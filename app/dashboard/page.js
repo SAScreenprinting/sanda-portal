@@ -1,330 +1,165 @@
-'use client'
-import { useState, useEffect } from 'react'
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 const themes = {
-  classic: {
-    name: 'Classic',
-    sidebar: '#EFEDE8',
-    sidebarText: '#666',
-    sidebarActive: '#1a1a1a',
-    sidebarActiveTxt: 'white',
-    main: '#F5F5F0',
-    card: 'white',
-    cardText: '#1a1a1a',
-    cardSub: '#aaa',
-    accent: '#1a1a1a',
-    accentText: 'white',
-    logoFilter: 'none',
-  },
-  midnight: {
-    name: 'Midnight',
-    sidebar: '#0f0f0f',
-    sidebarText: '#666',
-    sidebarActive: 'white',
-    sidebarActiveTxt: '#0f0f0f',
-    main: '#1a1a1a',
-    card: '#242424',
-    cardText: 'white',
-    cardSub: '#555',
-    accent: 'white',
-    accentText: '#1a1a1a',
-    logoFilter: 'invert(1)',
-  },
-  ocean: {
-    name: 'Ocean',
-    sidebar: '#EFF6FF',
-    sidebarText: '#64748B',
-    sidebarActive: '#1E40AF',
-    sidebarActiveTxt: 'white',
-    main: '#F0F7FF',
-    card: 'white',
-    cardText: '#1E293B',
-    cardSub: '#94A3B8',
-    accent: '#1E40AF',
-    accentText: 'white',
-    logoFilter: 'none',
-  },
-  forest: {
-    name: 'Forest',
-    sidebar: '#ECFDF5',
-    sidebarText: '#6B7280',
-    sidebarActive: '#065F46',
-    sidebarActiveTxt: 'white',
-    main: '#F0FDF4',
-    card: 'white',
-    cardText: '#1a1a1a',
-    cardSub: '#aaa',
-    accent: '#065F46',
-    accentText: 'white',
-    logoFilter: 'none',
-  },
-  rose: {
-    name: 'Rose',
-    sidebar: '#FFF1F2',
-    sidebarText: '#9F6B6B',
-    sidebarActive: '#9F1239',
-    sidebarActiveTxt: 'white',
-    main: '#FFF5F5',
-    card: 'white',
-    cardText: '#1a1a1a',
-    cardSub: '#aaa',
-    accent: '#9F1239',
-    accentText: 'white',
-    logoFilter: 'none',
-  },
-  slate: {
-    name: 'Slate',
-    sidebar: '#F1F5F9',
-    sidebarText: '#64748B',
-    sidebarActive: '#334155',
-    sidebarActiveTxt: 'white',
-    main: '#F8FAFC',
-    card: 'white',
-    cardText: '#1a1a1a',
-    cardSub: '#aaa',
-    accent: '#334155',
-    accentText: 'white',
-    logoFilter: 'none',
-  },
-}
+  classic:    { name:'Classic',     sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white', main:'#F5F5F0', card:'white', cardText:'#1a1a1a', cardSub:'#aaa', accent:'#1a1a1a', accentText:'white', logoFilter:'none' },
+  midnight:   { name:'Midnight',    sidebar:'#0f0f0f', sidebarText:'#666', sidebarActive:'white',   sidebarActiveTxt:'#0f0f0f', main:'#1a1a1a', card:'#242424', cardText:'white', cardSub:'#555', accent:'white', accentText:'#1a1a1a', logoFilter:'invert(1)' },
+  ocean:      { name:'Ocean',       sidebar:'#0a1628', sidebarText:'#4a7fa5', sidebarActive:'#2196f3', sidebarActiveTxt:'white', main:'#0d1f35', card:'#0f2744', cardText:'white', cardSub:'#4a7fa5', accent:'#2196f3', accentText:'white', logoFilter:'invert(1)' },
+  forest:     { name:'Forest',      sidebar:'#0f1f0f', sidebarText:'#4a7a4a', sidebarActive:'#4caf50', sidebarActiveTxt:'white', main:'#141f14', card:'#1a2e1a', cardText:'white', cardSub:'#4a7a4a', accent:'#4caf50', accentText:'white', logoFilter:'invert(1)' },
+  sunset:     { name:'Sunset',      sidebar:'#1a0f0a', sidebarText:'#a06040', sidebarActive:'#ff6b35', sidebarActiveTxt:'white', main:'#1f1510', card:'#2a1f15', cardText:'white', cardSub:'#a06040', accent:'#ff6b35', accentText:'white', logoFilter:'invert(1)' },
+  lavender:   { name:'Lavender',    sidebar:'#f0eef8', sidebarText:'#8878c3', sidebarActive:'#7c6bc4', sidebarActiveTxt:'white', main:'#f5f3ff', card:'white', cardText:'#2d2460', cardSub:'#9b8fd4', accent:'#7c6bc4', accentText:'white', logoFilter:'none' },
+};
 
-export default function Dashboard() {
-  const [activeTheme, setActiveTheme] = useState('classic')
-  const [showThemePicker, setShowThemePicker] = useState(false)
+const NAV = [
+  { id:'dashboard', label:'Dashboard',      icon:'◉', href:'/dashboard' },
+  { id:'orders',    label:'Orders',         icon:'▦', href:'/orders' },
+  { id:'artwork',   label:'Artwork Library',icon:'◈', href:'/artwork' },
+  { id:'studio',    label:'Design Studio',  icon:'✦', href:'/studio' },
+  { id:'billing',   label:'Billing',        icon:'◎', href:'/billing' },
+];
 
-  useEffect(() => {
-    const saved = localStorage.getItem('portal-theme')
-    if (saved && themes[saved]) setActiveTheme(saved)
-  }, [])
+const MOCK_ORDERS = [
+  { id:'#1051', product:'24x T-Shirts, Front Print',   status:'In Production', color:'#f59e0b', date:'May 10' },
+  { id:'#1049', product:'36x Jerseys, Name+Number',    status:'Awaiting Artwork', color:'#8b5cf6', date:'May 7' },
+  { id:'#1048', product:'60x T-Shirts, 2-color print', status:'Shipped',        color:'#10b981', date:'May 3' },
+];
 
-  const setTheme = (key) => {
-    setActiveTheme(key)
-    localStorage.setItem('portal-theme', key)
-    setShowThemePicker(false)
-  }
-
-  const t = themes[activeTheme]
-
-  const orders = [
-    { id: '#1042', customer: 'John Smith', product: 'TEE-BLK-LG-DTG-FC', status: 'Shipped', color: '#16A34A', bg: '#F0FDF4' },
-    { id: '#1041', customer: 'Sarah Jones', product: 'HOD-NVY-MD-DTG-FC', status: 'In Production', color: '#2563EB', bg: '#EFF6FF' },
-    { id: '#1040', customer: 'Mike Brown', product: 'TEE-WHT-SM-DTF-FC', status: 'Awaiting Artwork', color: '#D97706', bg: '#FFFBEB' },
-    { id: '#1039', customer: 'Lisa Davis', product: 'CRW-HGR-XL-DTG-FC', status: 'QC Passed', color: '#16A34A', bg: '#F0FDF4' },
-    { id: '#1038', customer: 'Tom Wilson', product: 'TEE-BLK-MD-DTG-BC', status: 'Awaiting Artwork', color: '#D97706', bg: '#FFFBEB' },
-  ]
+export default function DashboardPage() {
+  const router = useRouter();
+  const [themeName, setThemeName] = useState('classic');
+  const [showThemes, setShowThemes] = useState(false);
+  const t = themes[themeName];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: t.main, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display:'flex', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif' }}>
 
       {/* Sidebar */}
-      <div style={{
-        width: '220px', background: t.sidebar, display: 'flex', flexDirection: 'column',
-        padding: '28px 20px', position: 'fixed', height: '100vh', justifyContent: 'space-between'
-      }}>
+      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
         <div>
-          <div style={{ marginBottom: '32px' }}>
-            <img src="/Logoblack.png" alt="S&A" style={{ width: '110px', filter: t.logoFilter }} />
+          {/* Logo */}
+          <div style={{ marginBottom:'32px' }}>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'110px', filter:t.logoFilter }}/>
           </div>
 
-          <div style={{ marginBottom: '36px' }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '50%', background: t.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: t.accentText, fontSize: '14px', fontWeight: '600', marginBottom: '12px'
-            }}>BA</div>
-            <p style={{ fontSize: '14px', fontWeight: '700', color: t.cardText, margin: 0 }}>Brand A</p>
-            <p style={{ fontSize: '12px', color: t.sidebarText, margin: '2px 0 0' }}>Growth tier</p>
+          {/* User avatar */}
+          <div style={{ marginBottom:'36px' }}>
+            <div style={{ width:'48px', height:'48px', borderRadius:'50%', background:t.accent, display:'flex', alignItems:'center', justifyContent:'center', color:t.accentText, fontWeight:'700', fontSize:'18px', marginBottom:'12px' }}>R</div>
+            <div style={{ fontSize:'14px', fontWeight:'600', color:t.cardText }}>Riverside Youth</div>
+            <div style={{ fontSize:'12px', color:t.cardSub }}>Sports</div>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {[
-              { label: 'Dashboard', active: true, badge: null },
-              { label: 'Orders', active: false, badge: '2' },
-              { label: 'Artwork', active: false, badge: null },
-              { label: 'Inventory', active: false, badge: null },
-              { label: 'Design Studio', active: false, badge: null },
-              { label: 'Billing', active: false, badge: null },
-            ].map((item) => (
-              <div key={item.label} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
-                background: item.active ? t.sidebarActive : 'transparent',
-                color: item.active ? t.sidebarActiveTxt : t.sidebarText,
-                fontSize: '14px', fontWeight: item.active ? '600' : '400',
-              }}>
-                <span>{item.label}</span>
-                {item.badge && (
-                  <span style={{
-                    background: '#F59E0B', color: 'white', fontSize: '11px',
-                    fontWeight: '600', padding: '2px 7px', borderRadius: '20px'
-                  }}>{item.badge}</span>
-                )}
-              </div>
-            ))}
+          {/* Nav links */}
+          <nav style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+            {NAV.map(item => {
+              const active = item.id === 'dashboard';
+              return (
+                <a key={item.id} href={item.href}
+                  style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'10px', textDecoration:'none', cursor:'pointer', background:active?t.sidebarActive:'transparent', color:active?t.sidebarActiveTxt:t.sidebarText, fontSize:'13px', fontWeight:active?'600':'400', transition:'all 0.15s' }}>
+                  <span style={{ fontSize:'16px' }}>{item.icon}</span>
+                  {item.label}
+                </a>
+              );
+            })}
           </nav>
         </div>
 
+        {/* Bottom */}
         <div>
-          <div
-            onClick={() => setShowThemePicker(!showThemePicker)}
-            style={{
-              padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
-              fontSize: '13px', color: t.sidebarText, marginBottom: '4px',
-              display: 'flex', alignItems: 'center', gap: '8px'
-            }}
-          >
-            <span>🎨</span> Theme
+          {/* Theme switcher */}
+          <div style={{ marginBottom:'16px' }}>
+            <button onClick={() => setShowThemes(s => !s)}
+              style={{ width:'100%', padding:'8px 12px', background:'transparent', border:`1px solid ${t.sidebarText}40`, borderRadius:'8px', color:t.sidebarText, fontSize:'12px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span>🎨 Theme: {t.name}</span>
+              <span>{showThemes ? '▲' : '▼'}</span>
+            </button>
+            {showThemes && (
+              <div style={{ marginTop:'6px', display:'flex', flexDirection:'column', gap:'4px' }}>
+                {Object.entries(themes).map(([key, th]) => (
+                  <button key={key} onClick={() => { setThemeName(key); setShowThemes(false); }}
+                    style={{ padding:'6px 10px', background:key===themeName?t.sidebarActive:'transparent', border:'none', borderRadius:'6px', color:key===themeName?t.sidebarActiveTxt:t.sidebarText, fontSize:'12px', cursor:'pointer', textAlign:'left' }}>
+                    {th.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div style={{ fontSize: '14px', color: t.sidebarText, cursor: 'pointer', padding: '10px 12px' }}>
-            🚪 Log out
-          </div>
+
+          <a href="/" style={{ display:'block', padding:'8px 12px', color:t.sidebarText, fontSize:'12px', textDecoration:'none', textAlign:'center' }}>
+            Sign Out
+          </a>
         </div>
       </div>
 
-      {/* Theme picker */}
-      {showThemePicker && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.4)', zIndex: 999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }} onClick={() => setShowThemePicker(false)}>
-          <div style={{
-            background: 'white', borderRadius: '24px', padding: '32px',
-            width: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
-          }} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 6px' }}>Choose your theme</h2>
-            <p style={{ fontSize: '13px', color: '#aaa', margin: '0 0 24px' }}>Your preference is saved automatically</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-              {Object.entries(themes).map(([key, theme]) => (
-                <div
-                  key={key}
-                  onClick={() => setTheme(key)}
-                  style={{
-                    borderRadius: '16px', overflow: 'hidden', cursor: 'pointer',
-                    border: activeTheme === key ? '3px solid #1a1a1a' : '3px solid transparent',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                  }}
-                >
-                  <div style={{ display: 'flex', height: '60px' }}>
-                    <div style={{ width: '40%', background: theme.sidebar }}></div>
-                    <div style={{ flex: 1, background: theme.main, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px', gap: '4px' }}>
-                      <div style={{ height: '8px', background: theme.card, borderRadius: '4px' }}></div>
-                      <div style={{ height: '8px', background: theme.accent, borderRadius: '4px', width: '60%' }}></div>
-                    </div>
-                  </div>
-                  <div style={{ background: 'white', padding: '8px 10px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>{theme.name}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main area */}
-      <div style={{ marginLeft: '220px', flex: 1, padding: '36px 40px' }}>
+      {/* Main content */}
+      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: t.cardText, margin: 0 }}>Dashboard</h1>
-            <p style={{ fontSize: '13px', color: t.cardSub, margin: '6px 0 0' }}>Good morning, Brand A</p>
+            <h1 style={{ fontSize:'26px', fontWeight:'700', color:t.cardText, margin:'0 0 4px' }}>Welcome back 👋</h1>
+            <p style={{ fontSize:'14px', color:t.cardSub, margin:0 }}>Here's what's happening with your orders.</p>
           </div>
-          <div style={{
-            background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '16px',
-            padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px'
-          }}>
-            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#F59E0B' }}></div>
-            <span style={{ fontSize: '13px', color: '#92400E', fontWeight: '500' }}>2 orders awaiting artwork</span>
-          </div>
+          <a href="/orders" style={{ padding:'10px 20px', background:t.accent, color:t.accentText, borderRadius:'10px', fontSize:'13px', fontWeight:'600', textDecoration:'none', whiteSpace:'nowrap' }}>
+            + New Order
+          </a>
         </div>
 
-        {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'28px' }}>
           {[
-            { label: 'Total orders', value: '142', sub: 'all time', dark: false },
-            { label: 'This month', value: '24', sub: 'May 2026', dark: false },
-            { label: 'In production', value: '6', sub: 'right now', dark: true },
-            { label: 'Shipped this week', value: '11', sub: 'last 7 days', dark: false },
-          ].map((card) => (
-            <div key={card.label} style={{
-              background: card.dark ? t.accent : t.card,
-              borderRadius: '20px', padding: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-            }}>
-              <p style={{ fontSize: '11px', color: card.dark ? 'rgba(255,255,255,0.5)' : t.cardSub, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>{card.label}</p>
-              <p style={{ fontSize: '36px', fontWeight: '800', color: card.dark ? t.accentText : t.cardText, margin: 0, lineHeight: 1 }}>{card.value}</p>
-              <p style={{ fontSize: '11px', color: card.dark ? 'rgba(255,255,255,0.3)' : '#ddd', margin: '6px 0 0' }}>{card.sub}</p>
+            { label:'Active Orders',    value:'3',      sub:'2 in production' },
+            { label:'Pending Artwork',  value:'1',      sub:'Needs your upload' },
+            { label:'Balance Due',      value:'$342',   sub:'Due Jun 9' },
+            { label:'Total Orders',     value:'12',     sub:'All time' },
+          ].map(stat => (
+            <div key={stat.label} style={{ background:t.card, borderRadius:'12px', padding:'20px', border:`1px solid ${t.cardSub}20` }}>
+              <div style={{ fontSize:'11px', fontWeight:'600', color:t.cardSub, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'8px' }}>{stat.label}</div>
+              <div style={{ fontSize:'28px', fontWeight:'700', color:t.cardText, marginBottom:'4px' }}>{stat.value}</div>
+              <div style={{ fontSize:'12px', color:t.cardSub }}>{stat.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Bottom grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-
-          {/* Recent orders */}
-          <div style={{ background: t.card, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div style={{ padding: '20px 24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: '700', color: t.cardText, margin: 0 }}>Recent orders</h2>
-              <span style={{ fontSize: '12px', color: t.cardSub, cursor: 'pointer' }}>View all →</span>
-            </div>
-            {orders.map((order, i) => (
-              <div key={order.id} style={{
-                padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                borderBottom: i < orders.length - 1 ? '1px solid rgba(0,0,0,0.03)' : 'none',
-                cursor: 'pointer'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '12px', color: '#ccc', fontWeight: '500', width: '40px' }}>{order.id}</span>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: '600', color: t.cardText, margin: 0 }}>{order.customer}</p>
-                    <p style={{ fontSize: '11px', color: t.cardSub, fontFamily: 'monospace', margin: '2px 0 0' }}>{order.product}</p>
-                  </div>
+        {/* Recent orders */}
+        <div style={{ background:t.card, borderRadius:'14px', padding:'22px', marginBottom:'20px', border:`1px solid ${t.cardSub}20` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'18px' }}>
+            <h2 style={{ fontSize:'15px', fontWeight:'600', color:t.cardText, margin:0 }}>Recent Orders</h2>
+            <a href="/orders" style={{ fontSize:'13px', color:t.accent, textDecoration:'none', fontWeight:'500' }}>View all →</a>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+            {MOCK_ORDERS.map(order => (
+              <a key={order.id} href={`/orders/${order.id.replace('#','')}`}
+                style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', background:`${t.cardSub}10`, borderRadius:'10px', textDecoration:'none', cursor:'pointer' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
+                  <span style={{ fontSize:'13px', fontWeight:'700', color:t.accent, fontFamily:'monospace' }}>{order.id}</span>
+                  <span style={{ fontSize:'13px', color:t.cardText }}>{order.product}</span>
                 </div>
-                <span style={{
-                  fontSize: '11px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px',
-                  color: order.color, background: order.bg
-                }}>{order.status}</span>
-              </div>
+                <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
+                  <span style={{ fontSize:'12px', color:t.cardSub }}>{order.date}</span>
+                  <span style={{ fontSize:'11px', fontWeight:'600', padding:'3px 10px', borderRadius:'20px', background:`${order.color}20`, color:order.color }}>{order.status}</span>
+                </div>
+              </a>
             ))}
           </div>
+        </div>
 
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-            {/* Turnaround */}
-            <div style={{ background: t.card, borderRadius: '20px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-              <h2 style={{ fontSize: '14px', fontWeight: '700', color: t.cardText, margin: '0 0 16px' }}>Avg. turnaround</h2>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', marginBottom: '6px' }}>
-                <p style={{ fontSize: '40px', fontWeight: '800', color: t.cardText, margin: 0, lineHeight: 1 }}>1.8</p>
-                <p style={{ fontSize: '13px', color: t.cardSub, marginBottom: '4px' }}>days</p>
-              </div>
-              <p style={{ fontSize: '11px', color: t.cardSub, margin: '0 0 16px' }}>SLA is 2 business days</p>
-              <div style={{ height: '6px', background: 'rgba(0,0,0,0.06)', borderRadius: '999px' }}>
-                <div style={{ height: '6px', background: t.accent, borderRadius: '999px', width: '90%' }}></div>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div style={{ background: t.accent, borderRadius: '20px', padding: '24px' }}>
-              <h2 style={{ fontSize: '14px', fontWeight: '700', color: t.accentText, margin: '0 0 16px' }}>Quick actions</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button style={{ width: '100%', background: t.accentText, color: t.accent, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
-                  Upload artwork
-                </button>
-                <button style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: t.accentText, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
-                  View all orders
-                </button>
-                <button style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: t.accentText, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
-                  Open design studio
-                </button>
-              </div>
-            </div>
-
-          </div>
+        {/* Quick actions */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'14px' }}>
+          {[
+            { label:'Upload Artwork',   sub:'Add files to your orders',      icon:'🎨', href:'/artwork' },
+            { label:'Design Studio',    sub:'Preview your garments in 360°', icon:'✦',  href:'/studio' },
+            { label:'View Invoices',    sub:'Check billing & payment status', icon:'💰', href:'/billing' },
+          ].map(action => (
+            <a key={action.label} href={action.href}
+              style={{ background:t.card, borderRadius:'12px', padding:'20px', border:`1px solid ${t.cardSub}20`, textDecoration:'none', display:'block', transition:'all 0.15s' }}>
+              <div style={{ fontSize:'24px', marginBottom:'10px' }}>{action.icon}</div>
+              <div style={{ fontSize:'14px', fontWeight:'600', color:t.cardText, marginBottom:'4px' }}>{action.label}</div>
+              <div style={{ fontSize:'12px', color:t.cardSub }}>{action.sub}</div>
+            </a>
+          ))}
         </div>
       </div>
     </div>
-  )
+  );
 }

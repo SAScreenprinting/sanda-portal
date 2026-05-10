@@ -1,120 +1,329 @@
+'use client'
+import { useState, useEffect } from 'react'
+
+const themes = {
+  classic: {
+    name: 'Classic',
+    sidebar: '#EFEDE8',
+    sidebarText: '#666',
+    sidebarActive: '#1a1a1a',
+    sidebarActiveTxt: 'white',
+    main: '#F5F5F0',
+    card: 'white',
+    cardText: '#1a1a1a',
+    cardSub: '#aaa',
+    accent: '#1a1a1a',
+    accentText: 'white',
+    logoFilter: 'none',
+  },
+  midnight: {
+    name: 'Midnight',
+    sidebar: '#0f0f0f',
+    sidebarText: '#666',
+    sidebarActive: 'white',
+    sidebarActiveTxt: '#0f0f0f',
+    main: '#1a1a1a',
+    card: '#242424',
+    cardText: 'white',
+    cardSub: '#555',
+    accent: 'white',
+    accentText: '#1a1a1a',
+    logoFilter: 'invert(1)',
+  },
+  ocean: {
+    name: 'Ocean',
+    sidebar: '#EFF6FF',
+    sidebarText: '#64748B',
+    sidebarActive: '#1E40AF',
+    sidebarActiveTxt: 'white',
+    main: '#F0F7FF',
+    card: 'white',
+    cardText: '#1E293B',
+    cardSub: '#94A3B8',
+    accent: '#1E40AF',
+    accentText: 'white',
+    logoFilter: 'none',
+  },
+  forest: {
+    name: 'Forest',
+    sidebar: '#ECFDF5',
+    sidebarText: '#6B7280',
+    sidebarActive: '#065F46',
+    sidebarActiveTxt: 'white',
+    main: '#F0FDF4',
+    card: 'white',
+    cardText: '#1a1a1a',
+    cardSub: '#aaa',
+    accent: '#065F46',
+    accentText: 'white',
+    logoFilter: 'none',
+  },
+  rose: {
+    name: 'Rose',
+    sidebar: '#FFF1F2',
+    sidebarText: '#9F6B6B',
+    sidebarActive: '#9F1239',
+    sidebarActiveTxt: 'white',
+    main: '#FFF5F5',
+    card: 'white',
+    cardText: '#1a1a1a',
+    cardSub: '#aaa',
+    accent: '#9F1239',
+    accentText: 'white',
+    logoFilter: 'none',
+  },
+  slate: {
+    name: 'Slate',
+    sidebar: '#F1F5F9',
+    sidebarText: '#64748B',
+    sidebarActive: '#334155',
+    sidebarActiveTxt: 'white',
+    main: '#F8FAFC',
+    card: 'white',
+    cardText: '#1a1a1a',
+    cardSub: '#aaa',
+    accent: '#334155',
+    accentText: 'white',
+    logoFilter: 'none',
+  },
+}
+
 export default function Dashboard() {
+  const [activeTheme, setActiveTheme] = useState('classic')
+  const [showThemePicker, setShowThemePicker] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('portal-theme')
+    if (saved && themes[saved]) setActiveTheme(saved)
+  }, [])
+
+  const setTheme = (key) => {
+    setActiveTheme(key)
+    localStorage.setItem('portal-theme', key)
+    setShowThemePicker(false)
+  }
+
+  const t = themes[activeTheme]
+
+  const orders = [
+    { id: '#1042', customer: 'John Smith', product: 'TEE-BLK-LG-DTG-FC', status: 'Shipped', color: '#16A34A', bg: '#F0FDF4' },
+    { id: '#1041', customer: 'Sarah Jones', product: 'HOD-NVY-MD-DTG-FC', status: 'In Production', color: '#2563EB', bg: '#EFF6FF' },
+    { id: '#1040', customer: 'Mike Brown', product: 'TEE-WHT-SM-DTF-FC', status: 'Awaiting Artwork', color: '#D97706', bg: '#FFFBEB' },
+    { id: '#1039', customer: 'Lisa Davis', product: 'CRW-HGR-XL-DTG-FC', status: 'QC Passed', color: '#16A34A', bg: '#F0FDF4' },
+    { id: '#1038', customer: 'Tom Wilson', product: 'TEE-BLK-MD-DTG-BC', status: 'Awaiting Artwork', color: '#D97706', bg: '#FFFBEB' },
+  ]
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div style={{ display: 'flex', minHeight: '100vh', background: t.main, fontFamily: 'Inter, sans-serif' }}>
 
-      {/* Top navigation */}
-      <nav className="border-b border-white/10 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <img
-            src="/Logo2.png"
-            alt="S&A Screen Printing"
-            style={{ width: '140px', objectFit: 'contain' }}
-          />
-          <div className="hidden md:flex items-center gap-6 text-sm text-white/40">
-            <span className="text-white font-medium cursor-pointer">Dashboard</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Orders</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Artwork</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Inventory</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Design Studio</span>
-            <span className="cursor-pointer hover:text-white transition-colors">Billing</span>
+      {/* Sidebar */}
+      <div style={{
+        width: '220px', background: t.sidebar, display: 'flex', flexDirection: 'column',
+        padding: '28px 20px', position: 'fixed', height: '100vh', justifyContent: 'space-between'
+      }}>
+        <div>
+          <div style={{ marginBottom: '32px' }}>
+            <img src="/Logoblack.png" alt="S&A" style={{ width: '110px', filter: t.logoFilter }} />
+          </div>
+
+          <div style={{ marginBottom: '36px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%', background: t.accent,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: t.accentText, fontSize: '14px', fontWeight: '600', marginBottom: '12px'
+            }}>BA</div>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: t.cardText, margin: 0 }}>Brand A</p>
+            <p style={{ fontSize: '12px', color: t.sidebarText, margin: '2px 0 0' }}>Growth tier</p>
+          </div>
+
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {[
+              { label: 'Dashboard', active: true, badge: null },
+              { label: 'Orders', active: false, badge: '2' },
+              { label: 'Artwork', active: false, badge: null },
+              { label: 'Inventory', active: false, badge: null },
+              { label: 'Design Studio', active: false, badge: null },
+              { label: 'Billing', active: false, badge: null },
+            ].map((item) => (
+              <div key={item.label} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
+                background: item.active ? t.sidebarActive : 'transparent',
+                color: item.active ? t.sidebarActiveTxt : t.sidebarText,
+                fontSize: '14px', fontWeight: item.active ? '600' : '400',
+              }}>
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span style={{
+                    background: '#F59E0B', color: 'white', fontSize: '11px',
+                    fontWeight: '600', padding: '2px 7px', borderRadius: '20px'
+                  }}>{item.badge}</span>
+                )}
+              </div>
+            ))}
+          </nav>
+        </div>
+
+        <div>
+          <div
+            onClick={() => setShowThemePicker(!showThemePicker)}
+            style={{
+              padding: '10px 12px', borderRadius: '12px', cursor: 'pointer',
+              fontSize: '13px', color: t.sidebarText, marginBottom: '4px',
+              display: 'flex', alignItems: 'center', gap: '8px'
+            }}
+          >
+            <span>🎨</span> Theme
+          </div>
+          <div style={{ fontSize: '14px', color: t.sidebarText, cursor: 'pointer', padding: '10px 12px' }}>
+            🚪 Log out
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-medium text-white">Brand A</p>
-            <p className="text-xs text-white/30">Growth tier</p>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-medium">
-            BA
+      </div>
+
+      {/* Theme picker */}
+      {showThemePicker && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.4)', zIndex: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setShowThemePicker(false)}>
+          <div style={{
+            background: 'white', borderRadius: '24px', padding: '32px',
+            width: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 6px' }}>Choose your theme</h2>
+            <p style={{ fontSize: '13px', color: '#aaa', margin: '0 0 24px' }}>Your preference is saved automatically</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+              {Object.entries(themes).map(([key, theme]) => (
+                <div
+                  key={key}
+                  onClick={() => setTheme(key)}
+                  style={{
+                    borderRadius: '16px', overflow: 'hidden', cursor: 'pointer',
+                    border: activeTheme === key ? '3px solid #1a1a1a' : '3px solid transparent',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                  }}
+                >
+                  <div style={{ display: 'flex', height: '60px' }}>
+                    <div style={{ width: '40%', background: theme.sidebar }}></div>
+                    <div style={{ flex: 1, background: theme.main, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px', gap: '4px' }}>
+                      <div style={{ height: '8px', background: theme.card, borderRadius: '4px' }}></div>
+                      <div style={{ height: '8px', background: theme.accent, borderRadius: '4px', width: '60%' }}></div>
+                    </div>
+                  </div>
+                  <div style={{ background: 'white', padding: '8px 10px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>{theme.name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </nav>
+      )}
 
-      {/* Main content */}
-      <div className="px-8 py-8 max-w-7xl mx-auto">
+      {/* Main area */}
+      <div style={{ marginLeft: '220px', flex: 1, padding: '36px 40px' }}>
 
-        {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-white mb-1">Good morning, Brand A</h1>
-          <p className="text-white/40 text-sm">Here is what is happening with your orders today</p>
-        </div>
-
-        {/* Alert banner */}
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-5 py-4 mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-            <p className="text-sm text-amber-400 font-medium">2 orders are waiting for your artwork upload</p>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
+          <div>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: t.cardText, margin: 0 }}>Dashboard</h1>
+            <p style={{ fontSize: '13px', color: t.cardSub, margin: '6px 0 0' }}>Good morning, Brand A</p>
           </div>
-          <span className="text-xs text-amber-400/60 cursor-pointer hover:text-amber-400 transition-colors">View orders →</span>
+          <div style={{
+            background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '16px',
+            padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#F59E0B' }}></div>
+            <span style={{ fontSize: '13px', color: '#92400E', fontWeight: '500' }}>2 orders awaiting artwork</span>
+          </div>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Total orders</p>
-            <p className="text-3xl font-semibold text-white">142</p>
-            <p className="text-xs text-white/20 mt-1">all time</p>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-xs text-white/30 uppercase tracking-wider mb-2">This month</p>
-            <p className="text-3xl font-semibold text-white">24</p>
-            <p className="text-xs text-white/20 mt-1">May 2026</p>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-xs text-white/30 uppercase tracking-wider mb-2">In production</p>
-            <p className="text-3xl font-semibold text-white">6</p>
-            <p className="text-xs text-white/20 mt-1">right now</p>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Shipped this week</p>
-            <p className="text-3xl font-semibold text-white">11</p>
-            <p className="text-xs text-white/20 mt-1">last 7 days</p>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+          {[
+            { label: 'Total orders', value: '142', sub: 'all time', dark: false },
+            { label: 'This month', value: '24', sub: 'May 2026', dark: false },
+            { label: 'In production', value: '6', sub: 'right now', dark: true },
+            { label: 'Shipped this week', value: '11', sub: 'last 7 days', dark: false },
+          ].map((card) => (
+            <div key={card.label} style={{
+              background: card.dark ? t.accent : t.card,
+              borderRadius: '20px', padding: '24px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+            }}>
+              <p style={{ fontSize: '11px', color: card.dark ? 'rgba(255,255,255,0.5)' : t.cardSub, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>{card.label}</p>
+              <p style={{ fontSize: '36px', fontWeight: '800', color: card.dark ? t.accentText : t.cardText, margin: 0, lineHeight: 1 }}>{card.value}</p>
+              <p style={{ fontSize: '11px', color: card.dark ? 'rgba(255,255,255,0.3)' : '#ddd', margin: '6px 0 0' }}>{card.sub}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Recent orders */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-white">Recent orders</h2>
-            <span className="text-xs text-white/30 cursor-pointer hover:text-white transition-colors">View all →</span>
-          </div>
-          <div className="divide-y divide-white/5">
-            {[
-              { id: '#1042', product: 'TEE-BLK-LG-DTG-FC', customer: 'John Smith', status: 'Shipped', statusColor: 'text-green-400 bg-green-400/10' },
-              { id: '#1041', product: 'HOD-NVY-MD-DTG-FC', customer: 'Sarah Jones', status: 'In Production', statusColor: 'text-blue-400 bg-blue-400/10' },
-              { id: '#1040', product: 'TEE-WHT-SM-DTF-FC', customer: 'Mike Brown', status: 'Awaiting Artwork', statusColor: 'text-amber-400 bg-amber-400/10' },
-              { id: '#1039', product: 'CRW-HGR-XL-DTG-FC', customer: 'Lisa Davis', status: 'QC Passed', statusColor: 'text-green-400 bg-green-400/10' },
-              { id: '#1038', product: 'TEE-BLK-MD-DTG-BC', customer: 'Tom Wilson', status: 'Awaiting Artwork', statusColor: 'text-amber-400 bg-amber-400/10' },
-            ].map((order) => (
-              <div key={order.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-white/60 w-14">{order.id}</span>
+        {/* Bottom grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+
+          {/* Recent orders */}
+          <div style={{ background: t.card, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ padding: '20px 24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '700', color: t.cardText, margin: 0 }}>Recent orders</h2>
+              <span style={{ fontSize: '12px', color: t.cardSub, cursor: 'pointer' }}>View all →</span>
+            </div>
+            {orders.map((order, i) => (
+              <div key={order.id} style={{
+                padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: i < orders.length - 1 ? '1px solid rgba(0,0,0,0.03)' : 'none',
+                cursor: 'pointer'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={{ fontSize: '12px', color: '#ccc', fontWeight: '500', width: '40px' }}>{order.id}</span>
                   <div>
-                    <p className="text-sm font-medium text-white">{order.customer}</p>
-                    <p className="text-xs text-white/30 font-mono">{order.product}</p>
+                    <p style={{ fontSize: '13px', fontWeight: '600', color: t.cardText, margin: 0 }}>{order.customer}</p>
+                    <p style={{ fontSize: '11px', color: t.cardSub, fontFamily: 'monospace', margin: '2px 0 0' }}>{order.product}</p>
                   </div>
                 </div>
-                <span className={`text-xs font-medium px-3 py-1 rounded-full ${order.statusColor}`}>
-                  {order.status}
-                </span>
+                <span style={{
+                  fontSize: '11px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px',
+                  color: order.color, background: order.bg
+                }}>{order.status}</span>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Avg turnaround */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h2 className="text-sm font-medium text-white mb-4">Average turnaround</h2>
-          <div className="flex items-end gap-2 mb-2">
-            <p className="text-4xl font-semibold text-white">1.8</p>
-            <p className="text-white/40 text-sm mb-1">business days</p>
-          </div>
-          <p className="text-xs text-white/20">Based on last 30 days — SLA is 2 days</p>
-          <div className="mt-4 h-1 bg-white/10 rounded-full">
-            <div className="h-1 bg-white rounded-full" style={{ width: '90%' }}></div>
+          {/* Right column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {/* Turnaround */}
+            <div style={{ background: t.card, borderRadius: '20px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: '700', color: t.cardText, margin: '0 0 16px' }}>Avg. turnaround</h2>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', marginBottom: '6px' }}>
+                <p style={{ fontSize: '40px', fontWeight: '800', color: t.cardText, margin: 0, lineHeight: 1 }}>1.8</p>
+                <p style={{ fontSize: '13px', color: t.cardSub, marginBottom: '4px' }}>days</p>
+              </div>
+              <p style={{ fontSize: '11px', color: t.cardSub, margin: '0 0 16px' }}>SLA is 2 business days</p>
+              <div style={{ height: '6px', background: 'rgba(0,0,0,0.06)', borderRadius: '999px' }}>
+                <div style={{ height: '6px', background: t.accent, borderRadius: '999px', width: '90%' }}></div>
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div style={{ background: t.accent, borderRadius: '20px', padding: '24px' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: '700', color: t.accentText, margin: '0 0 16px' }}>Quick actions</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button style={{ width: '100%', background: t.accentText, color: t.accent, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                  Upload artwork
+                </button>
+                <button style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: t.accentText, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
+                  View all orders
+                </button>
+                <button style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: t.accentText, border: 'none', borderRadius: '12px', padding: '10px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
+                  Open design studio
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
-
       </div>
     </div>
   )

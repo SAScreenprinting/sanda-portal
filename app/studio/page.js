@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -9,406 +9,465 @@ const NAV = [
   { id:'billing',   label:'Billing',         icon:'◎', href:'/billing' },
 ];
 
-const PRODUCTS = [
-  { id:'tshirt', label:'T-Shirt',  icon:'👕' },
-  { id:'hoodie', label:'Hoodie',   icon:'🧥' },
-  { id:'polo',   label:'Polo',     icon:'👔' },
-  { id:'tank',   label:'Tank Top', icon:'🎽' },
-  { id:'hat',    label:'Hat',      icon:'🧢' },
+const DECORATION_METHODS = [
+  {
+    id:'screenprint', label:'Screen Print', icon:'🖨',
+    description:'Best for bold, vibrant designs. Price per color/screen.',
+    pricing: (colors) => `$30 × ${colors} color${colors!==1?'s':''} = $${30*colors}/setup`,
+    priceNote:'$30 per screen (color)',
+  },
+  {
+    id:'dtf', label:'DTF', icon:'🖨',
+    description:'Direct to Film. Full color, no minimums, great for photos.',
+    pricing: () => 'Flat rate — full color included',
+    priceNote:'Flat rate pricing',
+  },
+  {
+    id:'embroidery', label:'Embroidery', icon:'🧵',
+    description:'Premium stitched look. Priced by stitch count.',
+    pricing: (stitches) => `~${stitches.toLocaleString()} stitches`,
+    priceNote:'Priced by stitch count',
+  },
+  {
+    id:'laser', label:'Laser Engraving', icon:'🔴',
+    description:'Precise laser etching for hard goods and leather.',
+    pricing: () => 'Priced by engraving area',
+    priceNote:'Priced by area',
+  },
 ];
 
-const COLORS = [
-  { name:'White',      hex:'#ffffff' },
-  { name:'Black',      hex:'#1a1a1a' },
-  { name:'Navy',       hex:'#1e3a5f' },
-  { name:'Red',        hex:'#8b0000' },
-  { name:'Forest',     hex:'#2d4a1e' },
-  { name:'Royal Blue', hex:'#2554c7' },
-  { name:'Purple',     hex:'#4a2d6b' },
-  { name:'Gold',       hex:'#c8a951' },
-  { name:'Gray',       hex:'#6b7280' },
-  { name:'Maroon',     hex:'#6b2737' },
+const PLACEHOLDER_GARMENTS = [
+  { id:'placeholder-tshirt',   name:'T-Shirt (Generic)',    category:'T-Shirts',   colors:['White','Black','Navy','Red','Gray'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], imagePreview:null },
+  { id:'placeholder-hoodie',   name:'Hoodie (Generic)',     category:'Hoodies',    colors:['Black','Navy','Gray','Forest Green'], printAreas:['Full Front','Full Back','Left Sleeve','Hood'], decorationMethods:['screenprint','dtf','embroidery'], imagePreview:null },
+  { id:'placeholder-hat',      name:'Hat (Generic)',        category:'Hats',       colors:['Black','Navy','Gray','Red','White'], printAreas:['Front Left Chest'], decorationMethods:['embroidery','screenprint'], imagePreview:null },
+  { id:'placeholder-bag',      name:'Tote Bag (Generic)',   category:'Bags',       colors:['Natural','Black','Navy'], printAreas:['Full Front','Full Back'], decorationMethods:['screenprint','dtf'], imagePreview:null },
+  { id:'placeholder-laser',    name:'Laser Item (Generic)', category:'Laser Engraving', colors:['Natural'], printAreas:['Laser Front','Laser Back'], decorationMethods:['laser'], imagePreview:null },
 ];
 
-const PRINT_AREAS = [
-  { id:'front-chest', label:'Front Left Chest', shortLabel:'F.Chest',   x:0.37, y:0.30, w:0.16, h:0.14 },
-  { id:'full-front',  label:'Full Front',        shortLabel:'Full Front', x:0.28, y:0.28, w:0.44, h:0.38 },
-  { id:'full-back',   label:'Full Back',         shortLabel:'Full Back',  x:0.28, y:0.24, w:0.44, h:0.42 },
-  { id:'left-sleeve', label:'Left Sleeve',       shortLabel:'L.Sleeve',  x:0.10, y:0.30, w:0.14, h:0.20 },
-  { id:'right-sleeve',label:'Right Sleeve',      shortLabel:'R.Sleeve',  x:0.76, y:0.30, w:0.14, h:0.20 },
-];
+const COLOR_HEX = {
+  'White':'#ffffff','Black':'#1a1a1a','Navy':'#1e3a5f','Red':'#8b0000',
+  'Royal Blue':'#2554c7','Forest Green':'#2d4a1e','Purple':'#4a2d6b',
+  'Gold':'#c8a951','Gray':'#6b7280','Maroon':'#6b2737','Orange':'#c2620a',
+  'Pink':'#db7093','Light Blue':'#6baed6','Olive':'#6b6b2a','Brown':'#6b3a2a',
+  'Heather Gray':'#9ca3af','Charcoal':'#374151','Natural':'#f5f0e8',
+};
 
-function GarmentSVG({ product, color }) {
-  const isDark = !['#ffffff','#c8a951','#f3f4f6'].includes(color);
-  const stroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)';
-  const pocket = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
-
-  if (product === 'hat') return (
-    <svg viewBox="0 0 280 280" width="100%" height="100%">
-      <ellipse cx="140" cy="120" rx="100" ry="58" fill={color} stroke={stroke} strokeWidth="1.5"/>
-      <path d="M40 128 Q140 175 240 128 L240 148 Q140 195 40 148 Z" fill={color} stroke={stroke} strokeWidth="1.5"/>
-      <path d="M120 64 Q140 58 160 64" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      <circle cx="140" cy="60" r="5" fill={stroke}/>
-    </svg>
-  );
-
-  if (product === 'tank') return (
-    <svg viewBox="0 0 280 310" width="100%" height="100%">
-      <path d="M115 50 L90 62 L70 85 L92 92 L92 262 L188 262 L188 92 L210 85 L190 62 L165 50 C160 64 145 72 140 72 C135 72 120 64 115 50 Z"
-        fill={color} stroke={stroke} strokeWidth="1.5"/>
-    </svg>
-  );
-
-  if (product === 'hoodie') return (
-    <svg viewBox="0 0 280 310" width="100%" height="100%">
-      <path d="M108 48 L68 58 L28 98 L56 108 L56 265 L224 265 L224 108 L252 98 L212 58 L172 48 C167 72 147 82 140 82 C133 82 113 72 108 48 Z"
-        fill={color} stroke={stroke} strokeWidth="1.5"/>
-      <path d="M108 48 L122 78 L140 84 L158 78 L172 48" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      <path d="M56 108 L28 98" fill="none" stroke={stroke} strokeWidth="1"/>
-      <path d="M224 108 L252 98" fill="none" stroke={stroke} strokeWidth="1"/>
-      <rect x="122" y="165" width="36" height="44" rx="5" fill={pocket} stroke={stroke} strokeWidth="1"/>
-    </svg>
-  );
-
-  if (product === 'polo') return (
-    <svg viewBox="0 0 280 310" width="100%" height="100%">
-      <path d="M110 48 L72 55 L32 95 L58 105 L58 262 L222 262 L222 105 L248 95 L208 55 L170 48 C165 64 148 72 140 72 C132 72 115 64 110 48 Z"
-        fill={color} stroke={stroke} strokeWidth="1.5"/>
-      <rect x="131" y="48" width="18" height="36" rx="3" fill="none" stroke={stroke} strokeWidth="1.2"/>
-      <line x1="140" y1="48" x2="140" y2="84" stroke={stroke} strokeWidth="0.8"/>
-    </svg>
-  );
-
-  // Default: T-shirt
-  return (
-    <svg viewBox="0 0 280 310" width="100%" height="100%">
-      <path d="M110 48 L72 55 L32 95 L58 105 L58 262 L222 262 L222 105 L248 95 L208 55 L170 48 C165 66 148 76 140 76 C132 76 115 66 110 48 Z"
-        fill={color} stroke={stroke} strokeWidth="1.5"/>
-      <path d="M110 48 C115 70 165 70 170 48" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      <path d="M58 105 L32 95" fill="none" stroke={stroke} strokeWidth="1"/>
-      <path d="M222 105 L248 95" fill="none" stroke={stroke} strokeWidth="1"/>
-    </svg>
-  );
-}
+const CATEGORIES = ['All','T-Shirts','Hoodies','Sweatshirts','Polos','Tanks',
+  'Hats','Beanies','Bags','Jackets','Accessories','Youth','Laser Engraving'];
 
 export default function StudioPage() {
-  const [product, setProduct]       = useState('tshirt');
-  const [color, setColor]           = useState('#ffffff');
-  const [printArea, setPrintArea]   = useState('front-chest');
-  const [view, setView]             = useState('front');
-  const [design, setDesign]         = useState(null);
-  const [designPos, setDesignPos]   = useState({ x:0.37, y:0.30, w:0.18, h:0.16 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ ox:0, oy:0 });
-  const [selected, setSelected]     = useState(false);
-  const [layers, setLayers]         = useState([]);
-  const [zoom, setZoom]             = useState(100);
-  const [saved, setSaved]           = useState(false);
+  const [garments, setGarments]         = useState([]);
+  const [catFilter, setCatFilter]       = useState('All');
+  const [selectedGarment, setSelectedGarment] = useState(null);
+  const [garmentColor, setGarmentColor] = useState('');
+  const [printArea, setPrintArea]       = useState('');
+  const [decoMethod, setDecoMethod]     = useState('');
+  const [screenColors, setScreenColors] = useState(1);
+  const [stitchCount, setStitchCount]   = useState(8000);
+  const [design, setDesign]             = useState(null);
+  const [designPos, setDesignPos]       = useState({ x:0.32, y:0.28, w:0.36, h:0.32 });
+  const [isDragging, setIsDragging]     = useState(false);
+  const [isResizing, setIsResizing]     = useState(false);
+  const [dragOffset, setDragOffset]     = useState({ ox:0, oy:0 });
+  const [selected, setSelected]         = useState(false);
+  const [zoom, setZoom]                 = useState(100);
+  const [saved, setSaved]               = useState(false);
+  const [showGarmentPicker, setShowGarmentPicker] = useState(true);
   const canvasRef = useRef();
   const fileRef   = useRef();
 
-  const currentArea = PRINT_AREAS.find(a => a.id === printArea) || PRINT_AREAS[0];
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('sa_garments');
+      const custom = stored ? JSON.parse(stored) : [];
+      setGarments([...custom, ...PLACEHOLDER_GARMENTS]);
+    } catch(e) {
+      setGarments(PLACEHOLDER_GARMENTS);
+    }
+  }, []);
+
+  function selectGarment(g) {
+    setSelectedGarment(g);
+    setGarmentColor(g.colors?.[0] || '');
+    setPrintArea(g.printAreas?.[0] || '');
+    setDecoMethod(g.decorationMethods?.[0] || '');
+    setDesign(null);
+    setSelected(false);
+    setShowGarmentPicker(false);
+  }
 
   function handleUpload(file) {
     if (!file?.type.startsWith('image/')) return;
     const url = URL.createObjectURL(file);
     setDesign(url);
-    setDesignPos({ x:currentArea.x, y:currentArea.y, w:currentArea.w, h:currentArea.h });
     setSelected(true);
-    setLayers(l => [...l, { id:Date.now(), name:file.name, url }]);
   }
 
-  function getRelativePos(e) {
-    const rect = canvasRef.current.getBoundingClientRect();
-    return {
-      mx: (e.clientX - rect.left) / rect.width,
-      my: (e.clientY - rect.top) / rect.height,
-    };
+  function getRelPos(e) {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return { mx:0, my:0 };
+    return { mx:(e.clientX-rect.left)/rect.width, my:(e.clientY-rect.top)/rect.height };
   }
 
   function onMouseDown(e) {
     if (!design) return;
-    const { mx, my } = getRelativePos(e);
+    const { mx, my } = getRelPos(e);
     const { x, y, w, h } = designPos;
-    // Resize corner
-    if (Math.abs(mx-(x+w)) < 0.04 && Math.abs(my-(y+h)) < 0.04) {
-      setIsResizing(true); return;
-    }
-    // Drag
-    if (mx >= x && mx <= x+w && my >= y && my <= y+h) {
-      setIsDragging(true);
-      setDragOffset({ ox: mx-x, oy: my-y });
-      setSelected(true); return;
-    }
+    if (Math.abs(mx-(x+w)) < 0.05 && Math.abs(my-(y+h)) < 0.05) { setIsResizing(true); return; }
+    if (mx>=x && mx<=x+w && my>=y && my<=y+h) { setIsDragging(true); setDragOffset({ ox:mx-x, oy:my-y }); setSelected(true); return; }
     setSelected(false);
   }
 
   function onMouseMove(e) {
     if (!isDragging && !isResizing) return;
-    const { mx, my } = getRelativePos(e);
-    if (isDragging) {
-      setDesignPos(p => ({
-        ...p,
-        x: Math.max(0, Math.min(0.98-p.w, mx-dragOffset.ox)),
-        y: Math.max(0, Math.min(0.98-p.h, my-dragOffset.oy)),
-      }));
-    }
-    if (isResizing) {
-      setDesignPos(p => ({
-        ...p,
-        w: Math.max(0.05, Math.min(0.9-p.x, mx-p.x)),
-        h: Math.max(0.05, Math.min(0.9-p.y, my-p.y)),
-      }));
-    }
+    const { mx, my } = getRelPos(e);
+    if (isDragging) setDesignPos(p => ({ ...p, x:Math.max(0,Math.min(0.95-p.w,mx-dragOffset.ox)), y:Math.max(0,Math.min(0.95-p.h,my-dragOffset.oy)) }));
+    if (isResizing) setDesignPos(p => ({ ...p, w:Math.max(0.05,Math.min(0.9-p.x,mx-p.x)), h:Math.max(0.05,Math.min(0.9-p.y,my-p.y)) }));
   }
 
   function onMouseUp() { setIsDragging(false); setIsResizing(false); }
 
-  function snapToArea(areaId) {
-    const area = PRINT_AREAS.find(a => a.id === areaId);
-    if (area) setDesignPos({ x:area.x, y:area.y, w:area.w, h:area.h });
-    setPrintArea(areaId);
-  }
-
-  function saveDesign() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  }
+  const filteredGarments = catFilter==='All' ? garments : garments.filter(g => g.category===catFilter);
+  const currentDeco = DECORATION_METHODS.find(m => m.id===decoMethod);
+  const isDark = !['#ffffff','#c8a951','#f5f0e8','#f3f4f6'].includes(COLOR_HEX[garmentColor]||'#ffffff');
+  const isLaser = selectedGarment?.category === 'Laser Engraving' || decoMethod === 'laser';
 
   const canvasW = Math.round(320 * zoom / 100);
   const canvasH = Math.round(360 * zoom / 100);
 
   return (
     <div style={{ display:'flex', height:'100vh', background:'#1c1c1c', fontFamily:'Inter,sans-serif', overflow:'hidden' }}>
-      <style>{`
-        input[type=range] { accent-color: #e8a020; }
-        * { box-sizing: border-box; }
-      `}</style>
+      <style>{`* { box-sizing:border-box; } input[type=range]{ accent-color:#e8a020; }`}</style>
 
-      {/* LEFT TOOL RAIL */}
-      <div style={{ width:56, background:'#111', borderRight:'1px solid #2a2a2a', display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', gap:2, flexShrink:0 }}>
+      {/* LEFT RAIL */}
+      <div style={{ width:56, background:'#111', borderRight:'1px solid #2a2a2a', display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', gap:4, flexShrink:0 }}>
         <a href="/dashboard" style={{ display:'block', marginBottom:12, textDecoration:'none' }}>
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
             <rect width="28" height="28" rx="6" fill="#2a2a2a"/>
             <path d="M5 14h18M14 5v18" stroke="#e8a020" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </a>
-        {[
-          { icon:'⬆', label:'Upload Design', onClick:() => fileRef.current?.click() },
-          { icon:'⊞', label:'Layers',        onClick:() => {} },
-          { icon:'T',  label:'Add Text',      onClick:() => {} },
-        ].map(t => (
-          <button key={t.label} onClick={t.onClick} title={t.label}
-            style={{ width:38, height:38, background:'transparent', border:'none', color:'#777', cursor:'pointer', borderRadius:8, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            {t.icon}
-          </button>
-        ))}
+        <button onClick={() => fileRef.current?.click()} title="Upload Design"
+          style={{ width:38,height:38,background:'transparent',border:'none',color:'#777',cursor:'pointer',borderRadius:8,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center' }}>
+          ⬆
+        </button>
+        <button onClick={() => setShowGarmentPicker(true)} title="Change Garment"
+          style={{ width:38,height:38,background:'transparent',border:'none',color:'#777',cursor:'pointer',borderRadius:8,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center' }}>
+          👕
+        </button>
         <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e=>handleUpload(e.target.files[0])}/>
-
         <div style={{ flex:1 }}/>
-
         {NAV.filter(n=>n.id!=='studio').map(n => (
           <a key={n.id} href={n.href} title={n.label}
-            style={{ width:38, height:38, display:'flex', alignItems:'center', justifyContent:'center', color:'#555', textDecoration:'none', borderRadius:8, fontSize:16 }}>
+            style={{ width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',color:'#555',textDecoration:'none',borderRadius:8,fontSize:16 }}>
             {n.icon}
           </a>
         ))}
       </div>
 
-      {/* CENTER CANVAS */}
+      {/* CENTER */}
       <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
 
         {/* Topbar */}
-        <div style={{ height:48, background:'#111', borderBottom:'1px solid #2a2a2a', display:'flex', alignItems:'center', padding:'0 16px', gap:8, flexShrink:0 }}>
-          <div style={{ display:'flex', gap:2 }}>
-            {PRODUCTS.map(p => (
-              <button key={p.id} onClick={() => setProduct(p.id)}
-                style={{ padding:'4px 10px', borderRadius:6, border:'none', background:product===p.id?'#2e2e2e':'transparent', color:product===p.id?'#fff':'#666', fontSize:12, cursor:'pointer' }}>
-                {p.icon} {p.label}
-              </button>
-            ))}
-          </div>
+        <div style={{ height:48, background:'#111', borderBottom:'1px solid #2a2a2a', display:'flex', alignItems:'center', padding:'0 16px', gap:12, flexShrink:0 }}>
+          <button onClick={() => setShowGarmentPicker(true)}
+            style={{ padding:'4px 12px', borderRadius:6, border:'1px solid #333', background:'#1a1a1a', color:'#ccc', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+            👕 {selectedGarment ? selectedGarment.name : 'Select Garment'}
+          </button>
+          {selectedGarment && (
+            <span style={{ fontSize:12, color:'#666', borderLeft:'1px solid #333', paddingLeft:12 }}>
+              {selectedGarment.category}
+            </span>
+          )}
           <div style={{ flex:1 }}/>
-          <div style={{ display:'flex', background:'#1a1a1a', borderRadius:6, padding:2, gap:1 }}>
-            {['front','back'].map(v => (
-              <button key={v} onClick={() => setView(v)}
-                style={{ padding:'3px 12px', borderRadius:4, border:'none', background:view===v?'#333':'transparent', color:view===v?'#fff':'#555', fontSize:12, cursor:'pointer', textTransform:'capitalize' }}>
-                {v}
-              </button>
-            ))}
-          </div>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <button onClick={() => setZoom(z=>Math.max(50,z-10))} style={{ width:22, height:22, background:'#2a2a2a', border:'none', color:'#ccc', borderRadius:4, cursor:'pointer', fontSize:14, lineHeight:1 }}>−</button>
+            <button onClick={() => setZoom(z=>Math.max(50,z-10))} style={{ width:22,height:22,background:'#2a2a2a',border:'none',color:'#ccc',borderRadius:4,cursor:'pointer',fontSize:14 }}>−</button>
             <span style={{ fontSize:12, color:'#777', minWidth:36, textAlign:'center' }}>{zoom}%</span>
-            <button onClick={() => setZoom(z=>Math.min(200,z+10))} style={{ width:22, height:22, background:'#2a2a2a', border:'none', color:'#ccc', borderRadius:4, cursor:'pointer', fontSize:14, lineHeight:1 }}>+</button>
+            <button onClick={() => setZoom(z=>Math.min(200,z+10))} style={{ width:22,height:22,background:'#2a2a2a',border:'none',color:'#ccc',borderRadius:4,cursor:'pointer',fontSize:14 }}>+</button>
           </div>
-          <button onClick={saveDesign}
+          <button onClick={()=>setSaved(true)}
             style={{ padding:'6px 18px', background:'#e8a020', color:'#1a1a1a', border:'none', borderRadius:6, fontSize:13, fontWeight:700, cursor:'pointer' }}>
             {saved ? '✓ Saved!' : 'Save Design'}
           </button>
         </div>
 
         {/* Canvas */}
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'#242424', overflow:'hidden', position:'relative' }}
-          onClick={e=>{ if(e.target===e.currentTarget) setSelected(false); }}>
-
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'#242424', position:'relative', overflow:'hidden' }}>
           <div style={{ position:'absolute', inset:0, backgroundImage:'repeating-conic-gradient(#2a2a2a 0% 25%,#242424 0% 50%)', backgroundSize:'24px 24px', opacity:0.5 }}/>
 
-          {/* Garment + design canvas */}
-          <div ref={canvasRef}
-            onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-            style={{ position:'relative', width:canvasW, height:canvasH, cursor:isDragging?'grabbing':'crosshair', userSelect:'none', flexShrink:0 }}>
-
-            {/* Garment */}
-            <div style={{ position:'absolute', inset:0, filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))' }}>
-              <GarmentSVG product={product} color={color}/>
+          {!selectedGarment ? (
+            <div style={{ textAlign:'center', color:'#555' }}>
+              <div style={{ fontSize:64, marginBottom:16 }}>👕</div>
+              <p style={{ fontSize:16, fontWeight:600, color:'#777' }}>Select a garment to get started</p>
+              <button onClick={() => setShowGarmentPicker(true)}
+                style={{ marginTop:12, padding:'10px 24px', background:'#e8a020', color:'#1a1a1a', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                Browse Garments
+              </button>
             </div>
+          ) : (
+            <div ref={canvasRef}
+              onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+              style={{ position:'relative', width:canvasW, height:canvasH, cursor:isDragging?'grabbing':'default', userSelect:'none', flexShrink:0 }}>
 
-            {/* Print area guides */}
-            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none' }} viewBox="0 0 100 100" preserveAspectRatio="none">
-              {PRINT_AREAS.map(area => (
-                <g key={area.id}>
-                  <rect
-                    x={area.x*100} y={area.y*100}
-                    width={area.w*100} height={area.h*100}
-                    fill={printArea===area.id ? 'rgba(232,160,32,0.06)' : 'none'}
-                    stroke={printArea===area.id ? '#e8a020' : 'rgba(255,255,255,0.12)'}
-                    strokeWidth={printArea===area.id ? '0.4' : '0.3'}
-                    strokeDasharray="2 1.5"
-                    rx="0.5"
-                  />
-                  <text x={(area.x+area.w/2)*100} y={(area.y-0.02)*100}
-                    textAnchor="middle" fontSize="2.2"
-                    fill={printArea===area.id ? '#e8a020' : 'rgba(255,255,255,0.2)'}>
-                    {area.shortLabel}
-                  </text>
-                </g>
-              ))}
-            </svg>
-
-            {/* Uploaded design */}
-            {design && (
-              <div style={{ position:'absolute', left:`${designPos.x*100}%`, top:`${designPos.y*100}%`, width:`${designPos.w*100}%`, height:`${designPos.h*100}%`, cursor:isDragging?'grabbing':'move' }}>
-                <img src={design} alt="design" draggable={false}
-                  style={{ width:'100%', height:'100%', objectFit:'contain', display:'block', pointerEvents:'none' }}/>
-                {selected && <>
-                  <div style={{ position:'absolute', inset:-1, border:'1.5px solid #e8a020', borderRadius:2, pointerEvents:'none' }}/>
-                  {[[0,0],[100,0],[0,100],[100,100]].map(([lx,ly],i) => (
-                    <div key={i} style={{ position:'absolute', left:`${lx}%`, top:`${ly}%`, transform:'translate(-50%,-50%)', width:8, height:8, background:'#e8a020', border:'1.5px solid #1a1a1a', borderRadius:2, cursor:'nwse-resize' }}/>
-                  ))}
-                  <button onClick={()=>{setDesign(null);setSelected(false);setLayers([]);}}
-                    style={{ position:'absolute', top:-10, right:-10, width:18, height:18, background:'#dc2626', border:'none', borderRadius:'50%', color:'white', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, lineHeight:1 }}>×</button>
-                </>}
+              {/* Garment image or color block */}
+              <div style={{ position:'absolute', inset:0, borderRadius:8, overflow:'hidden', filter:'drop-shadow(0 8px 32px rgba(0,0,0,0.6))' }}>
+                {selectedGarment.imagePreview ? (
+                  <img src={selectedGarment.imagePreview} alt={selectedGarment.name}
+                    style={{ width:'100%', height:'100%', objectFit:'contain' }}/>
+                ) : (
+                  <div style={{ width:'100%', height:'100%', background:COLOR_HEX[garmentColor]||'#ffffff', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:8 }}>
+                    <div style={{ fontSize:72, opacity:0.15 }}>👕</div>
+                    <span style={{ fontSize:13, color:isDark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.2)', fontWeight:600 }}>{selectedGarment.name}</span>
+                    <span style={{ fontSize:11, color:isDark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.15)' }}>Upload garment photo in admin to preview</span>
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Upload prompt */}
-            {!design && (
-              <div onClick={() => fileRef.current?.click()}
-                style={{ position:'absolute', left:`${currentArea.x*100}%`, top:`${currentArea.y*100}%`, width:`${currentArea.w*100}%`, height:`${currentArea.h*100}%`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'rgba(232,160,32,0.04)', border:'1.5px dashed rgba(232,160,32,0.35)', borderRadius:4, cursor:'pointer' }}>
-                <div style={{ fontSize:Math.round(canvasW*0.06), lineHeight:1 }}>+</div>
-                <div style={{ fontSize:Math.round(canvasW*0.025), color:'rgba(255,255,255,0.35)', textAlign:'center', marginTop:2, lineHeight:1.3, padding:'0 4px' }}>Upload design</div>
-              </div>
-            )}
-          </div>
+              {/* Print area guides */}
+              {printArea && (
+                <div style={{ position:'absolute', left:'20%', top:'20%', width:'60%', height:'55%', border:`1.5px dashed ${isLaser?'#ef4444':'#e8a020'}`, borderRadius:4, pointerEvents:'none', display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
+                  <span style={{ fontSize:10, color:isLaser?'#ef4444':'#e8a020', background:'rgba(0,0,0,0.5)', padding:'2px 8px', borderRadius:20, marginTop:-10 }}>{printArea}</span>
+                </div>
+              )}
+
+              {/* Uploaded design */}
+              {design && (
+                <div style={{ position:'absolute', left:`${designPos.x*100}%`, top:`${designPos.y*100}%`, width:`${designPos.w*100}%`, height:`${designPos.h*100}%`, cursor:isDragging?'grabbing':'move' }}>
+                  <img src={design} alt="design" draggable={false} style={{ width:'100%', height:'100%', objectFit:'contain', display:'block', pointerEvents:'none', ...(isLaser?{ filter:'grayscale(1) opacity(0.8)' }:{}) }}/>
+                  {selected && <>
+                    <div style={{ position:'absolute', inset:-1, border:`1.5px solid ${isLaser?'#ef4444':'#e8a020'}`, borderRadius:2, pointerEvents:'none' }}/>
+                    {[[0,0],[100,0],[0,100],[100,100]].map(([lx,ly],i) => (
+                      <div key={i} style={{ position:'absolute', left:`${lx}%`, top:`${ly}%`, transform:'translate(-50%,-50%)', width:8, height:8, background:isLaser?'#ef4444':'#e8a020', border:'1.5px solid #111', borderRadius:2, cursor:'nwse-resize' }}/>
+                    ))}
+                    <button onClick={() => { setDesign(null); setSelected(false); }}
+                      style={{ position:'absolute', top:-10, right:-10, width:18, height:18, background:'#dc2626', border:'none', borderRadius:'50%', color:'white', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>×</button>
+                  </>}
+                </div>
+              )}
+
+              {/* Upload prompt */}
+              {!design && (
+                <div onClick={() => fileRef.current?.click()}
+                  style={{ position:'absolute', left:'25%', top:'25%', width:'50%', height:'45%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'rgba(232,160,32,0.05)', border:`1.5px dashed ${isLaser?'rgba(239,68,68,0.4)':'rgba(232,160,32,0.35)'}`, borderRadius:4, cursor:'pointer' }}>
+                  <div style={{ fontSize:28, marginBottom:4 }}>+</div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', textAlign:'center' }}>Click to upload design</div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ position:'absolute', bottom:12, left:'50%', transform:'translateX(-50%)', fontSize:11, color:'#555', whiteSpace:'nowrap' }}>
-            {design ? 'Drag to reposition · Corner to resize · Click canvas to deselect' : 'Click the + zone or Upload Design to get started'}
+            {design ? 'Drag to reposition · Corner handles to resize' : selectedGarment ? 'Upload your design to get started' : 'Select a garment first'}
           </div>
         </div>
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{ width:256, background:'#111', borderLeft:'1px solid #2a2a2a', display:'flex', flexDirection:'column', overflow:'hidden', flexShrink:0 }}>
+      <div style={{ width:268, background:'#111', borderLeft:'1px solid #2a2a2a', display:'flex', flexDirection:'column', overflow:'hidden', flexShrink:0 }}>
 
         {/* Upload */}
-        <div style={{ padding:16, borderBottom:'1px solid #1e1e1e' }}>
-          <button onClick={() => fileRef.current?.click()}
-            style={{ width:'100%', padding:'10px 0', background:'#e8a020', color:'#1a1a1a', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+        <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+          <button onClick={() => fileRef.current?.click()} disabled={!selectedGarment}
+            style={{ width:'100%', padding:'10px 0', background:selectedGarment?'#e8a020':'#2a2a2a', color:selectedGarment?'#1a1a1a':'#555', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:selectedGarment?'pointer':'not-allowed' }}>
             ⬆ Upload Design
           </button>
-          <p style={{ fontSize:10, color:'#555', textAlign:'center', margin:'6px 0 0' }}>PNG · SVG · JPG · PDF · AI</p>
         </div>
 
-        {/* Color */}
-        <div style={{ padding:16, borderBottom:'1px solid #1e1e1e' }}>
-          <div style={{ fontSize:11, fontWeight:600, color:'#666', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Garment Color</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:5 }}>
-            {COLORS.map(c => (
-              <button key={c.hex} onClick={() => setColor(c.hex)} title={c.name}
-                style={{ aspectRatio:'1', borderRadius:6, background:c.hex, border:color===c.hex?'2.5px solid #e8a020':'2px solid #2a2a2a', cursor:'pointer', position:'relative' }}>
-                {color===c.hex && <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:['#ffffff','#c8a951'].includes(c.hex)?'#333':'white' }}>✓</span>}
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize:11, color:'#555', marginTop:6 }}>{COLORS.find(c=>c.hex===color)?.name}</div>
-        </div>
+        <div style={{ flex:1, overflowY:'auto' }}>
 
-        {/* Print areas */}
-        <div style={{ padding:16, borderBottom:'1px solid #1e1e1e' }}>
-          <div style={{ fontSize:11, fontWeight:600, color:'#666', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Print Area</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            {PRINT_AREAS.map(area => (
-              <button key={area.id} onClick={() => snapToArea(area.id)}
-                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:6, border:`1px solid ${printArea===area.id?'#e8a020':'#232323'}`, background:printArea===area.id?'rgba(232,160,32,0.08)':'transparent', color:printArea===area.id?'#e8a020':'#666', fontSize:12, cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:6, height:6, borderRadius:1, background:printArea===area.id?'#e8a020':'#444', flexShrink:0 }}/>
-                {area.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Layers */}
-        <div style={{ padding:16, flex:1, overflow:'auto' }}>
-          <div style={{ fontSize:11, fontWeight:600, color:'#666', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Layers</div>
-          {layers.length===0
-            ? <div style={{ fontSize:11, color:'#444', textAlign:'center', padding:'20px 0' }}>No layers yet</div>
-            : layers.map(layer => (
-              <div key={layer.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:6, background:'#1a1a1a', border:'1px solid #232323', marginBottom:6 }}>
-                <img src={layer.url} alt="" style={{ width:28, height:28, objectFit:'contain', borderRadius:3, background:'#2a2a2a' }}/>
-                <span style={{ fontSize:11, color:'#888', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{layer.name}</span>
-                <button onClick={()=>{setDesign(null);setLayers([]);setSelected(false);}} style={{ background:'none', border:'none', color:'#555', cursor:'pointer', fontSize:14, lineHeight:1 }}>×</button>
+          {/* Garment color */}
+          {selectedGarment && (
+            <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+              <div style={RP.label}>Garment Color</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginTop:8 }}>
+                {(selectedGarment.colors || []).map(c => (
+                  <button key={c} onClick={() => setGarmentColor(c)} title={c}
+                    style={{ width:28, height:28, borderRadius:6, background:COLOR_HEX[c]||'#ccc', border:garmentColor===c?'2.5px solid #e8a020':'2px solid #2a2a2a', cursor:'pointer', position:'relative', flexShrink:0 }}>
+                    {garmentColor===c && <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:['White','Natural','Gold'].includes(c)?'#333':'white' }}>✓</span>}
+                  </button>
+                ))}
               </div>
-            ))
-          }
+              {garmentColor && <div style={{ fontSize:11, color:'#666', marginTop:6 }}>{garmentColor}</div>}
+            </div>
+          )}
+
+          {/* Print area */}
+          {selectedGarment && (
+            <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+              <div style={RP.label}>Print Area</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5, marginTop:8 }}>
+                {(selectedGarment.printAreas || []).map(area => (
+                  <button key={area} onClick={() => setPrintArea(area)}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:6, border:`1px solid ${printArea===area?'#e8a020':'#232323'}`, background:printArea===area?'rgba(232,160,32,0.08)':'transparent', color:printArea===area?'#e8a020':'#666', fontSize:12, cursor:'pointer', textAlign:'left' }}>
+                    <div style={{ width:6, height:6, borderRadius:1, background:printArea===area?'#e8a020':'#444', flexShrink:0 }}/>
+                    {area}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Decoration method */}
+          {selectedGarment && (
+            <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+              <div style={RP.label}>Decoration Method</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:8 }}>
+                {DECORATION_METHODS.filter(m => selectedGarment.decorationMethods?.includes(m.id)).map(m => (
+                  <button key={m.id} onClick={() => setDecoMethod(m.id)}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 10px', borderRadius:6, border:`1px solid ${decoMethod===m.id?'#e8a020':'#232323'}`, background:decoMethod===m.id?'rgba(232,160,32,0.08)':'transparent', color:decoMethod===m.id?'#e8a020':'#777', fontSize:12, cursor:'pointer', textAlign:'left' }}>
+                    <span style={{ fontSize:16 }}>{m.icon}</span>
+                    <div>
+                      <div style={{ fontWeight:600 }}>{m.label}</div>
+                      <div style={{ fontSize:10, opacity:0.7, marginTop:1 }}>{m.priceNote}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Pricing detail */}
+              {decoMethod === 'screenprint' && (
+                <div style={{ marginTop:10, padding:10, background:'#1a1a1a', borderRadius:8 }}>
+                  <div style={{ fontSize:11, color:'#999', marginBottom:6 }}>Number of colors/screens:</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <button onClick={() => setScreenColors(c=>Math.max(1,c-1))} style={{ width:24, height:24, background:'#333', border:'none', color:'#fff', borderRadius:4, cursor:'pointer', fontSize:14 }}>−</button>
+                    <span style={{ fontSize:18, fontWeight:700, color:'#e8a020', minWidth:24, textAlign:'center' }}>{screenColors}</span>
+                    <button onClick={() => setScreenColors(c=>Math.min(8,c+1))} style={{ width:24, height:24, background:'#333', border:'none', color:'#fff', borderRadius:4, cursor:'pointer', fontSize:14 }}>+</button>
+                    <span style={{ fontSize:12, color:'#666', marginLeft:4 }}>color{screenColors!==1?'s':''}</span>
+                  </div>
+                  <div style={{ marginTop:8, fontSize:13, color:'#e8a020', fontWeight:600 }}>Setup: ${30*screenColors} <span style={{ fontSize:11, color:'#666', fontWeight:400 }}>($30 × {screenColors} screen{screenColors!==1?'s':''})</span></div>
+                </div>
+              )}
+
+              {decoMethod === 'embroidery' && (
+                <div style={{ marginTop:10, padding:10, background:'#1a1a1a', borderRadius:8 }}>
+                  <div style={{ fontSize:11, color:'#999', marginBottom:6 }}>Estimated stitch count:</div>
+                  <input type="range" min="1000" max="30000" step="1000" value={stitchCount}
+                    onChange={e => setStitchCount(parseInt(e.target.value))}
+                    style={{ width:'100%', marginBottom:6 }}/>
+                  <div style={{ fontSize:13, color:'#e8a020', fontWeight:600 }}>{stitchCount.toLocaleString()} stitches</div>
+                  <div style={{ fontSize:11, color:'#666', marginTop:2 }}>Pricing provided in your quote</div>
+                </div>
+              )}
+
+              {decoMethod === 'dtf' && (
+                <div style={{ marginTop:10, padding:10, background:'#1a1a1a', borderRadius:8 }}>
+                  <div style={{ fontSize:12, color:'#999', lineHeight:1.5 }}>Full color print. No screen fees. Great for photos, gradients, and detailed artwork.</div>
+                </div>
+              )}
+
+              {decoMethod === 'laser' && (
+                <div style={{ marginTop:10, padding:10, background:'rgba(239,68,68,0.08)', borderRadius:8, border:'1px solid rgba(239,68,68,0.2)' }}>
+                  <div style={{ fontSize:12, color:'#f87171', lineHeight:1.5 }}>🔴 Laser Engraving mode. Design will be etched — no color, permanent mark.</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Design size */}
+          {design && (
+            <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+              <div style={RP.label}>Design Size</div>
+              <div style={{ marginTop:10 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                  <span style={{ fontSize:11, color:'#666' }}>Width</span>
+                  <span style={{ fontSize:11, color:'#e8a020' }}>{Math.round(designPos.w*100)}%</span>
+                </div>
+                <input type="range" min="5" max="85" value={Math.round(designPos.w*100)}
+                  onChange={e => setDesignPos(p=>({...p,w:parseInt(e.target.value)/100}))} style={{ width:'100%', marginBottom:10 }}/>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                  <span style={{ fontSize:11, color:'#666' }}>Height</span>
+                  <span style={{ fontSize:11, color:'#e8a020' }}>{Math.round(designPos.h*100)}%</span>
+                </div>
+                <input type="range" min="5" max="85" value={Math.round(designPos.h*100)}
+                  onChange={e => setDesignPos(p=>({...p,h:parseInt(e.target.value)/100}))} style={{ width:'100%' }}/>
+              </div>
+              <button onClick={() => { setDesign(null); setSelected(false); }}
+                style={{ width:'100%', marginTop:10, padding:'6px 0', background:'rgba(220,38,38,0.12)', border:'1px solid rgba(220,38,38,0.25)', borderRadius:6, color:'#f87171', fontSize:12, cursor:'pointer' }}>
+                Remove Design
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Size sliders */}
-        {design && (
-          <div style={{ padding:16, borderTop:'1px solid #1e1e1e' }}>
-            <div style={{ fontSize:11, fontWeight:600, color:'#666', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Adjust Size</div>
-            <div style={{ marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:11, color:'#666' }}>Width</span>
-                <span style={{ fontSize:11, color:'#e8a020' }}>{Math.round(designPos.w*100)}%</span>
+        {/* Request quote */}
+        {selectedGarment && (
+          <div style={{ padding:14, borderTop:'1px solid #1e1e1e' }}>
+            <a href="/billing"
+              style={{ display:'block', width:'100%', padding:'10px 0', background:'#1a1a2e', color:'#e8a020', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', textAlign:'center', textDecoration:'none' }}>
+              Request a Quote →
+            </a>
+            {decoMethod === 'screenprint' && (
+              <div style={{ fontSize:11, color:'#555', textAlign:'center', marginTop:6 }}>
+                Setup fee: ${30*screenColors} ({screenColors} screen{screenColors!==1?'s':''})
               </div>
-              <input type="range" min="5" max="80" value={Math.round(designPos.w*100)}
-                onChange={e => setDesignPos(p=>({...p,w:parseInt(e.target.value)/100}))}
-                style={{ width:'100%' }}/>
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:11, color:'#666' }}>Height</span>
-                <span style={{ fontSize:11, color:'#e8a020' }}>{Math.round(designPos.h*100)}%</span>
-              </div>
-              <input type="range" min="5" max="80" value={Math.round(designPos.h*100)}
-                onChange={e => setDesignPos(p=>({...p,h:parseInt(e.target.value)/100}))}
-                style={{ width:'100%' }}/>
-            </div>
-            <div style={{ display:'flex', gap:6 }}>
-              <button onClick={() => snapToArea(printArea)}
-                style={{ flex:1, padding:'6px 0', background:'#2a2a2a', border:'none', borderRadius:6, color:'#ccc', fontSize:11, cursor:'pointer' }}>
-                Snap to Area
-              </button>
-              <button onClick={()=>{setDesign(null);setLayers([]);setSelected(false);}}
-                style={{ flex:1, padding:'6px 0', background:'rgba(220,38,38,0.15)', border:'1px solid rgba(220,38,38,0.3)', borderRadius:6, color:'#f87171', fontSize:11, cursor:'pointer' }}>
-                Remove
-              </button>
-            </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* GARMENT PICKER MODAL */}
+      {showGarmentPicker && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:100, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+          <div style={{ background:'#111', borderBottom:'1px solid #2a2a2a', padding:'16px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+            <h2 style={{ color:'#fff', fontSize:18, fontWeight:700, margin:0 }}>Select a Garment</h2>
+            {selectedGarment && (
+              <button onClick={() => setShowGarmentPicker(false)}
+                style={{ padding:'6px 16px', background:'#e8a020', color:'#1a1a1a', border:'none', borderRadius:6, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                Done
+              </button>
+            )}
+          </div>
+
+          {/* Category filter */}
+          <div style={{ background:'#111', padding:'12px 24px', borderBottom:'1px solid #2a2a2a', display:'flex', gap:6, overflowX:'auto', flexShrink:0 }}>
+            {CATEGORIES.map(cat => (
+              <button key={cat} onClick={() => setCatFilter(cat)}
+                style={{ padding:'5px 14px', borderRadius:20, border:'none', background:catFilter===cat?'#e8a020':'#2a2a2a', color:catFilter===cat?'#1a1a1a':'#999', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', fontWeight:catFilter===cat?'700':'400' }}>
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Garment grid */}
+          <div style={{ flex:1, overflow:'auto', padding:24 }}>
+            {filteredGarments.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'60px 0', color:'#555' }}>
+                <div style={{ fontSize:48, marginBottom:12 }}>👕</div>
+                <p style={{ fontSize:15, color:'#777' }}>No garments in this category yet.</p>
+                <p style={{ fontSize:13, color:'#555' }}>Ask your admin to upload garments for this category.</p>
+              </div>
+            ) : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:14 }}>
+                {filteredGarments.map(g => (
+                  <button key={g.id} onClick={() => selectGarment(g)}
+                    style={{ background:selectedGarment?.id===g.id?'#1a1500':'#1a1a1a', border:`2px solid ${selectedGarment?.id===g.id?'#e8a020':'#2a2a2a'}`, borderRadius:10, padding:14, cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                    <div style={{ height:140, background:'#222', borderRadius:6, marginBottom:10, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      {g.imagePreview
+                        ? <img src={g.imagePreview} alt={g.name} style={{ width:'100%', height:'100%', objectFit:'contain' }}/>
+                        : <div style={{ fontSize:48, opacity:0.2 }}>
+                            {g.category==='Hats'||g.category==='Beanies'?'🧢':g.category==='Bags'?'👜':g.category==='Laser Engraving'?'🔴':'👕'}
+                          </div>
+                      }
+                    </div>
+                    <div style={{ fontSize:13, fontWeight:600, color:'#fff', marginBottom:4 }}>{g.name}</div>
+                    <div style={{ fontSize:11, color:'#666', marginBottom:6 }}>{g.brand || g.category}</div>
+                    <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                      {(g.decorationMethods||[]).slice(0,3).map(id => {
+                        const m = DECORATION_METHODS.find(m=>m.id===id);
+                        return <span key={id} style={{ fontSize:9, fontWeight:600, padding:'1px 5px', borderRadius:10, background:'#2a2a2a', color:'#888' }}>{m?.label}</span>;
+                      })}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const RP = {
+  label: { fontSize:11, fontWeight:600, color:'#666', textTransform:'uppercase', letterSpacing:1 },
+};

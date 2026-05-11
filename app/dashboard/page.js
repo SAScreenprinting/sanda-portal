@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { useMobile } from '@/hooks/useMobile';
 
 const themes = {
   classic:  { name:'Classic',  sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white', main:'#F5F5F0', card:'white',    cardText:'#1a1a1a', cardSub:'#aaa', accent:'#1a1a1a', accentText:'white', logoFilter:'none' },
@@ -65,6 +66,8 @@ export default function DashboardPage() {
   const [showRequest, setShowRequest] = useState(false);
   const [requestForm, setRequestForm] = useState({ brand:'', sku:'', garment:'', notes:'' });
   const [requestSuccess, setRequestSuccess] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMobile();
 
   const t = themes[themeName];
 
@@ -198,8 +201,16 @@ export default function DashboardPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif' }}>
 
+      {/* Sidebar overlay (mobile) */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px', filter:t.logoFilter }}/>
@@ -254,9 +265,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Main content */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
 
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px' }}>
+        {/* Mobile header */}
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:t.sidebar, borderBottom:`1px solid ${t.cardSub}20`, display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px', filter:t.logoFilter }}/>
+          </div>
+        )}
+
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
+
+        <div className="page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px' }}>
           <div>
             <h1 style={{ fontSize:'26px', fontWeight:'700', color:t.cardText, margin:'0 0 4px' }}>
               Welcome back{profile?.contact_name ? `, ${profile.contact_name.split(' ')[0]}` : ''} 👋
@@ -270,7 +291,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'28px' }}>
+        <div className="grid-4col" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'28px' }}>
           {[
             { label:'Active Orders',   value: loading ? '—' : String(stats.active),         sub: stats.active === 1 ? '1 in production' : `${stats.active} in progress` },
             { label:'Pending Artwork', value: loading ? '—' : String(stats.pendingArt),      sub: stats.pendingArt > 0 ? 'Needs your upload' : 'All caught up' },
@@ -303,6 +324,7 @@ export default function DashboardPage() {
                 const href = order.id.startsWith('demo-') ? '#' : `/orders/${order.id}`;
                 return (
                   <a key={order.id} href={href}
+                    className="order-card"
                     style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', background:`${t.cardSub}10`, borderRadius:'10px', textDecoration:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
                       <span style={{ fontSize:'13px', fontWeight:'700', color:t.accent, fontFamily:'monospace' }}>{order.order_number}</span>
@@ -320,7 +342,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom row: Quick actions + Loyalty widget */}
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:'16px' }}>
+        <div className="grid-2col" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:'16px' }}>
 
           {/* Quick actions */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'14px' }}>
@@ -377,6 +399,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

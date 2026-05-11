@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useMobile } from '@/hooks/useMobile'
 
 const themes = {
   classic:  { name:'Classic',  sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white', main:'#F5F5F0', card:'white',    cardText:'#1a1a1a', cardSub:'#aaa', accent:'#1a1a1a', accentText:'white', logoFilter:'none' },
@@ -35,6 +36,8 @@ function SettingsInner() {
   const [themeName, setThemeNameState] = useState('classic')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const isMobile = useMobile()
 
   // Profile form
   const [profileForm, setProfileForm] = useState({ business_name:'', contact_name:'', phone:'' })
@@ -125,8 +128,15 @@ function SettingsInner() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px', filter:t.logoFilter }}/>
@@ -157,7 +167,14 @@ function SettingsInner() {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px', maxWidth:'720px' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:t.sidebar, borderBottom:`1px solid ${t.cardSub}20`, display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px', filter:t.logoFilter }}/>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px', maxWidth:'720px' }}>
 
         {isPasswordReset && (
           <div style={{ background:'#dbeafe', border:'1px solid #93c5fd', borderRadius:'10px', padding:'12px 16px', marginBottom:'24px', fontSize:'13px', color:'#1e40af' }}>
@@ -173,7 +190,7 @@ function SettingsInner() {
           <h2 style={{ fontSize:'15px', fontWeight:'600', color:t.cardText, margin:'0 0 4px' }}>Business Profile</h2>
           <p style={{ fontSize:'13px', color:t.cardSub, margin:'0 0 20px' }}>This is how you appear in the portal.</p>
           <form onSubmit={saveProfile} style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
+            <div className="grid-3col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
               <div>
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', color:t.cardSub, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px' }}>Business Name</label>
                 <input value={profileForm.business_name} onChange={e => setProfileForm(f => ({...f, business_name:e.target.value}))}
@@ -265,6 +282,7 @@ function SettingsInner() {
           </form>
         </div>
 
+        </div>
       </div>
     </div>
   )

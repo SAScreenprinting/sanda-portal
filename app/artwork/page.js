@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { useMobile } from '@/hooks/useMobile';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -66,6 +67,8 @@ export default function ArtworkPage() {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMobile();
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -121,8 +124,15 @@ export default function ArtworkPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f5f5f0', fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px' }}/>
@@ -148,7 +158,14 @@ export default function ArtworkPage() {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:'#EFEDE8', borderBottom:'1px solid rgba(0,0,0,0.08)', display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
 
         <div style={{ marginBottom:'24px' }}>
           <h1 style={{ fontSize:'26px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 4px' }}>Artwork Library</h1>
@@ -234,6 +251,7 @@ export default function ArtworkPage() {
             No files found. Upload your first artwork file above.
           </div>
         )}
+        </div>
       </div>
     </div>
   );

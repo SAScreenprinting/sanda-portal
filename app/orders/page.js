@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { useMobile } from '@/hooks/useMobile';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -35,6 +36,8 @@ export default function OrdersPage() {
   const [userId, setUserId]         = useState(null);
   const [profile, setProfile]       = useState(null);
   const [showNewOrder, setShowNewOrder] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMobile();
   const [orderForm, setOrderForm]   = useState(BLANK_ORDER);
   const [submitting, setSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg]   = useState('');
@@ -94,8 +97,15 @@ export default function OrdersPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f5f5f0', fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px' }}/>
@@ -121,8 +131,15 @@ export default function OrdersPage() {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:'#EFEDE8', borderBottom:'1px solid rgba(0,0,0,0.08)', display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
+        <div className="page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
           <div>
             <h1 style={{ fontSize:'26px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 4px' }}>Your Orders</h1>
             <p style={{ fontSize:'14px', color:'#aaa', margin:0 }}>{orders.length} orders total</p>
@@ -146,6 +163,7 @@ export default function OrdersPage() {
         <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
           {filtered.map(order => (
             <a key={order.id} href={`/orders/${order.id}`}
+              className="order-card"
               style={{ background:'white', borderRadius:'14px', padding:'20px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', textDecoration:'none', boxShadow:'0 1px 3px rgba(0,0,0,0.06)', border:'1px solid #e5e5e5', gap:'16px' }}>
               <div style={{ flex:1 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px' }}>
@@ -157,7 +175,7 @@ export default function OrdersPage() {
                   <div style={{ height:'100%', width:`${order.progress}%`, background:order.color, borderRadius:'4px', transition:'width 0.3s' }}/>
                 </div>
               </div>
-              <div style={{ textAlign:'right', flexShrink:0 }}>
+              <div className="order-card-right" style={{ textAlign:'right', flexShrink:0 }}>
                 <div style={{ fontSize:'18px', fontWeight:'700', color:'#1a1a1a', marginBottom:'4px' }}>{order.total}</div>
                 <div style={{ fontSize:'12px', color:'#aaa' }}>{order.date}</div>
                 <div style={{ fontSize:'12px', color:'#1a1a1a', marginTop:'6px', fontWeight:'500' }}>View details →</div>
@@ -171,6 +189,7 @@ export default function OrdersPage() {
             No orders match this filter.
           </div>
         )}
+        </div>
       </div>
 
       {/* New Order Modal */}

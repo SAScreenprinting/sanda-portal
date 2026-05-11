@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useMobile } from '@/hooks/useMobile'
 
 const themes = {
   classic:  { name:'Classic',  sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white', main:'#F5F5F0', card:'white',    cardText:'#1a1a1a', cardSub:'#aaa', accent:'#1a1a1a', accentText:'white', logoFilter:'none' },
@@ -33,6 +34,8 @@ export default function MessagesPage() {
   const [newMsg, setNewMsg] = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const isMobile = useMobile()
 
   const t = themes[themeName]
 
@@ -127,8 +130,15 @@ export default function MessagesPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px', filter:t.logoFilter }}/>
@@ -159,7 +169,14 @@ export default function MessagesPage() {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px', display:'flex', flexDirection:'column', maxHeight:'100vh' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px', display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }}>
+        {isMobile && (
+          <div style={{ flexShrink:0, padding:'12px 16px', background:t.sidebar, borderBottom:`1px solid ${t.cardSub}20`, display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:t.sidebarText, lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px', filter:t.logoFilter }}/>
+          </div>
+        )}
+        <div style={{ flex:1, padding: isMobile ? '16px 14px' : '36px 32px', display:'flex', flexDirection:'column', minHeight:0 }}>
         <h1 style={{ fontSize:'26px', fontWeight:'700', color:t.cardText, margin:'0 0 4px' }}>Messages</h1>
         <p style={{ fontSize:'14px', color:t.cardSub, margin:'0 0 24px' }}>Chat directly with the S&A team.</p>
 
@@ -215,6 +232,7 @@ export default function MessagesPage() {
               </button>
             </form>
           </div>
+        </div>
         </div>
       </div>
     </div>

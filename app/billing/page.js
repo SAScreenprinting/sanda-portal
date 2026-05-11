@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -35,6 +36,8 @@ export default function BillingPage() {
   const [quote, setQuote]         = useState({ description:'', qty:'', notes:'' });
   const [quoteSent, setQuoteSent] = useState(false);
   const [copied, setCopied]       = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMobile();
 
   const outstanding = INVOICES.filter(i => i.status !== 'paid').reduce((s,i) => s+i.amount, 0);
   const paid        = INVOICES.filter(i => i.status === 'paid').reduce((s,i) => s+i.amount, 0);
@@ -64,8 +67,15 @@ export default function BillingPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f5f5f0', fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
             <img src="/Logoblack.png" alt="S&A" style={{ width:'110px' }}/>
@@ -92,8 +102,15 @@ export default function BillingPage() {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, marginLeft:'220px', padding:'36px 32px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:'#EFEDE8', borderBottom:'1px solid rgba(0,0,0,0.08)', display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
+        <div className="page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
           <div>
             <h1 style={{ fontSize:'26px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 4px' }}>Billing</h1>
             <p style={{ fontSize:'14px', color:'#aaa', margin:0 }}>Your invoices and payment history</p>
@@ -105,7 +122,7 @@ export default function BillingPage() {
         </div>
 
         {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'16px', marginBottom:'24px' }}>
+        <div className="grid-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'16px', marginBottom:'24px' }}>
           {[
             { label:'Outstanding Balance', value:`$${outstanding.toFixed(2)}`, color:outstanding>0?'#dc2626':'#059669', sub:`${INVOICES.filter(i=>i.status!=='paid').length} unpaid` },
             { label:'Paid to Date',        value:`$${paid.toFixed(2)}`,        color:'#059669', sub:`${INVOICES.filter(i=>i.status==='paid').length} invoices` },
@@ -157,7 +174,7 @@ export default function BillingPage() {
         {/* Payment info */}
         <div style={{ background:'white', borderRadius:'14px', padding:'22px', border:'1px solid #e5e5e5' }}>
           <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#1a1a1a', marginBottom:'14px', marginTop:0 }}>How to Pay</h2>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'12px' }}>
+          <div className="grid-3col" style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'12px' }}>
             {[
               { icon:'💙', label:'Venmo', detail:`@${VENMO_HANDLE}`, action:() => window.open(venmoWebLink({ id:'', amount:0 }), '_blank') },
               { icon:'💜', label:'Zelle', detail:ZELLE_EMAIL, action:() => copyToClipboard(ZELLE_EMAIL, 'zelle') },
@@ -179,6 +196,7 @@ export default function BillingPage() {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </div>
 

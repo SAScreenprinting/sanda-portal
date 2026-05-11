@@ -205,6 +205,11 @@ export default function StudioPage() {
             <span style={{ fontSize:12, color:'#777', minWidth:36, textAlign:'center' }}>{zoom}%</span>
             <button onClick={()=>setZoom(z=>Math.min(200,z+10))} style={{ width:22,height:22,background:'#2a2a2a',border:'none',color:'#ccc',borderRadius:4,cursor:'pointer',fontSize:14 }}>+</button>
           </div>
+          <a href="/dashboard"
+            style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', background:'#2a2a2a', border:'1px solid #3a3a3a', borderRadius:8, color:'#999', textDecoration:'none', fontSize:18, fontWeight:300, marginLeft:8, flexShrink:0 }}
+            title="Exit to Dashboard">
+            ✕
+          </a>
         </div>
 
         {/* Canvas */}

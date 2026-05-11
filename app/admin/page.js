@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { DEFAULT_PRODUCTS, toAdminFormat } from '@/lib/products';
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'sanda2024admin';
 const TAX_RATE = 0.07;
@@ -64,10 +65,15 @@ const INIT_ALERTS = [
 ];
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PRODUCT_KEY = 'sanda_products';
+const PRODUCT_CATEGORIES = ['T-Shirts','Hoodies','Sweatshirts','Polos','Jackets','Hats','Beanies','Bags','Other'];
+const DECORATION_OPTIONS = ['Screen Print','Embroidery','DTG','Sublimation','Heat Transfer','Vinyl'];
+const BLANK_PRODUCT = { name:'', brand:'', sku:'', category:'T-Shirts', price:'', colors:'', printAreas:'', decorations:[], frontImage:'', backImage:'' };
 const NAV = [
   { id:'dashboard', icon:'📊', label:'Dashboard' },
   { id:'alerts',    icon:'🔔', label:'Alerts' },
   { id:'clients',   icon:'👥', label:'Clients' },
+  { id:'requests',  icon:'📋', label:'Requests' },
   { id:'messages',  icon:'💬', label:'Messages' },
   { id:'orders',    icon:'📦', label:'Orders' },
   { id:'products',  icon:'🏷️', label:'Products' },
@@ -127,6 +133,115 @@ export default function AdminPage() {
   const [createMsg, setCreateMsg]       = useState('');
   const [reportType, setReportType]     = useState('monthly');
   const [reportYear, setReportYear]     = useState('2026');
+
+  // Requests state
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/requests/list').then(r => r.json()).then(d => { if (d.requests) setRequests(d.requests); }).catch(()=>{});
+  }, []);
+
+  async function updateRequestStatus(id, status) {
+    await fetch('/api/requests/list', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status }) });
+    setRequests(r => r.map(x => x.id === id ? { ...x, status } : x));
+  }
+
+  // Products state
+  const [products, setProducts]             = useState([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); // null = new
+  const [productForm, setProductForm]       = useState(BLANK_PRODUCT);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(PRODUCT_KEY);
+      if (stored === null) {
+        // First visit: seed with the default studio catalog
+        const seeded = DEFAULT_PRODUCTS.map(toAdminFormat);
+        localStorage.setItem(PRODUCT_KEY, JSON.stringify(seeded));
+        setProducts(seeded);
+      } else {
+        setProducts(JSON.parse(stored));
+      }
+    } catch {}
+  }, []);
+
+  function setPF(field, val) { setProductForm(f => ({ ...f, [field]: val })); }
+
+  function handleProductImage(field, file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setPF(field, e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  function openAddProduct() {
+    setEditingProduct(null);
+    setProductForm(BLANK_PRODUCT);
+    setShowProductModal(true);
+  }
+
+  function openEditProduct(p) {
+    setEditingProduct(p.id);
+    setProductForm({ name:p.name, brand:p.brand, sku:p.sku, category:p.category, price:String(p.price), colors:p.colors, printAreas:p.printAreas, decorations:p.decorations||[], frontImage:p.frontImage||'', backImage:p.backImage||'' });
+    setShowProductModal(true);
+  }
+
+  function saveProduct() {
+    if (!productForm.name || !productForm.sku) return;
+    const entry = { ...productForm, price: parseFloat(productForm.price) || 0, id: editingProduct || Date.now() };
+    let updated;
+    if (editingProduct) {
+      updated = products.map(p => p.id === editingProduct ? entry : p);
+    } else {
+      updated = [entry, ...products];
+    }
+    setProducts(updated);
+    localStorage.setItem(PRODUCT_KEY, JSON.stringify(updated));
+    setShowProductModal(false);
+  }
+
+  function deleteProduct(id) {
+    const updated = products.filter(p => p.id !== id);
+    setProducts(updated);
+    localStorage.setItem(PRODUCT_KEY, JSON.stringify(updated));
+  }
+
+  function toggleDecoration(val) {
+    setPF('decorations', productForm.decorations.includes(val)
+      ? productForm.decorations.filter(d => d !== val)
+      : [...productForm.decorations, val]);
+  }
+
+  // Create client state
+  const [showCreateClient, setShowCreateClient] = useState(false);
+  const [showCreatePw, setShowCreatePw] = useState(false);
+  const [createClientForm, setCreateClientForm] = useState({ email:'', password:'', business_name:'', contact_name:'', phone:'' });
+  const [createClientMsg, setCreateClientMsg] = useState('');
+  const [createClientLoading, setCreateClientLoading] = useState(false);
+
+  async function handleCreateClient(e) {
+    e.preventDefault();
+    setCreateClientLoading(true);
+    setCreateClientMsg('');
+    try {
+      const res = await fetch('/api/admin/create-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createClientForm),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCreateClientMsg('⚠ ' + data.error); }
+      else {
+        setCreateClientMsg('✓ Account created! They can log in now.');
+        setCreateClientForm({ email:'', password:'', business_name:'', contact_name:'', phone:'' });
+        setTimeout(() => { setShowCreateClient(false); setCreateClientMsg(''); }, 2500);
+      }
+    } catch {
+      setCreateClientMsg('⚠ Network error. Try again.');
+    }
+    setCreateClientLoading(false);
+  }
 
   // Discount state
   const [discountTarget, setDiscountTarget] = useState('client'); // 'client' | 'order'
@@ -355,8 +470,78 @@ export default function AdminPage() {
         {/* CLIENTS */}
         {section==='clients' && (
           <div style={s.sec}>
-            <h1 style={s.h1}>Clients</h1>
-            <p style={s.sub}>{clients.length} clients</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+              <div>
+                <h1 style={s.h1}>Clients</h1>
+                <p style={s.sub}>{clients.length} clients</p>
+              </div>
+              <button onClick={()=>setShowCreateClient(true)}
+                style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                + Create Client Account
+              </button>
+            </div>
+
+            {/* Create Client Modal */}
+            {showCreateClient && (
+              <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center'}}
+                onClick={e=>e.target===e.currentTarget&&setShowCreateClient(false)}>
+                <div style={{background:'#fff',borderRadius:16,padding:32,width:420,boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+                  <h2 style={{fontSize:18,fontWeight:700,color:'#111827',marginBottom:4}}>Create Client Account</h2>
+                  <p style={{fontSize:13,color:'#6b7280',marginBottom:20}}>Client will be able to log in to the portal immediately.</p>
+                  <form onSubmit={handleCreateClient} style={{display:'flex',flexDirection:'column',gap:12}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Business Name</label>
+                        <input value={createClientForm.business_name} onChange={e=>setCreateClientForm(f=>({...f,business_name:e.target.value}))}
+                          placeholder="Riverside FC" style={{...s.inp,width:'100%'}}/>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Contact Name</label>
+                        <input value={createClientForm.contact_name} onChange={e=>setCreateClientForm(f=>({...f,contact_name:e.target.value}))}
+                          placeholder="John Smith" style={{...s.inp,width:'100%'}}/>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Email Address *</label>
+                      <input type="email" required value={createClientForm.email} onChange={e=>setCreateClientForm(f=>({...f,email:e.target.value}))}
+                        placeholder="coach@riversidefc.com" style={{...s.inp,width:'100%'}}/>
+                    </div>
+                    <div>
+                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Phone</label>
+                      <input value={createClientForm.phone} onChange={e=>setCreateClientForm(f=>({...f,phone:e.target.value}))}
+                        placeholder="(201) 555-0182" style={{...s.inp,width:'100%'}}/>
+                    </div>
+                    <div>
+                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Temporary Password *</label>
+                      <div style={{position:'relative'}}>
+                        <input type={showCreatePw?'text':'password'} required minLength={6} value={createClientForm.password} onChange={e=>setCreateClientForm(f=>({...f,password:e.target.value}))}
+                          placeholder="Min 6 characters" style={{...s.inp,width:'100%',paddingRight:36}}/>
+                        <button type="button" onClick={()=>setShowCreatePw(p=>!p)}
+                          style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:15,opacity:0.5}}>
+                          {showCreatePw?'🙈':'👁'}
+                        </button>
+                      </div>
+                    </div>
+                    {createClientMsg && (
+                      <div style={{padding:'8px 12px',borderRadius:8,background:createClientMsg.startsWith('✓')?'#d1fae5':'#fee2e2',color:createClientMsg.startsWith('✓')?'#065f46':'#991b1b',fontSize:13}}>
+                        {createClientMsg}
+                      </div>
+                    )}
+                    <div style={{display:'flex',gap:8,marginTop:4}}>
+                      <button type="submit" disabled={createClientLoading}
+                        style={{flex:1,background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:14,fontWeight:700,cursor:'pointer',opacity:createClientLoading?0.7:1}}>
+                        {createClientLoading ? 'Creating…' : 'Create Account'}
+                      </button>
+                      <button type="button" onClick={()=>{setShowCreateClient(false);setCreateClientMsg('');}}
+                        style={{padding:'10px 16px',background:'#f3f4f6',border:'none',borderRadius:8,fontSize:14,cursor:'pointer',color:'#374151'}}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
             {clients.map(c=>(
               <div key={c.id} style={s.clientCard}>
                 <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
@@ -395,10 +580,45 @@ export default function AdminPage() {
         {/* MESSAGES */}
         {section==='messages' && (
           <div style={s.sec}>
-            <h1 style={s.h1}>Messages</h1>
-            <p style={s.sub}>{unreadCount} unread</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+              <div>
+                <h1 style={s.h1}>Messages</h1>
+                <p style={s.sub}>{unreadCount} unread</p>
+              </div>
+              <button onClick={()=>{
+                // Start new conversation: pick a client not already in messages
+                const existingClients = messages.map(m=>m.client);
+                const newClient = clients.find(c=>!existingClients.includes(c.name));
+                if (newClient) {
+                  const newThread = {id:Date.now(),client:newClient.name,msg:'',time:'just now',read:true,thread:[]};
+                  setMessages(ms=>[...ms,newThread]);
+                  setActiveMsg(messages.length);
+                } else {
+                  setActiveMsg(0);
+                }
+                setSection('messages');
+              }} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                + New Message
+              </button>
+            </div>
             <div style={{display:'grid',gridTemplateColumns:'260px 1fr',gap:16,minHeight:480}}>
+              {/* Thread list + new conversation picker */}
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {/* Start conversation with any client */}
+                <select onChange={e=>{
+                  const name = e.target.value;
+                  if (!name) return;
+                  const existing = messages.findIndex(m=>m.client===name);
+                  if (existing>=0) { setActiveMsg(existing); }
+                  else {
+                    const newThread = {id:Date.now(),client:name,msg:'',time:'just now',read:true,thread:[]};
+                    setMessages(ms=>{setActiveMsg(ms.length);return [...ms,newThread];});
+                  }
+                  e.target.value='';
+                }} style={{...s.inp,marginBottom:6,fontSize:12,color:'#6b7280'}}>
+                  <option value="">✉ Message a client…</option>
+                  {clients.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
                 {messages.map((m,i)=>(
                   <button key={m.id} onClick={()=>{setActiveMsg(i);setMessages(ms=>ms.map((x,j)=>j===i?{...x,read:true}:x));}}
                     style={{...s.msgBtn,...(activeMsg===i?{background:'#1a1a2e',color:'#fff'}:{})}}>
@@ -406,7 +626,7 @@ export default function AdminPage() {
                       <span style={{fontSize:13,fontWeight:600}}>{m.client}</span>
                       {!m.read&&<span style={{width:8,height:8,background:'#e8a020',borderRadius:'50%',marginTop:3}}/>}
                     </div>
-                    <div style={{fontSize:12,color:activeMsg===i?'#d1d5db':'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.msg}</div>
+                    <div style={{fontSize:12,color:activeMsg===i?'#d1d5db':'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.msg||'New conversation'}</div>
                     <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{m.time}</div>
                   </button>
                 ))}
@@ -415,7 +635,10 @@ export default function AdminPage() {
                 {activeMsg!==null&&messages[activeMsg] ? (
                   <>
                     <h3 style={s.cardTitle}>{messages[activeMsg].client}</h3>
-                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14}}>
+                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14,minHeight:200,maxHeight:400,overflowY:'auto'}}>
+                      {messages[activeMsg].thread.length===0 && (
+                        <div style={{color:'#9ca3af',fontSize:13,textAlign:'center',padding:'40px 0'}}>Start the conversation below.</div>
+                      )}
                       {messages[activeMsg].thread.map((t,i)=>(
                         <div key={i} style={{display:'flex',justifyContent:t.from==='admin'?'flex-end':'flex-start'}}>
                           <div style={{maxWidth:'75%',padding:'8px 12px',borderRadius:10,fontSize:13,background:t.from==='admin'?'#1a1a2e':'#f3f4f6',color:t.from==='admin'?'#fff':'#111827'}}>
@@ -425,11 +648,11 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <div style={{display:'flex',gap:8}}>
-                      <input value={replyText} onChange={e=>setReplyText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendReply()} style={{...s.inp,flex:1}} placeholder="Type a reply…"/>
+                      <input value={replyText} onChange={e=>setReplyText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendReply()} style={{...s.inp,flex:1}} placeholder={`Reply to ${messages[activeMsg].client}…`}/>
                       <button onClick={sendReply} style={s.saveBtn}>Send</button>
                     </div>
                   </>
-                ) : <div style={s.empty}>Select a conversation</div>}
+                ) : <div style={s.empty}>Select a conversation or start a new one</div>}
               </div>
             </div>
           </div>
@@ -473,15 +696,201 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* REQUESTS */}
+        {section==='requests' && (
+          <div style={s.sec}>
+            <h1 style={s.h1}>Product Requests</h1>
+            <p style={s.sub}>{requests.filter(r=>r.status==='pending').length} pending · {requests.length} total</p>
+
+            {requests.length === 0 ? (
+              <div style={{...s.card,...s.empty}}>
+                <div style={{fontSize:36,marginBottom:10}}>📋</div>
+                <div style={{fontWeight:600,color:'#374151',marginBottom:4}}>No requests yet</div>
+                <div style={{fontSize:13}}>Client product requests will appear here.</div>
+              </div>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {requests.map(r => {
+                  const clientName = r.profiles?.business_name || r.profiles?.contact_name || r.profiles?.email || 'Unknown client';
+                  const statusStyle = r.status==='pending' ? {bg:'#fef3c7',color:'#92400e'} : r.status==='sourced' ? {bg:'#d1fae5',color:'#065f46'} : r.status==='declined' ? {bg:'#fee2e2',color:'#991b1b'} : {bg:'#dbeafe',color:'#1e40af'};
+                  return (
+                    <div key={r.id} style={{...s.card,...(r.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{})}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}>
+                        <div style={{flex:1}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+                            <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>{r.garment_name}</span>
+                            <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:20,background:statusStyle.bg,color:statusStyle.color}}>{r.status}</span>
+                          </div>
+                          <div style={{fontSize:13,color:'#6b7280',marginBottom:4}}>
+                            👤 {clientName}
+                            {r.brand && <> · Brand: <strong>{r.brand}</strong></>}
+                            {r.sku && <> · SKU: <strong>{r.sku}</strong></>}
+                          </div>
+                          {r.notes && <div style={{fontSize:12,color:'#6b7280',fontStyle:'italic'}}>"{r.notes}"</div>}
+                          <div style={{fontSize:11,color:'#9ca3af',marginTop:6}}>{new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+                        </div>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                          {r.status==='pending' && <>
+                            <button onClick={()=>updateRequestStatus(r.id,'reviewed')} style={s.smBtn}>Mark Reviewed</button>
+                            <button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#059669',borderColor:'#6ee7b7'}}>✓ Sourced</button>
+                            <button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>Decline</button>
+                          </>}
+                          {r.status==='reviewed' && <>
+                            <button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#059669',borderColor:'#6ee7b7'}}>✓ Mark Sourced</button>
+                            <button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>Decline</button>
+                          </>}
+                          <button onClick={()=>{setSection('messages');}} style={s.smBtn}>💬 Message</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* PRODUCTS */}
         {section==='products' && (
           <div style={s.sec}>
-            <h1 style={s.h1}>Products</h1>
-            <p style={s.sub}>Manage your product catalog</p>
-            <a href="/admin/products" style={{...s.saveBtn,textDecoration:'none',display:'inline-block',marginBottom:20}}>+ Upload New Product with AI</a>
-            <div style={s.card}>
-              <p style={{color:'#6b7280',fontSize:14}}>Your saved products will appear here. Use the AI upload tool to add products from a photo.</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+              <div>
+                <h1 style={s.h1}>Products</h1>
+                <p style={s.sub}>{products.length} product{products.length!==1?'s':''} in catalog</p>
+              </div>
+              <button onClick={openAddProduct} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                + Add Product
+              </button>
             </div>
+
+            {products.length === 0 ? (
+              <div style={{...s.card,...s.empty}}>
+                <div style={{fontSize:40,marginBottom:12}}>🏷️</div>
+                <div style={{fontWeight:600,color:'#374151',marginBottom:6}}>No products yet</div>
+                <div style={{fontSize:13}}>Click "+ Add Product" to build your catalog.</div>
+              </div>
+            ) : (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:16}}>
+                {products.map(p=>(
+                  <div key={p.id} style={{background:'#fff',borderRadius:12,border:'1px solid #e5e7eb',overflow:'hidden'}}>
+                    <div style={{height:160,background:'#f9fafb',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+                      {p.frontImage
+                        ? <img src={p.frontImage} alt={p.name} style={{width:'100%',height:'100%',objectFit:'contain'}}/>
+                        : <span style={{fontSize:40,opacity:0.3}}>👕</span>
+                      }
+                      {p.category && (
+                        <span style={{position:'absolute',top:8,left:8,fontSize:10,fontWeight:700,background:'#1a1a2e',color:'#e8a020',padding:'2px 8px',borderRadius:10}}>
+                          {p.category}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{padding:'14px 16px'}}>
+                      <div style={{fontSize:14,fontWeight:700,color:'#111827',marginBottom:2}}>{p.name}</div>
+                      <div style={{fontSize:12,color:'#6b7280',marginBottom:6}}>{p.brand} · {p.sku}</div>
+                      {p.price>0 && <div style={{fontSize:13,fontWeight:600,color:'#059669',marginBottom:8}}>${parseFloat(p.price).toFixed(2)}</div>}
+                      {p.colors && <div style={{fontSize:11,color:'#9ca3af',marginBottom:10}} title={p.colors}>🎨 {p.colors.split(',').map(c=>c.trim()).filter(Boolean).join(' · ')}</div>}
+                      <div style={{display:'flex',gap:8}}>
+                        <button onClick={()=>openEditProduct(p)} style={{...s.smBtn,flex:1}}>✏️ Edit</button>
+                        <button onClick={()=>{ if(confirm('Delete this product?')) deleteProduct(p.id); }} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>🗑</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add / Edit Product Modal */}
+            {showProductModal && (
+              <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:999,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'24px 16px',overflowY:'auto'}}
+                onClick={e=>e.target===e.currentTarget&&setShowProductModal(false)}>
+                <div style={{background:'#fff',borderRadius:16,padding:28,width:'100%',maxWidth:560,marginTop:8,marginBottom:24}}>
+                  <h2 style={{fontSize:18,fontWeight:700,color:'#111827',marginBottom:20}}>{editingProduct?'Edit Product':'Add Product'}</h2>
+
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                    <div>
+                      <label style={s.label}>Product Name *</label>
+                      <input value={productForm.name} onChange={e=>setPF('name',e.target.value)} placeholder="Port & Company PC54" style={s.inp}/>
+                    </div>
+                    <div>
+                      <label style={s.label}>Brand</label>
+                      <input value={productForm.brand} onChange={e=>setPF('brand',e.target.value)} placeholder="Port & Company" style={s.inp}/>
+                    </div>
+                  </div>
+
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
+                    <div>
+                      <label style={s.label}>SKU *</label>
+                      <input value={productForm.sku} onChange={e=>setPF('sku',e.target.value)} placeholder="PC54" style={s.inp}/>
+                    </div>
+                    <div>
+                      <label style={s.label}>Category</label>
+                      <select value={productForm.category} onChange={e=>setPF('category',e.target.value)} style={s.inp}>
+                        {PRODUCT_CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={s.label}>Base Price ($)</label>
+                      <input type="number" min="0" step="0.01" value={productForm.price} onChange={e=>setPF('price',e.target.value)} placeholder="8.50" style={s.inp}/>
+                    </div>
+                  </div>
+
+                  <div style={{marginBottom:12}}>
+                    <label style={s.label}>Available Colors <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label>
+                    <input value={productForm.colors} onChange={e=>setPF('colors',e.target.value)} placeholder="White, Black, Navy, Red, Royal" style={s.inp}/>
+                  </div>
+
+                  <div style={{marginBottom:12}}>
+                    <label style={s.label}>Print Areas <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label>
+                    <input value={productForm.printAreas} onChange={e=>setPF('printAreas',e.target.value)} placeholder="Front, Back, Left Sleeve, Right Sleeve" style={s.inp}/>
+                  </div>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={s.label}>Decoration Methods</label>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                      {DECORATION_OPTIONS.map(d=>(
+                        <button key={d} type="button" onClick={()=>toggleDecoration(d)}
+                          style={{padding:'5px 12px',borderRadius:20,border:'1px solid',fontSize:12,cursor:'pointer',fontWeight:500,
+                            background:productForm.decorations.includes(d)?'#1a1a2e':'#f9fafb',
+                            color:productForm.decorations.includes(d)?'#e8a020':'#6b7280',
+                            borderColor:productForm.decorations.includes(d)?'#1a1a2e':'#e5e7eb'}}>
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
+                    {[['frontImage','Front Image'],['backImage','Back Image']].map(([field,label])=>(
+                      <div key={field}>
+                        <label style={s.label}>{label}</label>
+                        {productForm[field] && (
+                          <div style={{position:'relative',marginBottom:6}}>
+                            <img src={productForm[field]} alt={label} style={{width:'100%',height:100,objectFit:'contain',borderRadius:8,border:'1px solid #e5e7eb',background:'#f9fafb'}}/>
+                            <button onClick={()=>setPF(field,'')} style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:'50%',background:'#dc2626',color:'#fff',border:'none',fontSize:12,cursor:'pointer',lineHeight:'20px'}}>×</button>
+                          </div>
+                        )}
+                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                          <label style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px dashed #d1d5db',borderRadius:6,cursor:'pointer',fontSize:12,color:'#6b7280'}}>
+                            <span>📁 Upload file</span>
+                            <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleProductImage(field,e.target.files[0])}/>
+                          </label>
+                          <input value={productForm[field].startsWith('data:') ? '' : productForm[field]} onChange={e=>setPF(field,e.target.value)}
+                            placeholder="or paste image URL…" style={{...s.inp,fontSize:12}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{display:'flex',gap:10}}>
+                    <button onClick={saveProduct} disabled={!productForm.name||!productForm.sku}
+                      style={{...s.saveBtn,flex:1,padding:'10px',fontSize:14,opacity:(!productForm.name||!productForm.sku)?0.5:1}}>
+                      {editingProduct ? 'Save Changes' : 'Add Product'}
+                    </button>
+                    <button onClick={()=>setShowProductModal(false)} style={{...s.cancelBtn,padding:'10px 20px',fontSize:14}}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

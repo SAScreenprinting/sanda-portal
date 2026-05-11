@@ -1,6 +1,7 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { DEFAULT_PRODUCTS, toStudioFormat } from '@/lib/products';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -8,31 +9,10 @@ const NAV = [
   { id:'artwork',   label:'Artwork Library', icon:'◈', href:'/artwork' },
   { id:'studio',    label:'Design Studio',   icon:'✦', href:'/studio' },
   { id:'billing',   label:'Billing',         icon:'◎', href:'/billing' },
-  { id:'messages',  label:'Messages',        icon:'💬', href:'/messages' },
+  { id:'messages',  label:'Messages',        icon:'✉', href:'/messages' },
+  { id:'settings',  label:'Settings',        icon:'⚙', href:'/settings' },
 ];
 
-const PRODUCTS = [
-  { id:'G5000',    name:'Gildan 5000 Heavy Cotton Tee',           brand:'Gildan',          sku:'G5000',    category:'T-Shirts',   colors:['White','Black','Sport Grey','Navy','Royal','Red','Forest Green','Maroon','Gold','Dark Heather'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve','Right Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/5000/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/5000/White_2.jpg',   price:'10.99' },
-  { id:'G64000',   name:'Gildan 64000 Softstyle Tee',             brand:'Gildan',          sku:'G64000',   category:'T-Shirts',   colors:['White','Black','Dark Heather','Navy','Charcoal','Red','Royal','Indigo Blue','Military Green'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve','Right Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/64000/White_1.jpg',  backImage:'https://cdn.ssactivewear.com/Images/styles/64000/White_2.jpg',  price:'10.99' },
-  { id:'G2000',    name:'Gildan 2000 Ultra Cotton Tee',           brand:'Gildan',          sku:'G2000',    category:'T-Shirts',   colors:['White','Black','Sport Grey','Navy','Red','Safety Green','Maroon','Royal'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve','Right Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/2000/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/2000/White_2.jpg',   price:'11.99' },
-  { id:'BC3001',   name:'Bella+Canvas 3001 Unisex Jersey Tee',    brand:'Bella+Canvas',    sku:'BC3001',   category:'T-Shirts',   colors:['White','Black','Athletic Heather','Navy','True Royal','Red','Dark Grey Heather','Natural','Soft Cream'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve','Right Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/3001/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/3001/White_2.jpg',   price:'12.99' },
-  { id:'PC61',     name:'Port & Company PC61 Essential Tee',      brand:'Port & Company',  sku:'PC61',     category:'T-Shirts',   colors:['White','Black','Navy','Jet Black','Red','Athletic Heather','Royal','Safety Green'], printAreas:['Front Left Chest','Full Front','Full Back','Left Sleeve','Right Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/PC61/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/PC61/White_2.jpg',   price:'10.99' },
-  { id:'G18500',   name:'Gildan 18500 Heavy Blend Hoodie',        brand:'Gildan',          sku:'G18500',   category:'Hoodies',    colors:['White','Black','Sport Grey','Navy','Dark Heather','Maroon','Royal','Forest Green','Red'], printAreas:['Full Front','Full Back','Left Sleeve','Hood'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/18500/White_1.jpg',  backImage:'https://cdn.ssactivewear.com/Images/styles/18500/White_2.jpg',  price:'16.99' },
-  { id:'BC3719',   name:'Bella+Canvas 3719 Sponge Fleece Hoodie', brand:'Bella+Canvas',    sku:'BC3719',   category:'Hoodies',    colors:['Black','White','Dark Grey Heather','Navy','Athletic Heather','Red','Forest'], printAreas:['Full Front','Full Back','Left Sleeve','Hood'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/3719/Black_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/3719/Black_2.jpg',   price:'20.99' },
-  { id:'G18000',   name:'Gildan 18000 Heavy Blend Crewneck',      brand:'Gildan',          sku:'G18000',   category:'Sweatshirts', colors:['White','Black','Sport Grey','Navy','Dark Heather','Red','Maroon','Royal'], printAreas:['Full Front','Full Back','Left Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/18000/White_1.jpg',  backImage:'https://cdn.ssactivewear.com/Images/styles/18000/White_2.jpg',  price:'14.99' },
-  { id:'DT1100',   name:'District DT1100 Fleece Crewneck',        brand:'District',        sku:'DT1100',   category:'Sweatshirts', colors:['Black','White','New Navy','Charcoal','True Red','Steel Grey','True Royal'], printAreas:['Full Front','Full Back','Left Sleeve'], decorationMethods:['screenprint','dtf','embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/DT1100/Black_1.jpg', backImage:'https://cdn.ssactivewear.com/Images/styles/DT1100/Black_2.jpg', price:'17.99' },
-  { id:'K500',     name:'Port Authority K500 Silk Touch Polo',    brand:'Port Authority',  sku:'K500',     category:'Polos',      colors:['White','Black','Navy','Royal','Red','Steel Grey','Forest Green','Burgundy','True Royal'], printAreas:['Front Left Chest','Full Back'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/K500/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/K500/White_2.jpg',   price:'12.99' },
-  { id:'ST650',    name:'Sport-Tek ST650 Micropiqué Polo',        brand:'Sport-Tek',       sku:'ST650',    category:'Polos',      colors:['White','Black','True Navy','True Red','Forest Green','True Royal','Iron Grey','Silver'], printAreas:['Front Left Chest','Full Back'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/ST650/White_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/ST650/White_2.jpg',   price:'13.99' },
-  { id:'MM1004',   name:'Mercer+Mettle MM1004 Stretch Polo',      brand:'Mercer+Mettle',   sku:'MM1004',   category:'Polos',      colors:['Black','White','Night Navy','Crown Blue','Dusty Blue','Deep Red','Graphite'], printAreas:['Front Left Chest','Full Back'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/MM1004/Black_1.jpg', backImage:'https://cdn.ssactivewear.com/Images/styles/MM1004/Black_2.jpg', price:'15.99' },
-  { id:'C112',     name:'Port Authority C112 Snapback Cap',       brand:'Port Authority',  sku:'C112',     category:'Hats',       colors:['Black','White','Navy','Royal','Red','Charcoal','Camo','True Navy/White'], printAreas:['Front Left Chest'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/C112/Black_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/C112/Black_2.jpg',   price:'12.99' },
-  { id:'R112',     name:'Richardson 112 Trucker Cap',             brand:'Richardson',      sku:'R112',     category:'Hats',       colors:['Black/Black','White/White','Navy/White','Royal/White','Charcoal/White','Khaki/Brown','Camo/Black'], printAreas:['Front Left Chest'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/112/Black_1.jpg',    backImage:'https://cdn.ssactivewear.com/Images/styles/112/Black_2.jpg',    price:'14.99' },
-  { id:'CP90',     name:'Port & Company CP90 Knit Beanie',        brand:'Port & Company',  sku:'CP90',     category:'Beanies',    colors:['Black','White','Navy','Royal','Red','Charcoal','Dark Heather Grey','Athletic Heather'], printAreas:['Front Left Chest'], decorationMethods:['embroidery'], frontImage:'https://cdn.ssactivewear.com/Images/styles/CP90/Black_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/CP90/Black_2.jpg',   price:'10.99' },
-  { id:'B600',     name:'Port & Company B600 Tote Bag',           brand:'Port & Company',  sku:'B600',     category:'Bags',       colors:['Natural','Black','Royal','Red','Navy'], printAreas:['Full Front','Full Back'], decorationMethods:['screenprint','dtf'], frontImage:'https://cdn.ssactivewear.com/Images/styles/B600/Natural_1.jpg', backImage:'https://cdn.ssactivewear.com/Images/styles/B600/Natural_2.jpg', price:'10.99' },
-  { id:'BG615',    name:'Port Authority BG615 Travel Backpack',   brand:'Port Authority',  sku:'BG615',    category:'Bags',       colors:['Black','Navy','Grey','Red'], printAreas:['Full Front','Full Back'], decorationMethods:['screenprint','dtf'], frontImage:'https://cdn.ssactivewear.com/Images/styles/BG615/Black_1.jpg',  backImage:'https://cdn.ssactivewear.com/Images/styles/BG615/Black_2.jpg',  price:'17.99' },
-  { id:'J317',     name:'Port Authority J317 Soft Shell Jacket',  brand:'Port Authority',  sku:'J317',     category:'Jackets',    colors:['Black','Battleship Grey','Dark Smoke','True Navy','True Red','Forest Green'], printAreas:['Front Left Chest','Full Back','Left Sleeve'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/J317/Black_1.jpg',   backImage:'https://cdn.ssactivewear.com/Images/styles/J317/Black_2.jpg',   price:'25.99' },
-  { id:'CT102208', name:'Carhartt CT102208 Gilliam Jacket',       brand:'Carhartt',        sku:'CT102208', category:'Jackets',    colors:['Black','Dark Brown','Moss','Navy'], printAreas:['Front Left Chest','Full Back','Left Sleeve'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/CT102208/Black_1.jpg',backImage:'https://cdn.ssactivewear.com/Images/styles/CT102208/Black_2.jpg',price:'42.99' },
-  { id:'JST60',    name:'Sport-Tek JST60 Colorblock Raglan',      brand:'Sport-Tek',       sku:'JST60',    category:'Jackets',    colors:['Black/White','Navy/White','True Red/White','True Royal/White','Forest Green/White'], printAreas:['Front Left Chest','Full Back','Left Sleeve'], decorationMethods:['embroidery','screenprint'], frontImage:'https://cdn.ssactivewear.com/Images/styles/JST60/Black_White_1.jpg',backImage:'https://cdn.ssactivewear.com/Images/styles/JST60/Black_White_2.jpg',price:'22.99' },
-];
 
 const DECORATION_METHODS = [
   { id:'screenprint', label:'Screen Print',    icon:'🖨', note:'$30 per screen/color setup' },
@@ -44,11 +24,24 @@ const DECORATION_METHODS = [
 const QTY_TIERS = [12, 24, 48, 72, 144, 288];
 const CATEGORIES = ['All','T-Shirts','Hoodies','Sweatshirts','Polos','Hats','Beanies','Bags','Jackets'];
 
+const SIZE_CHARTS = {
+  'T-Shirts':    { headers:['Size','Chest (in)','Length','Sleeve'], rows:[['S','36–38','27','33'],['M','39–41','28','34'],['L','42–44','29','35'],['XL','45–47','30','36'],['2XL','48–50','31','37'],['3XL','51–53','32','38']] },
+  'Hoodies':     { headers:['Size','Chest (in)','Length','Sleeve'], rows:[['S','36–38','27','33'],['M','39–41','28','34'],['L','42–44','29','35'],['XL','45–47','30','36'],['2XL','48–50','31','37'],['3XL','51–53','32','38']] },
+  'Sweatshirts': { headers:['Size','Chest (in)','Length','Sleeve'], rows:[['S','36–38','27','33'],['M','39–41','28','34'],['L','42–44','29','35'],['XL','45–47','30','36'],['2XL','48–50','31','37'],['3XL','51–53','32','38']] },
+  'Polos':       { headers:['Size','Chest (in)','Length','Sleeve'], rows:[['S','36–38','27','33'],['M','39–41','28','34'],['L','42–44','29','35'],['XL','45–47','30','36'],['2XL','48–50','31','37'],['3XL','51–53','32','38']] },
+  'Jackets':     { headers:['Size','Chest (in)','Length','Sleeve'], rows:[['S','38–40','28','34'],['M','41–43','29','35'],['L','44–46','30','36'],['XL','47–49','31','37'],['2XL','50–52','32','38'],['3XL','53–55','33','39']] },
+  'Hats':        { headers:['Size','Head Circumference','Fitted Size'], rows:[['S/M','21–22"','6⅝–6⅞'],['L/XL','22–23"','7–7¼'],['One Size','21–23"','Adjustable']] },
+  'Beanies':     { headers:['Size','Head Circumference','Notes'], rows:[['One Size','21–24"','Stretches to fit all']] },
+  'Bags':        { headers:['Item','Width','Height','Depth'], rows:[['Tote Bag','14"','16"','4"'],['Backpack','12"','18"','6"']] },
+};
+
+const SAVED_KEY = 'sanda_saved_designs';
+
 export default function StudioPage() {
   const [catFilter, setCatFilter]           = useState('All');
   const [showPicker, setShowPicker]         = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [view, setView]                     = useState('front'); // front | back
+  const [view, setView]                     = useState('front');
   const [orderType, setOrderType]           = useState('');
   const [fulfillment, setFulfillment]       = useState('');
   const [quantity, setQuantity]             = useState(24);
@@ -67,8 +60,36 @@ export default function StudioPage() {
   const [submitted, setSubmitted]           = useState(false);
   const [submitting, setSubmitting]         = useState(false);
 
+  // Size chart
+  const [showSizeChart, setShowSizeChart]   = useState(false);
+
+  // Saved designs
+  const [savedDesigns, setSavedDesigns]     = useState([]);
+  const [showSaved, setShowSaved]           = useState(false);
+  const [saveNameInput, setSaveNameInput]   = useState('');
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [saveSuccess, setSaveSuccess]       = useState(false);
+
+  const [products, setProducts] = useState(DEFAULT_PRODUCTS);
+
   const canvasRef = useRef();
   const fileRef   = useRef();
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+      setSavedDesigns(stored);
+    } catch {}
+
+    try {
+      const adminRaw = JSON.parse(localStorage.getItem('sanda_products') || '[]');
+      if (adminRaw.length > 0) {
+        const adminProducts = adminRaw.map(toStudioFormat);
+        const adminSkus = new Set(adminProducts.map(p => p.sku));
+        setProducts([...adminProducts, ...DEFAULT_PRODUCTS.filter(p => !adminSkus.has(p.sku))]);
+      }
+    } catch {}
+  }, []);
 
   function selectProduct(p) {
     setSelectedProduct(p);
@@ -118,12 +139,58 @@ export default function StudioPage() {
     setTimeout(() => { setSubmitting(false); setSubmitted(true); }, 1500);
   }
 
-  const filtered = catFilter==='All' ? PRODUCTS : PRODUCTS.filter(p => p.category===catFilter);
+  function saveDesign() {
+    if (!selectedProduct || !saveNameInput.trim()) return;
+    const entry = {
+      id: Date.now(),
+      name: saveNameInput.trim(),
+      savedAt: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }),
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      printArea,
+      decoMethod,
+      orderType,
+      fulfillment,
+      quantity,
+      screenColors,
+      notes,
+    };
+    const updated = [entry, ...savedDesigns].slice(0, 20);
+    setSavedDesigns(updated);
+    localStorage.setItem(SAVED_KEY, JSON.stringify(updated));
+    setSaveNameInput('');
+    setShowSavePrompt(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  }
+
+  function loadSavedDesign(d) {
+    const product = products.find(p => p.id === d.productId);
+    if (!product) return;
+    selectProduct(product);
+    setPrintArea(d.printArea || product.printAreas[0]);
+    setDecoMethod(d.decoMethod || product.decorationMethods[0]);
+    setOrderType(d.orderType || '');
+    setFulfillment(d.fulfillment || '');
+    setQuantity(d.quantity || 24);
+    setScreenColors(d.screenColors || 1);
+    setNotes(d.notes || '');
+    setShowSaved(false);
+  }
+
+  function deleteSavedDesign(id) {
+    const updated = savedDesigns.filter(d => d.id !== id);
+    setSavedDesigns(updated);
+    localStorage.setItem(SAVED_KEY, JSON.stringify(updated));
+  }
+
+  const filtered = catFilter==='All' ? products : products.filter(p => p.category===catFilter);
   const canSubmit = selectedProduct && orderType && decoMethod && (orderType==='pod' || (orderType==='bulk' && fulfillment));
   const isLaser = decoMethod === 'laser';
   const garmentImage = selectedProduct ? (view==='front' ? selectedProduct.frontImage : selectedProduct.backImage) : null;
   const canvasW = Math.round(340 * zoom / 100);
   const canvasH = Math.round(380 * zoom / 100);
+  const sizeChart = selectedProduct ? SIZE_CHARTS[selectedProduct.category] : null;
 
   return (
     <div style={{ display:'flex', height:'100vh', background:'#1c1c1c', fontFamily:'Inter,sans-serif', overflow:'hidden' }}>
@@ -141,6 +208,11 @@ export default function StudioPage() {
           style={{ width:38,height:38,background:'transparent',border:'none',color:'#777',cursor:'pointer',borderRadius:8,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center' }}>⬆</button>
         <button onClick={() => setShowPicker(true)} title="Change Product"
           style={{ width:38,height:38,background:'transparent',border:'none',color:'#777',cursor:'pointer',borderRadius:8,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center' }}>👕</button>
+        <button onClick={() => setShowSaved(true)} title="Saved Designs"
+          style={{ width:38,height:38,background:'transparent',border:'none',color:savedDesigns.length>0?'#e8a020':'#555',cursor:'pointer',borderRadius:8,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center', position:'relative' }}>
+          📂
+          {savedDesigns.length > 0 && <span style={{ position:'absolute', top:4, right:4, width:8, height:8, background:'#e8a020', borderRadius:'50%' }}/>}
+        </button>
         <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e=>handleUpload(e.target.files[0])}/>
         <div style={{ flex:1 }}/>
         {NAV.filter(n=>n.id!=='studio').map(n => (
@@ -170,7 +242,14 @@ export default function StudioPage() {
               ))}
             </div>
           )}
+          {sizeChart && (
+            <button onClick={() => setShowSizeChart(true)}
+              style={{ padding:'4px 12px', borderRadius:6, border:'1px solid #333', background:'#1a1a1a', color:'#888', fontSize:12, cursor:'pointer' }}>
+              📏 Size Chart
+            </button>
+          )}
           <div style={{ flex:1 }}/>
+          {saveSuccess && <span style={{ fontSize:12, color:'#e8a020', fontWeight:600 }}>✓ Design saved!</span>}
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
             <button onClick={()=>setZoom(z=>Math.max(50,z-10))} style={{ width:22,height:22,background:'#2a2a2a',border:'none',color:'#ccc',borderRadius:4,cursor:'pointer',fontSize:14 }}>−</button>
             <span style={{ fontSize:12, color:'#777', minWidth:36, textAlign:'center' }}>{zoom}%</span>
@@ -199,25 +278,16 @@ export default function StudioPage() {
               onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
               style={{ position:'relative', width:canvasW, height:canvasH, cursor:isDragging?'grabbing':'default', userSelect:'none', flexShrink:0 }}>
 
-              {/* Real garment photo */}
               <div style={{ position:'absolute', inset:0, filter:'drop-shadow(0 8px 32px rgba(0,0,0,0.6))', borderRadius:8, overflow:'hidden' }}>
-                <Image
-                  src={garmentImage}
-                  alt={selectedProduct.name}
-                  fill
-                  style={{ objectFit:'contain' }}
-                  unoptimized
-                />
+                <Image src={garmentImage} alt={selectedProduct.name} fill style={{ objectFit:'contain' }} unoptimized/>
               </div>
 
-              {/* Print area guide */}
               {printArea && (
                 <div style={{ position:'absolute', left:'18%', top:'15%', width:'64%', height:'62%', border:`1.5px dashed ${isLaser?'#ef4444':'#e8a020'}`, borderRadius:4, pointerEvents:'none' }}>
                   <span style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', fontSize:9, color:isLaser?'#ef4444':'#e8a020', background:'rgba(0,0,0,0.7)', padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' }}>{printArea}</span>
                 </div>
               )}
 
-              {/* Uploaded design overlay */}
               {design && (
                 <div style={{ position:'absolute', left:`${designPos.x*100}%`, top:`${designPos.y*100}%`, width:`${designPos.w*100}%`, height:`${designPos.h*100}%`, cursor:isDragging?'grabbing':'move' }}>
                   <img src={design} alt="design" draggable={false}
@@ -233,7 +303,6 @@ export default function StudioPage() {
                 </div>
               )}
 
-              {/* Upload prompt */}
               {!design && (
                 <div onClick={() => fileRef.current?.click()}
                   style={{ position:'absolute', left:'22%', top:'20%', width:'56%', height:'55%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:`rgba(${isLaser?'239,68,68':'232,160,32'},0.04)`, border:`1.5px dashed rgba(${isLaser?'239,68,68':'232,160,32'},0.3)`, borderRadius:4, cursor:'pointer' }}>
@@ -325,11 +394,6 @@ export default function StudioPage() {
                 <input type="number" value={customQty} onChange={e=>setCustomQty(e.target.value)}
                   placeholder="Custom qty…" min="1"
                   style={{ width:'100%', marginTop:8, padding:'7px 10px', background:'#1a1a1a', border:`1px solid ${customQty?'#e8a020':'#2a2a2a'}`, borderRadius:6, color:customQty?'#e8a020':'#777', fontSize:13, fontFamily:'inherit' }}/>
-                {(customQty || quantity) && (
-                  <div style={{ fontSize:12, color:'#666', marginTop:6 }}>
-                    Qty: <strong style={{ color:'#e8a020' }}>{customQty || quantity} pieces</strong>
-                  </div>
-                )}
               </div>
             </>}
 
@@ -417,6 +481,37 @@ export default function StudioPage() {
                 placeholder="Special instructions, deadline, sizes breakdown…"
                 style={{ width:'100%', marginTop:8, padding:'8px 10px', background:'#1a1a1a', border:'1px solid #2a2a2a', borderRadius:6, color:'#ccc', fontSize:12, fontFamily:'inherit', resize:'vertical', minHeight:70, lineHeight:1.5 }}/>
             </div>
+
+            {/* Save design */}
+            <div style={{ padding:14, borderBottom:'1px solid #1e1e1e' }}>
+              {showSavePrompt ? (
+                <div>
+                  <input
+                    value={saveNameInput}
+                    onChange={e => setSaveNameInput(e.target.value)}
+                    placeholder="Name this design…"
+                    onKeyDown={e => e.key === 'Enter' && saveDesign()}
+                    style={{ width:'100%', padding:'7px 10px', background:'#1a1a1a', border:'1px solid #e8a020', borderRadius:6, color:'#e8a020', fontSize:12, fontFamily:'inherit', marginBottom:8 }}
+                    autoFocus
+                  />
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={saveDesign} disabled={!saveNameInput.trim()}
+                      style={{ flex:2, padding:'7px 0', background:saveNameInput.trim()?'#e8a020':'#2a2a2a', color:saveNameInput.trim()?'#1a1a1a':'#555', border:'none', borderRadius:6, fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                      Save
+                    </button>
+                    <button onClick={() => { setShowSavePrompt(false); setSaveNameInput(''); }}
+                      style={{ flex:1, padding:'7px 0', background:'#2a2a2a', border:'none', borderRadius:6, fontSize:12, color:'#777', cursor:'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowSavePrompt(true)}
+                  style={{ width:'100%', padding:'8px 0', background:'transparent', border:'1px solid #333', borderRadius:6, color:'#888', fontSize:12, cursor:'pointer', fontWeight:600 }}>
+                  💾 Save Design
+                </button>
+              )}
+            </div>
           </>}
         </div>
 
@@ -485,8 +580,7 @@ export default function StudioPage() {
                   <button key={p.id} onClick={() => selectProduct(p)}
                     style={{ background:isSelected?'#1a1400':'#1a1a1a', border:`2px solid ${isSelected?'#e8a020':'#2a2a2a'}`, borderRadius:10, padding:14, cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
                     <div style={{ height:160, background:'#111', borderRadius:6, marginBottom:10, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
-                      <Image src={p.frontImage} alt={p.name}
-                        fill style={{ objectFit:'contain' }} unoptimized/>
+                      <Image src={p.frontImage} alt={p.name} fill style={{ objectFit:'contain' }} unoptimized/>
                     </div>
                     <div style={{ fontSize:13, fontWeight:600, color:'#fff', marginBottom:2 }}>{p.name}</div>
                     <div style={{ fontSize:11, color:'#666', marginBottom:6 }}>{p.brand} · {p.sku}</div>
@@ -497,6 +591,92 @@ export default function StudioPage() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIZE CHART MODAL */}
+      {showSizeChart && sizeChart && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:150, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#1a1a1a', borderRadius:14, padding:28, maxWidth:520, width:'100%', border:'1px solid #2a2a2a' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <div>
+                <h3 style={{ color:'white', fontSize:16, fontWeight:700, margin:'0 0 3px' }}>📏 Size Chart</h3>
+                <div style={{ fontSize:12, color:'#666' }}>{selectedProduct?.name} · {selectedProduct?.category}</div>
+              </div>
+              <button onClick={() => setShowSizeChart(false)}
+                style={{ width:28, height:28, background:'#2a2a2a', border:'none', borderRadius:6, color:'#999', cursor:'pointer', fontSize:14 }}>✕</button>
+            </div>
+            <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                <thead>
+                  <tr>
+                    {sizeChart.headers.map(h => (
+                      <th key={h} style={{ padding:'10px 14px', textAlign:'left', color:'#e8a020', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, borderBottom:'1px solid #2a2a2a', whiteSpace:'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sizeChart.rows.map((row, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
+                      {row.map((cell, j) => (
+                        <td key={j} style={{ padding:'10px 14px', color:j===0?'white':'#aaa', fontWeight:j===0?700:400, borderBottom:'1px solid #1e1e1e', whiteSpace:'nowrap' }}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop:16, padding:'10px 14px', background:'rgba(232,160,32,0.07)', borderRadius:8, fontSize:11, color:'#888', lineHeight:1.6 }}>
+              All measurements in inches unless noted. Sizes may vary slightly by brand — when in doubt, size up.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SAVED DESIGNS MODAL */}
+      {showSaved && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:150, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#1a1a1a', borderRadius:14, padding:28, maxWidth:520, width:'100%', border:'1px solid #2a2a2a', maxHeight:'80vh', display:'flex', flexDirection:'column' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexShrink:0 }}>
+              <div>
+                <h3 style={{ color:'white', fontSize:16, fontWeight:700, margin:'0 0 3px' }}>📂 Saved Designs</h3>
+                <div style={{ fontSize:12, color:'#666' }}>{savedDesigns.length} saved · stored on this device</div>
+              </div>
+              <button onClick={() => setShowSaved(false)}
+                style={{ width:28, height:28, background:'#2a2a2a', border:'none', borderRadius:6, color:'#999', cursor:'pointer', fontSize:14 }}>✕</button>
+            </div>
+            <div style={{ flex:1, overflowY:'auto' }}>
+              {savedDesigns.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'40px 0', color:'#555' }}>
+                  <div style={{ fontSize:40, marginBottom:12 }}>💾</div>
+                  <div style={{ fontSize:14, fontWeight:600, color:'#777' }}>No saved designs yet</div>
+                  <div style={{ fontSize:12, color:'#555', marginTop:4 }}>Configure a design and click "Save Design" to save it here.</div>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {savedDesigns.map(d => (
+                    <div key={d.id} style={{ background:'#111', borderRadius:10, padding:'14px 16px', border:'1px solid #2a2a2a', display:'flex', alignItems:'center', gap:'14px' }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:'white', marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.name}</div>
+                        <div style={{ fontSize:11, color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.productName}</div>
+                        <div style={{ fontSize:11, color:'#555', marginTop:2 }}>{d.savedAt} · {d.decoMethod}</div>
+                      </div>
+                      <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                        <button onClick={() => loadSavedDesign(d)}
+                          style={{ padding:'6px 12px', background:'#e8a020', color:'#1a1a1a', border:'none', borderRadius:6, fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                          Load
+                        </button>
+                        <button onClick={() => deleteSavedDesign(d.id)}
+                          style={{ padding:'6px 10px', background:'rgba(220,38,38,0.15)', border:'1px solid rgba(220,38,38,0.2)', borderRadius:6, fontSize:12, color:'#f87171', cursor:'pointer' }}>
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

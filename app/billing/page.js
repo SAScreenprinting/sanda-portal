@@ -7,6 +7,8 @@ const NAV = [
   { id:'artwork',   label:'Artwork Library', icon:'◈', href:'/artwork' },
   { id:'studio',    label:'Design Studio',   icon:'✦', href:'/studio' },
   { id:'billing',   label:'Billing',         icon:'◎', href:'/billing' },
+  { id:'messages',  label:'Messages',        icon:'✉', href:'/messages' },
+  { id:'settings',  label:'Settings',        icon:'⚙', href:'/settings' },
 ];
 
 const INVOICES = [
@@ -22,11 +24,17 @@ const STATUS = {
   paid:    { bg:'#d1fae5', color:'#065f46', label:'Paid' },
 };
 
+const VENMO_HANDLE = 'SandAScreenPrinting';
+const ZELLE_EMAIL  = 'billing@sascreenprinting.com';
+const ZELLE_PHONE  = '(973) 555-0100';
+
 export default function BillingPage() {
-  const [viewing, setViewing]   = useState(null);
+  const [viewing, setViewing]     = useState(null);
+  const [payModal, setPayModal]   = useState(null);
   const [showQuote, setShowQuote] = useState(false);
-  const [quote, setQuote]       = useState({ description:'', qty:'', notes:'' });
+  const [quote, setQuote]         = useState({ description:'', qty:'', notes:'' });
   const [quoteSent, setQuoteSent] = useState(false);
+  const [copied, setCopied]       = useState('');
 
   const outstanding = INVOICES.filter(i => i.status !== 'paid').reduce((s,i) => s+i.amount, 0);
   const paid        = INVOICES.filter(i => i.status === 'paid').reduce((s,i) => s+i.amount, 0);
@@ -34,6 +42,23 @@ export default function BillingPage() {
   function sendQuote() {
     setQuoteSent(true);
     setTimeout(() => { setShowQuote(false); setQuoteSent(false); setQuote({description:'',qty:'',notes:''}); }, 2500);
+  }
+
+  function copyToClipboard(text, key) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(''), 2000);
+    });
+  }
+
+  function venmoLink(inv) {
+    const note = encodeURIComponent(`Invoice ${inv.id} — S&A Screen Printing`);
+    return `venmo://paycharge?txn=pay&recipients=${VENMO_HANDLE}&amount=${inv.amount.toFixed(2)}&note=${note}`;
+  }
+
+  function venmoWebLink(inv) {
+    const note = encodeURIComponent(`Invoice ${inv.id} — S&A Screen Printing`);
+    return `https://venmo.com/${VENMO_HANDLE}?txn=pay&amount=${inv.amount.toFixed(2)}&note=${note}`;
   }
 
   return (
@@ -110,10 +135,16 @@ export default function BillingPage() {
                     </div>
                     <div style={{ fontSize:'13px', color:'#6b7280' }}>Issued {inv.issued} · Due {inv.due}</div>
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
                     <div style={{ fontSize:'20px', fontWeight:'700', color:'#1a1a1a' }}>${inv.amount.toFixed(2)}</div>
+                    {inv.status !== 'paid' && (
+                      <button onClick={() => setPayModal(inv)}
+                        style={{ padding:'7px 14px', background:'#059669', color:'white', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap' }}>
+                        Pay Now
+                      </button>
+                    )}
                     <button onClick={() => setViewing(inv)}
-                      style={{ padding:'7px 16px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap' }}>
+                      style={{ padding:'7px 14px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap' }}>
                       View
                     </button>
                   </div>
@@ -125,13 +156,89 @@ export default function BillingPage() {
 
         {/* Payment info */}
         <div style={{ background:'white', borderRadius:'14px', padding:'22px', border:'1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#1a1a1a', marginBottom:'10px', marginTop:0 }}>How to Pay</h2>
-          <p style={{ fontSize:'14px', color:'#6b7280', lineHeight:1.7, margin:0 }}>
-            We accept <strong>Venmo</strong>, <strong>Zelle</strong>, <strong>check</strong>, and <strong>bank transfer</strong>.
-            Contact us at <strong>info@sascreenprinting.com</strong> or <strong>(973) 555-0100</strong> with any questions.
-          </p>
+          <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#1a1a1a', marginBottom:'14px', marginTop:0 }}>How to Pay</h2>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'12px' }}>
+            {[
+              { icon:'💙', label:'Venmo', detail:`@${VENMO_HANDLE}`, action:() => window.open(venmoWebLink({ id:'', amount:0 }), '_blank') },
+              { icon:'💜', label:'Zelle', detail:ZELLE_EMAIL, action:() => copyToClipboard(ZELLE_EMAIL, 'zelle') },
+              { icon:'🏦', label:'Bank Transfer', detail:'Contact us for routing info', action:null },
+              { icon:'✉', label:'Questions?', detail:'info@sascreenprinting.com', action:null },
+            ].map(m => (
+              <div key={m.label} style={{ display:'flex', alignItems:'center', gap:'12px', padding:'14px', background:'#f9fafb', borderRadius:'10px', border:'1px solid #e5e5e5' }}>
+                <span style={{ fontSize:'22px' }}>{m.icon}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a' }}>{m.label}</div>
+                  <div style={{ fontSize:'12px', color:'#6b7280' }}>{m.detail}</div>
+                </div>
+                {m.action && (
+                  <button onClick={m.action}
+                    style={{ padding:'5px 12px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'6px', fontSize:'11px', fontWeight:'600', cursor:'pointer' }}>
+                    {m.label==='Zelle' && copied==='zelle' ? 'Copied!' : 'Open'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Pay Now modal */}
+      {payModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, padding:'20px' }}>
+          <div style={{ background:'white', borderRadius:'16px', padding:'32px', maxWidth:'440px', width:'100%', position:'relative' }}>
+            <button onClick={() => setPayModal(null)} style={{ position:'absolute', top:'16px', right:'16px', background:'#f3f4f6', border:'none', borderRadius:'6px', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px' }}>✕</button>
+            <div style={{ marginBottom:'20px' }}>
+              <div style={{ fontSize:'12px', color:'#aaa', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.5px' }}>Invoice {payModal.id}</div>
+              <div style={{ fontSize:'32px', fontWeight:'800', color:'#1a1a1a' }}>${payModal.amount.toFixed(2)}</div>
+              <div style={{ fontSize:'13px', color:'#dc2626', fontWeight:'600', marginTop:'4px' }}>
+                {payModal.status === 'overdue' ? '⚠ Payment Overdue' : `Due ${payModal.due}`}
+              </div>
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'12px', marginBottom:'24px' }}>
+              {/* Venmo */}
+              <a href={venmoLink(payModal)}
+                onClick={e => { e.preventDefault(); window.open(venmoWebLink(payModal), '_blank'); }}
+                style={{ display:'flex', alignItems:'center', gap:'14px', padding:'16px', background:'#3D95CE', borderRadius:'12px', textDecoration:'none', cursor:'pointer' }}>
+                <div style={{ width:'36px', height:'36px', background:'white', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px', flexShrink:0 }}>💙</div>
+                <div>
+                  <div style={{ fontSize:'14px', fontWeight:'700', color:'white' }}>Pay with Venmo</div>
+                  <div style={{ fontSize:'12px', color:'rgba(255,255,255,0.7)' }}>@{VENMO_HANDLE}</div>
+                </div>
+                <span style={{ marginLeft:'auto', color:'white', fontSize:'18px' }}>→</span>
+              </a>
+
+              {/* Zelle */}
+              <div style={{ padding:'16px', background:'#6B2FA0', borderRadius:'12px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'12px' }}>
+                  <div style={{ width:'36px', height:'36px', background:'white', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px', flexShrink:0 }}>💜</div>
+                  <div>
+                    <div style={{ fontSize:'14px', fontWeight:'700', color:'white' }}>Pay with Zelle</div>
+                    <div style={{ fontSize:'12px', color:'rgba(255,255,255,0.7)' }}>Open your bank app → Send with Zelle</div>
+                  </div>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+                  <button onClick={() => copyToClipboard(ZELLE_EMAIL, 'email')}
+                    style={{ padding:'8px 10px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'8px', color:'white', fontSize:'11px', cursor:'pointer', fontWeight:'600' }}>
+                    {copied === 'email' ? '✓ Copied!' : `📧 Copy Email`}
+                  </button>
+                  <button onClick={() => copyToClipboard(ZELLE_PHONE, 'phone')}
+                    style={{ padding:'8px 10px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'8px', color:'white', fontSize:'11px', cursor:'pointer', fontWeight:'600' }}>
+                    {copied === 'phone' ? '✓ Copied!' : `📞 Copy Phone`}
+                  </button>
+                </div>
+                <div style={{ marginTop:'8px', fontSize:'11px', color:'rgba(255,255,255,0.5)', textAlign:'center' }}>
+                  {ZELLE_EMAIL} · {ZELLE_PHONE}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding:'12px', background:'#f9fafb', borderRadius:'8px', fontSize:'12px', color:'#6b7280', lineHeight:'1.5' }}>
+              <strong>Include in your payment note:</strong> {payModal.id} — {payModal.amount.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invoice viewer */}
       {viewing && (
@@ -140,6 +247,12 @@ export default function BillingPage() {
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' }}>
               <h3 style={{ margin:0, fontSize:'16px', fontWeight:'700' }}>Invoice {viewing.id}</h3>
               <div style={{ display:'flex', gap:'8px' }}>
+                {viewing.status !== 'paid' && (
+                  <button onClick={() => { setViewing(null); setPayModal(viewing); }}
+                    style={{ padding:'6px 14px', background:'#059669', color:'white', border:'none', borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>
+                    💳 Pay Now
+                  </button>
+                )}
                 <button onClick={() => window.print()} style={{ padding:'6px 14px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>🖨 Print</button>
                 <button onClick={() => setViewing(null)} style={{ padding:'6px 14px', background:'#f3f4f6', border:'1px solid #e5e5e5', borderRadius:'6px', fontSize:'12px', cursor:'pointer' }}>✕ Close</button>
               </div>

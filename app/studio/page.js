@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -200,11 +201,12 @@ export default function StudioPage() {
 
               {/* Real garment photo */}
               <div style={{ position:'absolute', inset:0, filter:'drop-shadow(0 8px 32px rgba(0,0,0,0.6))', borderRadius:8, overflow:'hidden' }}>
-                <img
+                <Image
                   src={garmentImage}
                   alt={selectedProduct.name}
-                  style={{ width:'100%', height:'100%', objectFit:'contain' }}
-                  onError={e => { e.target.style.display='none'; }}
+                  fill
+                  style={{ objectFit:'contain' }}
+                  unoptimized
                 />
               </div>
 
@@ -482,10 +484,9 @@ export default function StudioPage() {
                 return (
                   <button key={p.id} onClick={() => selectProduct(p)}
                     style={{ background:isSelected?'#1a1400':'#1a1a1a', border:`2px solid ${isSelected?'#e8a020':'#2a2a2a'}`, borderRadius:10, padding:14, cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
-                    <div style={{ height:160, background:'#111', borderRadius:6, marginBottom:10, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <img src={p.frontImage} alt={p.name}
-                        style={{ width:'100%', height:'100%', objectFit:'contain' }}
-                        onError={e => { e.target.style.display='none'; }}/>
+                    <div style={{ height:160, background:'#111', borderRadius:6, marginBottom:10, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+                      <Image src={p.frontImage} alt={p.name}
+                        fill style={{ objectFit:'contain' }} unoptimized/>
                     </div>
                     <div style={{ fontSize:13, fontWeight:600, color:'#fff', marginBottom:2 }}>{p.name}</div>
                     <div style={{ fontSize:11, color:'#666', marginBottom:6 }}>{p.brand} · {p.sku}</div>

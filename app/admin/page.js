@@ -141,6 +141,73 @@ export default function AdminPage() {
     fetch('/api/requests/list').then(r => r.json()).then(d => { if (d.requests) setRequests(d.requests); }).catch(()=>{});
   }, []);
 
+  // Inquiries state
+  const [inquiries, setInquiries]           = useState([]);
+  const [activeInquiry, setActiveInquiry]   = useState(null);
+  const [inqThread, setInqThread]           = useState([]);
+  const [inqReply, setInqReply]             = useState('');
+  const [inqSending, setInqSending]         = useState(false);
+  const [inqFilter, setInqFilter]           = useState('all');
+  const [inqLoading, setInqLoading]         = useState(false);
+
+  const loadInquiries = () => {
+    setInqLoading(true);
+    fetch('/api/inquiries/list?admin=true')
+      .then(r => r.json())
+      .then(d => { if (d.inquiries) setInquiries(d.inquiries); setInqLoading(false); })
+      .catch(() => setInqLoading(false));
+  };
+
+  const loadInqThread = (id) => {
+    fetch(`/api/inquiries/${id}`)
+      .then(r => r.json())
+      .then(d => { if (d.messages) setInqThread(d.messages); });
+  };
+
+  useEffect(() => {
+    if (section === 'messages') loadInquiries();
+  }, [section]);
+
+  async function openInquiry(inq) {
+    setActiveInquiry(inq);
+    setInqReply('');
+    loadInqThread(inq.id);
+  }
+
+  async function sendInqReply() {
+    if (!inqReply.trim() || !activeInquiry) return;
+    setInqSending(true);
+    const res = await fetch(`/api/inquiries/${activeInquiry.id}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ senderId: 'admin', body: inqReply, isAdmin: true }),
+    });
+    if (res.ok) {
+      setInqReply('');
+      loadInqThread(activeInquiry.id);
+      loadInquiries();
+      // Update status to in_progress in local state
+      setActiveInquiry(a => a ? { ...a, status:'in_progress' } : a);
+    }
+    setInqSending(false);
+  }
+
+  async function updateInqStatus(id, status) {
+    await fetch('/api/inquiries/list', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id, status }),
+    });
+    setInquiries(list => list.map(i => i.id === id ? { ...i, status } : i));
+    if (activeInquiry?.id === id) setActiveInquiry(a => ({ ...a, status }));
+  }
+
+  const INQ_STATUS = {
+    open:        { bg:'#fef3c7', color:'#92400e', label:'Open' },
+    in_progress: { bg:'#dbeafe', color:'#1e40af', label:'In Progress' },
+    resolved:    { bg:'#d1fae5', color:'#065f46', label:'Resolved' },
+  };
+
   async function updateRequestStatus(id, status) {
     await fetch('/api/requests/list', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, status }) });
     setRequests(r => r.map(x => x.id === id ? { ...x, status } : x));
@@ -577,82 +644,124 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* MESSAGES */}
+        {/* INQUIRIES */}
         {section==='messages' && (
           <div style={s.sec}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}>
               <div>
-                <h1 style={s.h1}>Messages</h1>
-                <p style={s.sub}>{unreadCount} unread</p>
+                <h1 style={s.h1}>Client Inquiries</h1>
+                <p style={s.sub}>{inquiries.filter(i=>i.status==='open').length} open · {inquiries.filter(i=>i.status==='in_progress').length} in progress</p>
               </div>
-              <button onClick={()=>{
-                // Start new conversation: pick a client not already in messages
-                const existingClients = messages.map(m=>m.client);
-                const newClient = clients.find(c=>!existingClients.includes(c.name));
-                if (newClient) {
-                  const newThread = {id:Date.now(),client:newClient.name,msg:'',time:'just now',read:true,thread:[]};
-                  setMessages(ms=>[...ms,newThread]);
-                  setActiveMsg(messages.length);
-                } else {
-                  setActiveMsg(0);
-                }
-                setSection('messages');
-              }} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                + New Message
+              <button onClick={loadInquiries} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                ↻ Refresh
               </button>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'260px 1fr',gap:16,minHeight:480}}>
-              {/* Thread list + new conversation picker */}
-              <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {/* Start conversation with any client */}
-                <select onChange={e=>{
-                  const name = e.target.value;
-                  if (!name) return;
-                  const existing = messages.findIndex(m=>m.client===name);
-                  if (existing>=0) { setActiveMsg(existing); }
-                  else {
-                    const newThread = {id:Date.now(),client:name,msg:'',time:'just now',read:true,thread:[]};
-                    setMessages(ms=>{setActiveMsg(ms.length);return [...ms,newThread];});
-                  }
-                  e.target.value='';
-                }} style={{...s.inp,marginBottom:6,fontSize:12,color:'#6b7280'}}>
-                  <option value="">✉ Message a client…</option>
-                  {clients.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-                {messages.map((m,i)=>(
-                  <button key={m.id} onClick={()=>{setActiveMsg(i);setMessages(ms=>ms.map((x,j)=>j===i?{...x,read:true}:x));}}
-                    style={{...s.msgBtn,...(activeMsg===i?{background:'#1a1a2e',color:'#fff'}:{})}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:2}}>
-                      <span style={{fontSize:13,fontWeight:600}}>{m.client}</span>
-                      {!m.read&&<span style={{width:8,height:8,background:'#e8a020',borderRadius:'50%',marginTop:3}}/>}
-                    </div>
-                    <div style={{fontSize:12,color:activeMsg===i?'#d1d5db':'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.msg||'New conversation'}</div>
-                    <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{m.time}</div>
-                  </button>
-                ))}
-              </div>
-              <div style={s.card}>
-                {activeMsg!==null&&messages[activeMsg] ? (
-                  <>
-                    <h3 style={s.cardTitle}>{messages[activeMsg].client}</h3>
-                    <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14,minHeight:200,maxHeight:400,overflowY:'auto'}}>
-                      {messages[activeMsg].thread.length===0 && (
-                        <div style={{color:'#9ca3af',fontSize:13,textAlign:'center',padding:'40px 0'}}>Start the conversation below.</div>
+
+            {/* Status filter */}
+            <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+              {[['all','All'],['open','Open'],['in_progress','In Progress'],['resolved','Resolved']].map(([val,label])=>(
+                <button key={val} onClick={()=>setInqFilter(val)}
+                  style={{padding:'5px 14px',borderRadius:20,border:'none',background:inqFilter===val?'#1a1a2e':'#f3f4f6',color:inqFilter===val?'#fff':'#6b7280',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{display:'grid',gridTemplateColumns:'300px 1fr',gap:16,minHeight:500}}>
+
+              {/* Inquiry list */}
+              <div style={{display:'flex',flexDirection:'column',gap:8,overflowY:'auto',maxHeight:600}}>
+                {inqLoading && <div style={{color:'#9ca3af',fontSize:13,padding:'20px',textAlign:'center'}}>Loading…</div>}
+                {!inqLoading && inquiries.filter(i=>inqFilter==='all'||i.status===inqFilter).length===0 && (
+                  <div style={{color:'#9ca3af',fontSize:13,padding:'40px 20px',textAlign:'center'}}>No inquiries yet.</div>
+                )}
+                {inquiries.filter(i=>inqFilter==='all'||i.status===inqFilter).map(inq=>{
+                  const st = INQ_STATUS[inq.status]||INQ_STATUS.open;
+                  const clientName = inq.client?.business_name || inq.client?.contact_name || 'Client';
+                  const isActive = activeInquiry?.id===inq.id;
+                  return (
+                    <button key={inq.id} onClick={()=>openInquiry(inq)}
+                      style={{...s.msgBtn,...(isActive?{background:'#1a1a2e',color:'#fff',borderColor:'#1a1a2e'}:{}),textAlign:'left',padding:'12px 14px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4,gap:6}}>
+                        <span style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:isActive?'#e8a020':'#9ca3af',flexShrink:0}}>{inq.inquiry_number}</span>
+                        <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:20,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:isActive?'#fff':'#111827'}}>{inq.title}</div>
+                      <div style={{fontSize:12,color:isActive?'#d1d5db':'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{clientName}</div>
+                      {inq.last_message && (
+                        <div style={{fontSize:11,color:isActive?'#9ca3af':'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2}}>
+                          {inq.last_message.is_admin?'You: ':'Client: '}{inq.last_message.body}
+                        </div>
                       )}
-                      {messages[activeMsg].thread.map((t,i)=>(
-                        <div key={i} style={{display:'flex',justifyContent:t.from==='admin'?'flex-end':'flex-start'}}>
-                          <div style={{maxWidth:'75%',padding:'8px 12px',borderRadius:10,fontSize:13,background:t.from==='admin'?'#1a1a2e':'#f3f4f6',color:t.from==='admin'?'#fff':'#111827'}}>
-                            {t.text}<div style={{fontSize:10,opacity:0.6,marginTop:3,textAlign:t.from==='admin'?'right':'left'}}>{t.time}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Thread panel */}
+              <div style={s.card}>
+                {activeInquiry ? (
+                  <>
+                    {/* Inquiry header */}
+                    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16,gap:12,flexWrap:'wrap'}}>
+                      <div>
+                        <div style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:'#9ca3af',marginBottom:3}}>{activeInquiry.inquiry_number}</div>
+                        <h3 style={{...s.cardTitle,margin:0}}>{activeInquiry.title}</h3>
+                        <div style={{fontSize:12,color:'#6b7280',marginTop:2}}>
+                          {activeInquiry.client?.business_name || activeInquiry.client?.contact_name || 'Client'}
+                        </div>
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
+                        {/* Status changer */}
+                        <select value={activeInquiry.status} onChange={e=>updateInqStatus(activeInquiry.id,e.target.value)}
+                          style={{padding:'5px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',color:'#374151',background:'white'}}>
+                          <option value="open">Open</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16,minHeight:220,maxHeight:380,overflowY:'auto',padding:'4px'}}>
+                      {inqThread.length===0 && (
+                        <div style={{color:'#9ca3af',fontSize:13,textAlign:'center',padding:'40px 0'}}>Loading thread…</div>
+                      )}
+                      {inqThread.map((msg,i)=>(
+                        <div key={msg.id||i} style={{display:'flex',flexDirection:'column',alignItems:msg.is_admin?'flex-end':'flex-start',gap:2}}>
+                          <span style={{fontSize:11,color:'#9ca3af',paddingLeft:msg.is_admin?0:4,paddingRight:msg.is_admin?4:0}}>
+                            {msg.is_admin?'You (S&A)':'Client'} · {new Date(msg.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
+                          </span>
+                          <div style={{maxWidth:'78%',padding:'9px 13px',borderRadius:12,fontSize:13,lineHeight:'1.55',background:msg.is_admin?'#1a1a2e':'#f3f4f6',color:msg.is_admin?'#fff':'#111827',borderBottomRightRadius:msg.is_admin?3:12,borderBottomLeftRadius:msg.is_admin?12:3}}>
+                            {msg.body}
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div style={{display:'flex',gap:8}}>
-                      <input value={replyText} onChange={e=>setReplyText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendReply()} style={{...s.inp,flex:1}} placeholder={`Reply to ${messages[activeMsg].client}…`}/>
-                      <button onClick={sendReply} style={s.saveBtn}>Send</button>
-                    </div>
+
+                    {/* Reply */}
+                    {activeInquiry.status!=='resolved' ? (
+                      <div style={{display:'flex',gap:8}}>
+                        <input
+                          value={inqReply}
+                          onChange={e=>setInqReply(e.target.value)}
+                          onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&sendInqReply()}
+                          style={{...s.inp,flex:1}}
+                          placeholder={`Reply to ${activeInquiry.client?.business_name||'client'}…`}
+                        />
+                        <button onClick={sendInqReply} disabled={!inqReply.trim()||inqSending} style={{...s.saveBtn,opacity:(!inqReply.trim()||inqSending)?0.5:1}}>
+                          {inqSending?'Sending…':'Send'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{padding:'10px 14px',background:'#d1fae5',borderRadius:8,fontSize:12,color:'#065f46',fontWeight:600,textAlign:'center'}}>
+                        ✓ Inquiry resolved. Change status above to reopen.
+                      </div>
+                    )}
                   </>
-                ) : <div style={s.empty}>Select a conversation or start a new one</div>}
+                ) : (
+                  <div style={s.empty}>Select an inquiry to view the thread and reply</div>
+                )}
               </div>
             </div>
           </div>

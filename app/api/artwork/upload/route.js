@@ -5,6 +5,7 @@ export async function POST(request) {
   const file     = formData.get('file');
   const clientId = formData.get('clientId');
   const orderId  = formData.get('orderId') || null;
+  const label    = formData.get('label') || null;
 
   if (!file || !clientId) return Response.json({ error: 'Missing file or clientId' }, { status: 400 });
 
@@ -37,6 +38,7 @@ export async function POST(request) {
     file_size: file.size,
     file_type: file.type,
     status:    'pending',
+    label:     label,
   });
 
   if (dbErr) return Response.json({ error: dbErr.message }, { status: 500 });

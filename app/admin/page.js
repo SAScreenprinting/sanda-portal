@@ -118,7 +118,16 @@ export default function AdminPage() {
   const [orders, setOrders]       = useState(INIT_ORDERS);
   const [invoices, setInvoices]   = useState(INIT_INVOICES);
   const [inventory]               = useState(INIT_INVENTORY);
-  const [artwork, setArtwork]     = useState(INIT_ARTWORK);
+  const [artwork, setArtwork]     = useState([]);
+  const [artworkLoading, setArtworkLoading] = useState(false);
+  const [artworkClientFilter, setArtworkClientFilter] = useState('all');
+  const [artworkStatusFilter, setArtworkStatusFilter] = useState('pending');
+  const [artworkNotes, setArtworkNotes]   = useState({});   // { [id]: noteText }
+  const [artworkAdminUpClient, setArtworkAdminUpClient] = useState('');
+  const [artworkAdminUpLabel, setArtworkAdminUpLabel]   = useState('');
+  const [artworkAdminUploading, setArtworkAdminUploading] = useState(false);
+  const [artworkAdminUpMsg, setArtworkAdminUpMsg]       = useState('');
+  const artworkFileRef = useRef();
   const [messages, setMessages]   = useState(INIT_MESSAGES);
   const [activeMsg, setActiveMsg] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -136,9 +145,11 @@ export default function AdminPage() {
 
   // Requests state
   const [requests, setRequests] = useState([]);
+  const [clientProfiles, setClientProfiles] = useState([]);
 
   useEffect(() => {
     fetch('/api/requests/list').then(r => r.json()).then(d => { if (d.requests) setRequests(d.requests); }).catch(()=>{});
+    fetch('/api/profiles/list').then(r => r.json()).then(d => { if (d.profiles) setClientProfiles(d.profiles); }).catch(()=>{});
   }, []);
 
   // Inquiries state
@@ -164,8 +175,17 @@ export default function AdminPage() {
       .then(d => { if (d.messages) setInqThread(d.messages); });
   };
 
+  const loadArtwork = () => {
+    setArtworkLoading(true);
+    fetch('/api/artwork/list?admin=true')
+      .then(r => r.json())
+      .then(d => { if (d.artwork) setArtwork(d.artwork); setArtworkLoading(false); })
+      .catch(() => setArtworkLoading(false));
+  };
+
   useEffect(() => {
     if (section === 'messages') loadInquiries();
+    if (section === 'artwork')  loadArtwork();
   }, [section]);
 
   async function openInquiry(inq) {
@@ -365,8 +385,49 @@ export default function AdminPage() {
   }
 
   // Artwork
-  function approveArt(id) { setArtwork(a=>a.map(x=>x.id===id?{...x,status:'approved'}:x)); }
-  function rejectArt(id)  { setArtwork(a=>a.map(x=>x.id===id?{...x,status:'rejected',notes:'Rejected by admin'}:x)); }
+  async function approveArt(id) {
+    await fetch('/api/artwork/update', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, status:'approved' }) });
+    setArtwork(a => a.map(x => x.id===id ? {...x, status:'approved'} : x));
+  }
+  async function rejectArt(id) {
+    const notes = artworkNotes[id]?.trim() || '';
+    await fetch('/api/artwork/update', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, status:'rejected', admin_notes: notes || 'Rejected by admin' }) });
+    setArtwork(a => a.map(x => x.id===id ? {...x, status:'rejected', admin_notes: notes || 'Rejected by admin'} : x));
+  }
+  async function saveArtNote(id) {
+    const notes = artworkNotes[id]?.trim() || '';
+    await fetch('/api/artwork/update', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, admin_notes: notes }) });
+    setArtwork(a => a.map(x => x.id===id ? {...x, admin_notes: notes} : x));
+  }
+  async function adminUploadArt(fileList) {
+    if (!artworkAdminUpClient || !fileList?.length) return;
+    setArtworkAdminUploading(true);
+    setArtworkAdminUpMsg('');
+    for (const file of Array.from(fileList)) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('clientId', artworkAdminUpClient);
+      if (artworkAdminUpLabel.trim()) fd.append('label', artworkAdminUpLabel.trim());
+      const res  = await fetch('/api/artwork/upload', { method:'POST', body:fd });
+      const data = await res.json();
+      if (!res.ok) { setArtworkAdminUpMsg(`⚠ ${data.error}`); setArtworkAdminUploading(false); return; }
+    }
+    // Auto-approve admin uploads
+    const res2 = await fetch('/api/artwork/list?admin=true');
+    const d2   = await res2.json();
+    if (d2.artwork) {
+      // approve the newest ones just uploaded by this admin for this client
+      const newest = d2.artwork.filter(a => a.client_id === artworkAdminUpClient && a.status === 'pending').slice(0, fileList.length);
+      for (const a of newest) {
+        await fetch('/api/artwork/update', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:a.id, status:'approved', label: artworkAdminUpLabel.trim()||null }) });
+      }
+    }
+    setArtworkAdminUpMsg(`✓ ${fileList.length} file${fileList.length>1?'s':''} uploaded & approved`);
+    setArtworkAdminUpLabel('');
+    setTimeout(() => setArtworkAdminUpMsg(''), 4000);
+    setArtworkAdminUploading(false);
+    loadArtwork();
+  }
 
   // Messages
   function sendReply() {
@@ -1006,28 +1067,136 @@ export default function AdminPage() {
         {/* ARTWORK */}
         {section==='artwork' && (
           <div style={s.sec}>
-            <h1 style={s.h1}>Artwork Review</h1>
-            <p style={s.sub}>{pendingArt} files pending approval</p>
-            {artwork.map(a=>(
-              <div key={a.id} style={{...s.card,...(a.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{}),marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
-                  <div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                      <span style={{fontSize:14,fontWeight:600}}>🎨 {a.file}</span>
-                      <Badge status={a.status}/>
-                    </div>
-                    <div style={{fontSize:13,color:'#6b7280'}}>{a.client} · {a.uploaded}</div>
-                    {a.notes&&<div style={{fontSize:12,color:'#92400e',marginTop:4}}>{a.notes}</div>}
-                  </div>
-                  {a.status==='pending'&&(
-                    <div style={{display:'flex',gap:8}}>
-                      <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669'}}>✓ Approve</button>
-                      <button onClick={()=>rejectArt(a.id)}  style={{...s.saveBtn,background:'#dc2626'}}>✗ Reject</button>
-                    </div>
-                  )}
+            <h1 style={s.h1}>Design Vault</h1>
+            <p style={s.sub}>Manage client artwork — approve, reject, and upload on behalf of clients</p>
+
+            {/* Stats row */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+              {[
+                {label:'On File',    value:artwork.filter(a=>a.status==='approved').length, color:'#059669'},
+                {label:'Pending',    value:artwork.filter(a=>a.status==='pending').length,  color:'#d97706'},
+                {label:'Total Files',value:artwork.length,                                  color:'#374151'},
+              ].map(st=>(
+                <div key={st.label} style={s.statCard}>
+                  <div style={{fontSize:11,color:'#6b7280',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div>
+                  <div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Admin upload panel */}
+            <div style={{...s.card,marginBottom:20,borderLeft:'3px solid #6366f1'}}>
+              <h3 style={{...s.cardTitle,marginBottom:14}}>📤 Upload Artwork for a Client</h3>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Client</label>
+                  <select value={artworkAdminUpClient} onChange={e=>setArtworkAdminUpClient(e.target.value)} style={{...s.inp,width:'100%'}}>
+                    <option value=''>— Select client —</option>
+                    {clientProfiles.map(p=>(
+                      <option key={p.id} value={p.id}>{p.business_name || p.contact_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Design Label</label>
+                  <input type='text' placeholder='e.g. Main Logo, Jersey Front…' value={artworkAdminUpLabel} onChange={e=>setArtworkAdminUpLabel(e.target.value)} style={{...s.inp,width:'100%'}}/>
                 </div>
               </div>
-            ))}
+              <input ref={artworkFileRef} type='file' multiple accept='.svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp' style={{display:'none'}} onChange={e=>adminUploadArt(e.target.files)}/>
+              <button onClick={()=>artworkAdminUpClient&&artworkFileRef.current?.click()} disabled={!artworkAdminUpClient||artworkAdminUploading}
+                style={{...s.saveBtn,background:'#6366f1',opacity:(!artworkAdminUpClient||artworkAdminUploading)?0.5:1}}>
+                {artworkAdminUploading?'Uploading…':'Choose Files & Upload'}
+              </button>
+              {!artworkAdminUpClient&&<span style={{fontSize:12,color:'#9ca3af',marginLeft:10}}>Select a client first</span>}
+              {artworkAdminUpMsg&&<div style={{marginTop:10,padding:'8px 12px',borderRadius:6,fontSize:13,background:artworkAdminUpMsg.startsWith('✓')?'#d1fae5':'#fee2e2',color:artworkAdminUpMsg.startsWith('✓')?'#065f46':'#991b1b'}}>{artworkAdminUpMsg}</div>}
+            </div>
+
+            {/* Filters */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
+              {[['pending','⏳ Pending'],['approved','✓ On File'],['rejected','✗ Rejected'],['all','All']].map(([val,label])=>(
+                <button key={val} onClick={()=>setArtworkStatusFilter(val)}
+                  style={{padding:'6px 14px',borderRadius:20,border:'none',background:artworkStatusFilter===val?'#111827':'#f3f4f6',color:artworkStatusFilter===val?'white':'#6b7280',fontSize:13,cursor:'pointer',fontWeight:artworkStatusFilter===val?'600':'400'}}>
+                  {label}
+                </button>
+              ))}
+              <div style={{marginLeft:'auto'}}>
+                <select value={artworkClientFilter} onChange={e=>setArtworkClientFilter(e.target.value)} style={{...s.inp,fontSize:12,padding:'6px 10px'}}>
+                  <option value='all'>All Clients</option>
+                  {[...new Map(artwork.map(a=>[a.client_id,a.client])).entries()].map(([id,cl])=>(
+                    <option key={id} value={id}>{cl?.business_name||cl?.contact_name||'Unknown'}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {artworkLoading ? (
+              <div style={{textAlign:'center',padding:'40px',color:'#aaa'}}>Loading artwork…</div>
+            ) : (
+              (() => {
+                const filtered = artwork
+                  .filter(a => artworkStatusFilter==='all' || a.status===artworkStatusFilter)
+                  .filter(a => artworkClientFilter==='all' || a.client_id===artworkClientFilter);
+
+                if (!filtered.length) return (
+                  <div style={{textAlign:'center',padding:'48px',color:'#aaa'}}>
+                    <div style={{fontSize:32,marginBottom:8}}>🎨</div>
+                    {artwork.length===0 ? 'No artwork uploaded yet.' : 'No files match this filter.'}
+                  </div>
+                );
+
+                return filtered.map(a=>{
+                  const clientName = a.client?.business_name || a.client?.contact_name || 'Unknown Client';
+                  const dateStr    = new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+                  const isPending  = a.status==='pending';
+                  const isApproved = a.status==='approved';
+                  const isRejected = a.status==='rejected';
+                  const noteVal    = artworkNotes[a.id] ?? (a.admin_notes || '');
+                  return (
+                    <div key={a.id} style={{...s.card,borderLeft:`3px solid ${isPending?'#f59e0b':isApproved?'#10b981':'#ef4444'}`,marginBottom:12}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:12}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                            <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>
+                              {a.label || a.file_name}
+                            </span>
+                            <Badge status={a.status==='approved'?'approved':a.status==='rejected'?'rejected':'pending'}/>
+                          </div>
+                          {a.label && <div style={{fontSize:11,color:'#9ca3af',marginBottom:2,wordBreak:'break-all'}}>{a.file_name}</div>}
+                          <div style={{fontSize:13,color:'#6b7280'}}>
+                            <strong style={{color:'#374151'}}>{clientName}</strong> · {dateStr}
+                            {a.file_size ? ` · ${(a.file_size/1024/1024).toFixed(1)} MB` : ''}
+                          </div>
+                          {a.file_url&&<a href={a.file_url} target='_blank' rel='noopener noreferrer' style={{fontSize:12,color:'#6366f1',fontWeight:500}}>View file →</a>}
+                        </div>
+                        {isPending&&(
+                          <div style={{display:'flex',gap:8,flexShrink:0}}>
+                            <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px'}}>✓ Approve</button>
+                            <button onClick={()=>rejectArt(a.id)}  style={{...s.saveBtn,background:'#dc2626',padding:'7px 14px'}}>✗ Reject</button>
+                          </div>
+                        )}
+                        {isApproved&&(
+                          <button onClick={()=>rejectArt(a.id)} style={{...s.cancelBtn,fontSize:12,padding:'6px 12px'}}>Move to Rejected</button>
+                        )}
+                        {isRejected&&(
+                          <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px',fontSize:12}}>✓ Approve</button>
+                        )}
+                      </div>
+
+                      {/* Notes */}
+                      <div style={{marginTop:10,display:'flex',gap:8,alignItems:'center'}}>
+                        <input
+                          placeholder={isRejected?'Rejection reason for client…':'Add note for client…'}
+                          value={noteVal}
+                          onChange={e=>setArtworkNotes(n=>({...n,[a.id]:e.target.value}))}
+                          style={{...s.inp,flex:1,fontSize:12,padding:'6px 10px'}}
+                        />
+                        <button onClick={()=>saveArtNote(a.id)} style={{...s.saveBtn,padding:'6px 14px',fontSize:12}}>Save Note</button>
+                      </div>
+                    </div>
+                  );
+                });
+              })()
+            )}
           </div>
         )}
 

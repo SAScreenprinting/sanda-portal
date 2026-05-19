@@ -14,12 +14,6 @@ const NAV = [
   { id:'settings',  label:'Settings',        icon:'⚙', href:'/settings' },
 ];
 
-const STATUS_COLORS = {
-  'approved': { bg:'#d1fae5', color:'#065f46', label:'Approved' },
-  'pending':  { bg:'#fef3c7', color:'#92400e', label:'Pending Review' },
-  'rejected': { bg:'#fee2e2', color:'#991b1b', label:'Rejected' },
-};
-
 const TYPE_COLORS = {
   'image/svg+xml': '#8b5cf6',
   'application/postscript': '#f59e0b',
@@ -46,12 +40,16 @@ function fmtSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function fmtDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
 const MOCK_FILES = [
-  { id:'m1', file_name:'main_logo_final.svg',  file_type:'image/svg+xml',             file_size:43008,   created_at: new Date(Date.now()-259200000).toISOString(), status:'approved', order_id:null },
-  { id:'m2', file_name:'jersey_front_v3.ai',   file_type:'application/postscript',    file_size:2201600, created_at: new Date(Date.now()-345600000).toISOString(), status:'pending',  order_id:null },
-  { id:'m3', file_name:'jersey_back_v3.ai',    file_type:'application/postscript',    file_size:1887436, created_at: new Date(Date.now()-345600000).toISOString(), status:'pending',  order_id:null },
-  { id:'m4', file_name:'sleeve_patch.pdf',     file_type:'application/pdf',           file_size:389120,  created_at: new Date(Date.now()-432000000).toISOString(), status:'pending',  order_id:null },
-  { id:'m5', file_name:'sponsor_logo.png',     file_type:'image/png',                 file_size:245760,  created_at: new Date(Date.now()-1728000000).toISOString(), status:'approved', order_id:null },
+  { id:'m1', file_name:'main_logo_final.svg',  label:'Main Logo',        file_type:'image/svg+xml',          file_size:43008,   created_at: new Date(Date.now()-259200000).toISOString(), status:'approved' },
+  { id:'m2', file_name:'jersey_front_v3.ai',   label:'Jersey Front',     file_type:'application/postscript', file_size:2201600, created_at: new Date(Date.now()-345600000).toISOString(), status:'pending'  },
+  { id:'m3', file_name:'sleeve_patch.pdf',      label:'Sleeve Patch',    file_type:'application/pdf',        file_size:389120,  created_at: new Date(Date.now()-432000000).toISOString(), status:'pending'  },
+  { id:'m4', file_name:'sponsor_logo.png',      label:'Sponsor Logo',    file_type:'image/png',              file_size:245760,  created_at: new Date(Date.now()-1728000000).toISOString(), status:'approved' },
 ];
 
 export default function ArtworkPage() {
@@ -59,15 +57,16 @@ export default function ArtworkPage() {
   const supabase = createClient();
   const fileRef = useRef();
 
-  const [files, setFiles]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [filter, setFilter]     = useState('all');
-  const [userId, setUserId]     = useState(null);
-  const [profile, setProfile]   = useState(null);
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadMsg, setUploadMsg] = useState('');
+  const [files, setFiles]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [userId, setUserId]       = useState(null);
+  const [profile, setProfile]     = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showUpload, setShowUpload]   = useState(false);
+  const [dragging, setDragging]   = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState('');
+  const [uploadMsg, setUploadMsg] = useState('');
   const isMobile = useMobile();
 
   const loadData = useCallback(async () => {
@@ -75,16 +74,17 @@ export default function ArtworkPage() {
     if (!user) { router.push('/'); return; }
     setUserId(user.id);
 
-    const { data: prof } = await supabase.from('profiles').select('business_name, contact_name').eq('id', user.id).single();
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('business_name, contact_name')
+      .eq('id', user.id)
+      .single();
     if (prof) setProfile(prof);
 
-    const { data: artworks } = await supabase
-      .from('artwork')
-      .select('*')
-      .eq('client_id', user.id)
-      .order('created_at', { ascending: false });
-
-    setFiles(artworks?.length ? artworks : MOCK_FILES);
+    const res = await fetch(`/api/artwork/list?clientId=${user.id}`);
+    const json = await res.json();
+    const artworks = json.artwork || [];
+    setFiles(artworks.length ? artworks : MOCK_FILES);
     setLoading(false);
   }, [supabase, router]);
 
@@ -99,14 +99,20 @@ export default function ArtworkPage() {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('clientId', userId);
+      if (uploadLabel.trim()) fd.append('label', uploadLabel.trim());
 
-      const res = await fetch('/api/artwork/upload', { method: 'POST', body: fd });
+      const res  = await fetch('/api/artwork/upload', { method:'POST', body:fd });
       const data = await res.json();
-      if (!res.ok) { setUploadMsg(`⚠ ${data.error || 'Upload failed'}`); setUploading(false); return; }
+      if (!res.ok) {
+        setUploadMsg(`⚠ ${data.error || 'Upload failed'}`);
+        setUploading(false);
+        return;
+      }
     }
 
-    setUploadMsg(`✓ ${fileList.length} file${fileList.length > 1 ? 's' : ''} uploaded — pending review`);
-    setTimeout(() => setUploadMsg(''), 4000);
+    setUploadMsg(`✓ ${fileList.length} file${fileList.length > 1 ? 's' : ''} submitted for review`);
+    setUploadLabel('');
+    setTimeout(() => { setUploadMsg(''); setShowUpload(false); }, 3500);
     setUploading(false);
     loadData();
   }
@@ -117,9 +123,101 @@ export default function ArtworkPage() {
     uploadFiles(e.dataTransfer.files);
   }
 
-  const filtered = filter === 'all' ? files : files.filter(f => f.status === filter);
+  const approved = files.filter(f => f.status === 'approved');
+  const pending  = files.filter(f => f.status === 'pending');
+  const rejected = files.filter(f => f.status === 'rejected');
   const displayName = profile?.business_name || profile?.contact_name || 'Client';
-  const initial = displayName[0]?.toUpperCase() || '?';
+  const initial     = displayName[0]?.toUpperCase() || '?';
+
+  function FileCard({ file }) {
+    const tc = TYPE_COLORS[file.file_type] || '#6b7280';
+    const tl = typeLabel(file.file_type);
+    const isApproved = file.status === 'approved';
+    const isRejected = file.status === 'rejected';
+    const isImage    = file.file_type?.startsWith('image/') && !file.file_type?.includes('svg');
+    const canPreview = isImage && file.file_url;
+
+    return (
+      <div style={{
+        background: 'white',
+        borderRadius: '14px',
+        overflow: 'hidden',
+        border: `1px solid ${isApproved ? '#a7f3d0' : isRejected ? '#fecaca' : '#e5e7eb'}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+
+        {/* Image preview strip */}
+        {canPreview ? (
+          <div style={{ width:'100%', height:'140px', background:'#f9fafb', overflow:'hidden', position:'relative' }}>
+            <img src={file.file_url} alt={file.label || file.file_name}
+              style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          </div>
+        ) : file.file_url ? (
+          <div style={{ width:'100%', height:'100px', background:`${tc}08`, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'6px' }}>
+            <div style={{ fontSize:'28px', fontWeight:'800', color:`${tc}`, opacity:0.5 }}>{tl}</div>
+            <div style={{ fontSize:'11px', color:'#9ca3af' }}>Click below to open</div>
+          </div>
+        ) : null}
+
+        {/* Card body */}
+        <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:'10px', flex:1 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'8px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'10px', flex:1, minWidth:0 }}>
+              {!canPreview && (
+                <div style={{ width:'40px', height:'40px', borderRadius:'10px', background:`${tc}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:'800', color:tc, flexShrink:0 }}>
+                  {tl}
+                </div>
+              )}
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:'14px', fontWeight:'700', color:'#1a1a1a', marginBottom:'2px' }}>
+                  {file.label || file.file_name}
+                </div>
+                <div style={{ fontSize:'11px', color:'#9ca3af', wordBreak:'break-all' }}>{file.file_name}</div>
+              </div>
+            </div>
+            {isApproved && (
+              <div style={{ background:'#d1fae5', color:'#065f46', fontSize:'11px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px', flexShrink:0 }}>
+                ✓ On File
+              </div>
+            )}
+            {isRejected && (
+              <div style={{ background:'#fee2e2', color:'#991b1b', fontSize:'11px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px', flexShrink:0 }}>
+                ✗ Revision Needed
+              </div>
+            )}
+            {file.status === 'pending' && (
+              <div style={{ background:'#fef3c7', color:'#92400e', fontSize:'11px', fontWeight:'700', padding:'4px 10px', borderRadius:'20px', flexShrink:0 }}>
+                ⏳ In Review
+              </div>
+            )}
+          </div>
+
+          <div style={{ fontSize:'12px', color:'#9ca3af' }}>
+            {fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{fmtDate(file.created_at)}
+          </div>
+
+          {isRejected && file.admin_notes && (
+            <div style={{ fontSize:'12px', color:'#991b1b', background:'#fff1f2', padding:'8px 12px', borderRadius:'8px', borderLeft:'3px solid #fca5a5' }}>
+              <strong>Note from S&A:</strong> {file.admin_notes}
+            </div>
+          )}
+
+          {file.file_url ? (
+            <a href={file.file_url} target="_blank" rel="noopener noreferrer"
+              style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'9px', background:'#1a1a1a', color:'white', borderRadius:'9px', textDecoration:'none', fontSize:'13px', fontWeight:'600', marginTop:'auto' }}>
+              🔗 Open File
+            </a>
+          ) : (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'9px', background:'#f3f4f6', color:'#9ca3af', borderRadius:'9px', fontSize:'13px' }}>
+              No file URL
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f5f5f0', fontFamily:'Inter, sans-serif' }}>
@@ -154,7 +252,10 @@ export default function ArtworkPage() {
             })}
           </nav>
         </div>
-        <a href="/" style={{ display:'block', padding:'8px 12px', color:'#666', fontSize:'12px', textDecoration:'none', textAlign:'center' }}>Sign Out</a>
+        <a href="/" onClick={async e => { e.preventDefault(); await supabase.auth.signOut(); router.push('/'); }}
+          style={{ display:'block', padding:'8px 12px', color:'#666', fontSize:'12px', textDecoration:'none', textAlign:'center' }}>
+          Sign Out
+        </a>
       </div>
 
       {/* Main */}
@@ -165,92 +266,149 @@ export default function ArtworkPage() {
             <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
           </div>
         )}
-        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px', maxWidth:'900px' }}>
 
-        <div style={{ marginBottom:'24px' }}>
-          <h1 style={{ fontSize:'26px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 4px' }}>Artwork Library</h1>
-          <p style={{ fontSize:'14px', color:'#aaa', margin:0 }}>
-            {files.length} file{files.length !== 1 ? 's' : ''} · {files.filter(f => f.status === 'pending').length} pending review
-          </p>
-        </div>
-
-        {/* Upload zone */}
-        <div
-          onDragEnter={() => setDragging(true)}
-          onDragLeave={() => setDragging(false)}
-          onDragOver={e => e.preventDefault()}
-          onDrop={onDrop}
-          onClick={() => !uploading && fileRef.current?.click()}
-          style={{ border:`2px dashed ${dragging ? '#1a1a1a' : '#d1d5db'}`, borderRadius:'14px', padding:'32px', textAlign:'center', cursor:uploading?'default':'pointer', marginBottom:'24px', background:dragging?'rgba(0,0,0,0.03)':'white', transition:'all 0.15s' }}>
-          <input ref={fileRef} type="file" multiple accept=".svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp" style={{ display:'none' }} onChange={e => uploadFiles(e.target.files)}/>
-          {uploading ? (
+          {/* Header */}
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:'12px', marginBottom:'28px' }}>
             <div>
-              <div style={{ fontSize:'28px', marginBottom:'8px' }}>⏳</div>
-              <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>Uploading…</div>
+              <h1 style={{ fontSize:'26px', fontWeight:'800', color:'#1a1a1a', margin:'0 0 4px' }}>Design Vault</h1>
+              <p style={{ fontSize:'14px', color:'#9ca3af', margin:0 }}>
+                {approved.length} design{approved.length !== 1 ? 's' : ''} on file · {pending.length} pending review
+              </p>
             </div>
-          ) : (
+            <button onClick={() => setShowUpload(v => !v)}
+              style={{ padding:'10px 20px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:'600', cursor:'pointer' }}>
+              + Submit Artwork
+            </button>
+          </div>
+
+          {/* Info banner */}
+          <div style={{ background:'#fffbeb', border:'1px solid #fde68a', borderRadius:'12px', padding:'14px 18px', marginBottom:'28px', display:'flex', gap:'12px', alignItems:'flex-start' }}>
+            <span style={{ fontSize:'20px', flexShrink:0 }}>📁</span>
             <div>
-              <div style={{ fontSize:'32px', marginBottom:'8px' }}>🎨</div>
-              <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a', marginBottom:'4px' }}>Drop files here or click to upload</div>
-              <div style={{ fontSize:'12px', color:'#9ca3af' }}>SVG, AI, PDF, PNG, JPG, EPS · Max 20MB per file</div>
+              <div style={{ fontSize:'13px', fontWeight:'700', color:'#92400e', marginBottom:'2px' }}>Your Design Vault</div>
+              <div style={{ fontSize:'12px', color:'#a16207', lineHeight:'1.5' }}>
+                These are the artwork files S&A Screen Printing has on file for your account. Approved designs are ready to use on your next order — just reference the design name when placing an order. Need to update a design? Submit a new file below.
+              </div>
+            </div>
+          </div>
+
+          {/* Upload panel */}
+          {showUpload && (
+            <div style={{ background:'white', borderRadius:'14px', border:'1px solid #e5e7eb', padding:'24px', marginBottom:'28px', boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' }}>
+                <h3 style={{ margin:0, fontSize:'16px', fontWeight:'700', color:'#1a1a1a' }}>Submit New Artwork</h3>
+                <button onClick={() => setShowUpload(false)} style={{ background:'none', border:'none', color:'#9ca3af', fontSize:'20px', cursor:'pointer', lineHeight:1, padding:'2px' }}>✕</button>
+              </div>
+
+              <div style={{ marginBottom:'12px' }}>
+                <label style={{ fontSize:'12px', fontWeight:'600', color:'#6b7280', display:'block', marginBottom:'6px' }}>
+                  Design Name / Label <span style={{ color:'#9ca3af', fontWeight:'400' }}>(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Main Logo, Jersey Back, Sleeve Patch…"
+                  value={uploadLabel}
+                  onChange={e => setUploadLabel(e.target.value)}
+                  style={{ width:'100%', padding:'10px 12px', borderRadius:'8px', border:'1px solid #e5e7eb', fontSize:'13px', color:'#1a1a1a', boxSizing:'border-box', outline:'none' }}
+                />
+              </div>
+
+              <div
+                onDragEnter={() => setDragging(true)}
+                onDragLeave={() => setDragging(false)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={onDrop}
+                onClick={() => !uploading && fileRef.current?.click()}
+                style={{ border:`2px dashed ${dragging ? '#1a1a1a' : '#d1d5db'}`, borderRadius:'12px', padding:'32px', textAlign:'center', cursor:uploading?'default':'pointer', background:dragging?'rgba(0,0,0,0.03)':'#fafafa', transition:'all 0.15s' }}>
+                <input ref={fileRef} type="file" multiple accept=".svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp" style={{ display:'none' }} onChange={e => uploadFiles(e.target.files)}/>
+                {uploading ? (
+                  <div>
+                    <div style={{ fontSize:'28px', marginBottom:'8px' }}>⏳</div>
+                    <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>Uploading…</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize:'30px', marginBottom:'8px' }}>🎨</div>
+                    <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a', marginBottom:'4px' }}>Drop files here or click to browse</div>
+                    <div style={{ fontSize:'12px', color:'#9ca3af' }}>SVG · AI · PDF · PNG · JPG · EPS · Max 20MB per file</div>
+                  </div>
+                )}
+              </div>
+
+              {uploadMsg && (
+                <div style={{ marginTop:'12px', padding:'10px 14px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', background:uploadMsg.startsWith('✓')?'#d1fae5':'#fee2e2', color:uploadMsg.startsWith('✓')?'#065f46':'#991b1b' }}>
+                  {uploadMsg}
+                </div>
+              )}
+
+              <p style={{ fontSize:'11px', color:'#9ca3af', marginTop:'12px', marginBottom:0, lineHeight:'1.5' }}>
+                Files will be reviewed by S&A Screen Printing. Once approved, they'll appear in your Design Vault and can be referenced on future orders.
+              </p>
             </div>
           )}
-        </div>
 
-        {uploadMsg && (
-          <div style={{ padding:'10px 16px', borderRadius:'8px', marginBottom:'16px', fontSize:'13px', fontWeight:'500', background:uploadMsg.startsWith('✓')?'#d1fae5':'#fee2e2', color:uploadMsg.startsWith('✓')?'#065f46':'#991b1b' }}>
-            {uploadMsg}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div style={{ display:'flex', gap:'8px', marginBottom:'20px' }}>
-          {[['all','All'],['approved','Approved'],['pending','Pending Review'],['rejected','Rejected']].map(([val, label]) => (
-            <button key={val} onClick={() => setFilter(val)}
-              style={{ padding:'6px 16px', borderRadius:'20px', border:'none', background:filter===val?'#1a1a1a':'white', color:filter===val?'white':'#666', fontSize:'13px', cursor:'pointer', fontWeight:filter===val?'600':'400', boxShadow:'0 1px 3px rgba(0,0,0,0.08)' }}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Files grid */}
-        {loading ? (
-          <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>Loading…</div>
-        ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:'14px' }}>
-            {filtered.map(file => {
-              const sc = STATUS_COLORS[file.status] || STATUS_COLORS.pending;
-              const tc = TYPE_COLORS[file.file_type] || '#6b7280';
-              const tl = typeLabel(file.file_type);
-              const dateStr = new Date(file.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-              return (
-                <div key={file.id} style={{ background:'white', borderRadius:'12px', padding:'18px', border:'1px solid #e5e5e5', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'12px' }}>
-                    <div style={{ width:'40px', height:'40px', borderRadius:'8px', background:`${tc}18`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:'700', color:tc }}>
-                      {tl}
-                    </div>
-                    <span style={{ fontSize:'11px', fontWeight:'600', padding:'3px 8px', borderRadius:'20px', background:sc.bg, color:sc.color }}>{sc.label}</span>
-                  </div>
-                  <div style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a', marginBottom:'4px', wordBreak:'break-all' }}>{file.file_name}</div>
-                  <div style={{ fontSize:'12px', color:'#aaa', marginBottom:'12px' }}>{fmtSize(file.file_size)} · Uploaded {dateStr}</div>
-                  {file.file_url && (
-                    <a href={file.file_url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize:'12px', color:'#1a1a1a', fontWeight:'500', textDecoration:'none' }}>
-                      View file →
-                    </a>
-                  )}
+          {loading ? (
+            <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>Loading your designs…</div>
+          ) : (
+            <>
+              {/* On File (approved) */}
+              <div style={{ marginBottom:'36px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px' }}>
+                  <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#10b981' }}/>
+                  <h2 style={{ margin:0, fontSize:'15px', fontWeight:'700', color:'#1a1a1a' }}>On File</h2>
+                  <span style={{ fontSize:'12px', color:'#9ca3af', background:'#f3f4f6', padding:'2px 8px', borderRadius:'20px' }}>{approved.length}</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>
-            <div style={{ fontSize:'36px', marginBottom:'12px' }}>🎨</div>
-            No files found. Upload your first artwork file above.
-          </div>
-        )}
+                {approved.length === 0 ? (
+                  <div style={{ background:'white', borderRadius:'12px', border:'1px dashed #d1d5db', padding:'32px', textAlign:'center' }}>
+                    <div style={{ fontSize:'28px', marginBottom:'8px' }}>📂</div>
+                    <div style={{ fontSize:'13px', color:'#9ca3af' }}>No approved designs yet. Submit your artwork above and we'll review it.</div>
+                  </div>
+                ) : (
+                  <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap:'12px' }}>
+                    {approved.map(f => <FileCard key={f.id} file={f} />)}
+                  </div>
+                )}
+              </div>
+
+              {/* Pending Review */}
+              {pending.length > 0 && (
+                <div style={{ marginBottom:'36px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px' }}>
+                    <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#f59e0b' }}/>
+                    <h2 style={{ margin:0, fontSize:'15px', fontWeight:'700', color:'#1a1a1a' }}>Pending Review</h2>
+                    <span style={{ fontSize:'12px', color:'#9ca3af', background:'#f3f4f6', padding:'2px 8px', borderRadius:'20px' }}>{pending.length}</span>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap:'12px' }}>
+                    {pending.map(f => <FileCard key={f.id} file={f} />)}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejected / Revision Needed */}
+              {rejected.length > 0 && (
+                <div style={{ marginBottom:'36px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px' }}>
+                    <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444' }}/>
+                    <h2 style={{ margin:0, fontSize:'15px', fontWeight:'700', color:'#1a1a1a' }}>Revision Needed</h2>
+                    <span style={{ fontSize:'12px', color:'#9ca3af', background:'#f3f4f6', padding:'2px 8px', borderRadius:'20px' }}>{rejected.length}</span>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap:'12px' }}>
+                    {rejected.map(f => <FileCard key={f.id} file={f} />)}
+                  </div>
+                </div>
+              )}
+
+              {files.length === 0 && (
+                <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>
+                  <div style={{ fontSize:'40px', marginBottom:'12px' }}>🎨</div>
+                  <div style={{ fontSize:'15px', fontWeight:'600', color:'#6b7280', marginBottom:'6px' }}>No artwork on file yet</div>
+                  <div style={{ fontSize:'13px', color:'#9ca3af' }}>Click "Submit Artwork" to send us your design files.</div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

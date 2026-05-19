@@ -164,15 +164,11 @@ export default function ArtworkPage() {
             </div>
           )}
 
-          {file.file_url ? (
+          {file.file_url && (
             <a href={file.file_url} target="_blank" rel="noopener noreferrer"
               style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'9px', background:'#1a1a1a', color:'white', borderRadius:'9px', textDecoration:'none', fontSize:'13px', fontWeight:'600', marginTop:'auto' }}>
               🔗 Open File
             </a>
-          ) : (
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'9px', background:'#f3f4f6', color:'#9ca3af', borderRadius:'9px', fontSize:'13px' }}>
-              No file URL
-            </div>
           )}
         </div>
       </div>

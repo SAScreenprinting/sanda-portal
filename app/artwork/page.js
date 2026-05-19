@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useMobile } from '@/hooks/useMobile';
@@ -55,18 +55,11 @@ const MOCK_FILES = [
 export default function ArtworkPage() {
   const router = useRouter();
   const supabase = createClient();
-  const fileRef = useRef();
-
   const [files, setFiles]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [userId, setUserId]       = useState(null);
   const [profile, setProfile]     = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showUpload, setShowUpload]   = useState(false);
-  const [dragging, setDragging]   = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadLabel, setUploadLabel] = useState('');
-  const [uploadMsg, setUploadMsg] = useState('');
   const isMobile = useMobile();
 
   const loadData = useCallback(async () => {
@@ -89,39 +82,6 @@ export default function ArtworkPage() {
   }, [supabase, router]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  async function uploadFiles(fileList) {
-    if (!userId || !fileList?.length) return;
-    setUploading(true);
-    setUploadMsg('');
-
-    for (const file of Array.from(fileList)) {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('clientId', userId);
-      if (uploadLabel.trim()) fd.append('label', uploadLabel.trim());
-
-      const res  = await fetch('/api/artwork/upload', { method:'POST', body:fd });
-      const data = await res.json();
-      if (!res.ok) {
-        setUploadMsg(`⚠ ${data.error || 'Upload failed'}`);
-        setUploading(false);
-        return;
-      }
-    }
-
-    setUploadMsg(`✓ ${fileList.length} file${fileList.length > 1 ? 's' : ''} submitted for review`);
-    setUploadLabel('');
-    setTimeout(() => { setUploadMsg(''); setShowUpload(false); }, 3500);
-    setUploading(false);
-    loadData();
-  }
-
-  function onDrop(e) {
-    e.preventDefault();
-    setDragging(false);
-    uploadFiles(e.dataTransfer.files);
-  }
 
   const approved = files.filter(f => f.status === 'approved');
   const pending  = files.filter(f => f.status === 'pending');
@@ -269,17 +229,11 @@ export default function ArtworkPage() {
         <div style={{ padding: isMobile ? '16px 14px' : '36px 32px', maxWidth:'900px' }}>
 
           {/* Header */}
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:'12px', marginBottom:'28px' }}>
-            <div>
-              <h1 style={{ fontSize:'26px', fontWeight:'800', color:'#1a1a1a', margin:'0 0 4px' }}>Design Vault</h1>
-              <p style={{ fontSize:'14px', color:'#9ca3af', margin:0 }}>
-                {approved.length} design{approved.length !== 1 ? 's' : ''} on file · {pending.length} pending review
-              </p>
-            </div>
-            <button onClick={() => setShowUpload(v => !v)}
-              style={{ padding:'10px 20px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:'600', cursor:'pointer' }}>
-              + Submit Artwork
-            </button>
+          <div style={{ marginBottom:'28px' }}>
+            <h1 style={{ fontSize:'26px', fontWeight:'800', color:'#1a1a1a', margin:'0 0 4px' }}>Design Vault</h1>
+            <p style={{ fontSize:'14px', color:'#9ca3af', margin:0 }}>
+              {approved.length} design{approved.length !== 1 ? 's' : ''} on file · {pending.length} pending review
+            </p>
           </div>
 
           {/* Info banner */}
@@ -288,65 +242,10 @@ export default function ArtworkPage() {
             <div>
               <div style={{ fontSize:'13px', fontWeight:'700', color:'#92400e', marginBottom:'2px' }}>Your Design Vault</div>
               <div style={{ fontSize:'12px', color:'#a16207', lineHeight:'1.5' }}>
-                These are the artwork files S&A Screen Printing has on file for your account. Approved designs are ready to use on your next order — just reference the design name when placing an order. Need to update a design? Submit a new file below.
+                These are the artwork files S&A Screen Printing has on file for your account. Approved designs are ready to use on your next order — just reference the design name when placing an order. Use the Design Studio to create or submit new designs.
               </div>
             </div>
           </div>
-
-          {/* Upload panel */}
-          {showUpload && (
-            <div style={{ background:'white', borderRadius:'14px', border:'1px solid #e5e7eb', padding:'24px', marginBottom:'28px', boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' }}>
-                <h3 style={{ margin:0, fontSize:'16px', fontWeight:'700', color:'#1a1a1a' }}>Submit New Artwork</h3>
-                <button onClick={() => setShowUpload(false)} style={{ background:'none', border:'none', color:'#9ca3af', fontSize:'20px', cursor:'pointer', lineHeight:1, padding:'2px' }}>✕</button>
-              </div>
-
-              <div style={{ marginBottom:'12px' }}>
-                <label style={{ fontSize:'12px', fontWeight:'600', color:'#6b7280', display:'block', marginBottom:'6px' }}>
-                  Design Name / Label <span style={{ color:'#9ca3af', fontWeight:'400' }}>(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Main Logo, Jersey Back, Sleeve Patch…"
-                  value={uploadLabel}
-                  onChange={e => setUploadLabel(e.target.value)}
-                  style={{ width:'100%', padding:'10px 12px', borderRadius:'8px', border:'1px solid #e5e7eb', fontSize:'13px', color:'#1a1a1a', boxSizing:'border-box', outline:'none' }}
-                />
-              </div>
-
-              <div
-                onDragEnter={() => setDragging(true)}
-                onDragLeave={() => setDragging(false)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={onDrop}
-                onClick={() => !uploading && fileRef.current?.click()}
-                style={{ border:`2px dashed ${dragging ? '#1a1a1a' : '#d1d5db'}`, borderRadius:'12px', padding:'32px', textAlign:'center', cursor:uploading?'default':'pointer', background:dragging?'rgba(0,0,0,0.03)':'#fafafa', transition:'all 0.15s' }}>
-                <input ref={fileRef} type="file" multiple accept=".svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp" style={{ display:'none' }} onChange={e => uploadFiles(e.target.files)}/>
-                {uploading ? (
-                  <div>
-                    <div style={{ fontSize:'28px', marginBottom:'8px' }}>⏳</div>
-                    <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>Uploading…</div>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize:'30px', marginBottom:'8px' }}>🎨</div>
-                    <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a', marginBottom:'4px' }}>Drop files here or click to browse</div>
-                    <div style={{ fontSize:'12px', color:'#9ca3af' }}>SVG · AI · PDF · PNG · JPG · EPS · Max 20MB per file</div>
-                  </div>
-                )}
-              </div>
-
-              {uploadMsg && (
-                <div style={{ marginTop:'12px', padding:'10px 14px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', background:uploadMsg.startsWith('✓')?'#d1fae5':'#fee2e2', color:uploadMsg.startsWith('✓')?'#065f46':'#991b1b' }}>
-                  {uploadMsg}
-                </div>
-              )}
-
-              <p style={{ fontSize:'11px', color:'#9ca3af', marginTop:'12px', marginBottom:0, lineHeight:'1.5' }}>
-                Files will be reviewed by S&A Screen Printing. Once approved, they'll appear in your Design Vault and can be referenced on future orders.
-              </p>
-            </div>
-          )}
 
           {loading ? (
             <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>Loading your designs…</div>
@@ -363,7 +262,7 @@ export default function ArtworkPage() {
                 {approved.length === 0 ? (
                   <div style={{ background:'white', borderRadius:'12px', border:'1px dashed #d1d5db', padding:'32px', textAlign:'center' }}>
                     <div style={{ fontSize:'28px', marginBottom:'8px' }}>📂</div>
-                    <div style={{ fontSize:'13px', color:'#9ca3af' }}>No approved designs yet. Submit your artwork above and we'll review it.</div>
+                    <div style={{ fontSize:'13px', color:'#9ca3af' }}>No approved designs yet. Use the Design Studio to submit your artwork and we'll add it here once approved.</div>
                   </div>
                 ) : (
                   <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap:'12px' }}>
@@ -404,7 +303,7 @@ export default function ArtworkPage() {
                 <div style={{ textAlign:'center', padding:'60px', color:'#aaa' }}>
                   <div style={{ fontSize:'40px', marginBottom:'12px' }}>🎨</div>
                   <div style={{ fontSize:'15px', fontWeight:'600', color:'#6b7280', marginBottom:'6px' }}>No artwork on file yet</div>
-                  <div style={{ fontSize:'13px', color:'#9ca3af' }}>Click "Submit Artwork" to send us your design files.</div>
+                  <div style={{ fontSize:'13px', color:'#9ca3af' }}>Use the Design Studio to get started — approved designs will appear here.</div>
                 </div>
               )}
             </>

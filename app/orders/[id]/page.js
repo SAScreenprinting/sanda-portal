@@ -1,15 +1,8 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-const themes = {
-  classic:  { sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white', main:'#F5F5F0', card:'white',    cardText:'#1a1a1a', cardSub:'#aaa', accent:'#1a1a1a', accentText:'white', logoFilter:'none' },
-  midnight: { sidebar:'#0f0f0f', sidebarText:'#666', sidebarActive:'white',   sidebarActiveTxt:'#0f0f0f', main:'#1a1a1a', card:'#242424', cardText:'white',   cardSub:'#555', accent:'white',   accentText:'#1a1a1a', logoFilter:'invert(1)' },
-  ocean:    { sidebar:'#0a1628', sidebarText:'#4a7fa5', sidebarActive:'#2196f3', sidebarActiveTxt:'white', main:'#0d1f35', card:'#0f2744', cardText:'white',   cardSub:'#4a7fa5', accent:'#2196f3', accentText:'white', logoFilter:'invert(1)' },
-  forest:   { sidebar:'#0f1f0f', sidebarText:'#4a7a4a', sidebarActive:'#4caf50', sidebarActiveTxt:'white', main:'#141f14', card:'#1a2e1a', cardText:'white',   cardSub:'#4a7a4a', accent:'#4caf50', accentText:'white', logoFilter:'invert(1)' },
-  sunset:   { sidebar:'#1a0f0a', sidebarText:'#a06040', sidebarActive:'#ff6b35', sidebarActiveTxt:'white', main:'#1f1510', card:'#2a1f15', cardText:'white',   cardSub:'#a06040', accent:'#ff6b35', accentText:'white', logoFilter:'invert(1)' },
-  lavender: { sidebar:'#f0eef8', sidebarText:'#8878c3', sidebarActive:'#7c6bc4', sidebarActiveTxt:'white', main:'#f5f3ff', card:'white',    cardText:'#2d2460', cardSub:'#9b8fd4', accent:'#7c6bc4', accentText:'white', logoFilter:'none' },
-}
+'use client';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
+import { useMobile } from '@/hooks/useMobile';
 
 const NAV = [
   { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
@@ -19,332 +12,365 @@ const NAV = [
   { id:'billing',   label:'Billing',         icon:'◎', href:'/billing' },
   { id:'messages',  label:'Messages',        icon:'✉', href:'/messages' },
   { id:'settings',  label:'Settings',        icon:'⚙', href:'/settings' },
-]
+];
 
 const TRACK_STEPS = [
-  { key:'art_approved',   label:'Art Approved',   icon:'🎨' },
-  { key:'in_production',  label:'In Production',  icon:'⚙️' },
-  { key:'quality_check',  label:'Quality Check',  icon:'✅' },
-  { key:'shipped',        label:'Shipped',         icon:'📦' },
-]
+  { key:'awaiting_artwork', label:'Awaiting Artwork', icon:'🎨' },
+  { key:'art_approved',     label:'Art Approved',     icon:'✅' },
+  { key:'in_production',    label:'In Production',    icon:'⚙️' },
+  { key:'shipped',          label:'Shipped',          icon:'📦' },
+];
 
-const MOCK_ORDER = {
-  id: '#1051',
-  product: 'TEE-WHT-SM-SCR-FC',
-  qty: 24,
-  description: '24x T-Shirts, Front Print',
-  date: 'May 10, 2026',
-  status: 'In Production',
-  cost: '$252.00',
-  shipping: '$18.00',
-  total: '$270.00',
-  address: '123 Riverside Dr, Newark, NJ 07101',
-  tracking: null,
-  carrier: null,
-  notes: 'Rush order — needed by May 17.',
-  // Tracking dates
-  est_art_approved_at: 'May 11',
-  est_in_production_at: 'May 12',
-  est_quality_check_at: 'May 15',
-  est_shipped_at: 'May 16',
-  art_approved_at: 'May 11',
-  in_production_at: 'May 12',
-  quality_check_at: null,
-  shipped_at: null,
-  // Proof
-  proof: {
-    id: 1,
-    version: 1,
-    status: 'Pending',
-    file_url: null,
-    thumbnail_url: null,
-  }
-}
-
-const skuDecoder = (sku) => {
-  if (!sku) return {}
-  const parts = sku.split('-')
-  const product = { TEE:'T-Shirt', HOD:'Hoodie', CRW:'Crewneck', TNK:'Tank Top', LSL:'Long Sleeve', HAT:'Hat/Cap', TOT:'Tote Bag', YTH:'Youth Tee' }
-  const color   = { BLK:'Black', WHT:'White', NVY:'Navy', GRY:'Gray', HGR:'Heather Gray', RED:'Red', NAT:'Natural' }
-  const size    = { XS:'XS', SM:'Small', MD:'Medium', LG:'Large', XL:'XL', '2X':'2XL', '3X':'3XL', '4X':'4XL' }
-  const method  = { DTG:'Direct to Garment', DTF:'Direct to Film', SCR:'Screen Print', EMB:'Embroidery', SUB:'Sublimation', HTV:'Heat Transfer' }
-  const location= { FC:'Front Chest', BC:'Back Center', LC:'Left Chest', SL:'Sleeve', NK:'Neck Label', FCBC:'Front + Back' }
-  return {
-    product:  product[parts[0]]  || parts[0],
-    color:    color[parts[1]]    || parts[1],
-    size:     size[parts[2]]     || parts[2],
-    method:   method[parts[3]]   || parts[3],
-    location: location[parts[4]] || parts[4],
-  }
-}
+// Mock detail data for demo orders not yet in Supabase
+const MOCK_ORDERS = {
+  '1051': { order_number:'#1051', description:'24x T-Shirts, Front Print',    status:'In Production',  total_amount:342.00, created_at:'2026-05-10', notes:'Rush order — needed by May 17.' },
+  '1049': { order_number:'#1049', description:'36x Jerseys, Name+Number',     status:'Awaiting Artwork',total_amount:540.00, created_at:'2026-05-07', notes:'' },
+  '1048': { order_number:'#1048', description:'60x T-Shirts, 2-color print',  status:'Shipped',        total_amount:480.00, created_at:'2026-05-03', notes:'' },
+  '1042': { order_number:'#1042', description:'100x T-Shirts, 3-color print', status:'Delivered',      total_amount:950.00, created_at:'2026-04-20', notes:'' },
+  '1038': { order_number:'#1038', description:'24x Hoodies, Full Back',       status:'Delivered',      total_amount:480.00, created_at:'2026-04-05', notes:'' },
+};
 
 function getStepIndex(status) {
-  if (status === 'Shipped' || status === 'Delivered') return 4
-  if (status === 'Quality Check') return 3
-  if (status === 'In Production') return 2
-  if (status === 'Art Approved')  return 1
-  return 0
+  if (!status) return 0;
+  const s = status.toLowerCase();
+  if (s.includes('deliver') || s.includes('ship')) return 4;
+  if (s.includes('production'))  return 3;
+  if (s.includes('art approved') || s.includes('quality')) return 2;
+  return 1; // awaiting artwork or anything else
 }
 
+const STATUS_COLOR = {
+  'Awaiting Artwork': '#8b5cf6',
+  'Art Approved':     '#3b82f6',
+  'In Production':    '#f59e0b',
+  'Quality Check':    '#f97316',
+  'Shipped':          '#10b981',
+  'Delivered':        '#6b7280',
+};
+
 export default function OrderDetail() {
-  const router = useRouter()
-  const [themeName, setThemeName] = useState('classic')
-  const [order, setOrder] = useState(MOCK_ORDER)
-  const [proofNote, setProofNote] = useState('')
-  const [proofAction, setProofAction] = useState(null) // 'approved' | 'rejected'
-  const [reorderMsg, setReorderMsg] = useState('')
+  const router  = useRouter();
+  const params  = useParams();
+  const id      = params?.id;
+  const supabase = createClient();
+  const fileRef  = useRef();
+  const isMobile = useMobile();
+
+  const [order, setOrder]         = useState(null);
+  const [profile, setProfile]     = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [userId, setUserId]       = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [reorderMsg, setReorderMsg]   = useState('');
+  const [themeName, setThemeName]     = useState('classic');
+
+  // Artwork upload state
+  const [artUploading, setArtUploading] = useState(false);
+  const [artLabel, setArtLabel]         = useState('');
+  const [artMsg, setArtMsg]             = useState('');
+  const [artFiles, setArtFiles]         = useState([]);
+  const [dragging, setDragging]         = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('portal-theme')
-    if (saved && themes[saved]) setThemeName(saved)
-  }, [])
+    const saved = localStorage.getItem('portal-theme');
+    if (saved) setThemeName(saved);
+  }, []);
 
-  const t = themes[themeName]
-  const decoded = skuDecoder(order.product)
-  const stepIdx = getStepIndex(order.status)
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/'); return; }
+      setUserId(user.id);
 
-  function handleProof(action) {
-    setProofAction(action)
-    setOrder(o => ({ ...o, proof: { ...o.proof, status: action === 'approved' ? 'Approved' : 'Rejected' } }))
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('business_name, contact_name')
+        .eq('id', user.id)
+        .single();
+      if (prof) setProfile(prof);
+
+      // Try to fetch real order from Supabase by order_number
+      const { data: dbOrder } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('client_id', user.id)
+        .eq('order_number', `#${id}`)
+        .single();
+
+      if (dbOrder) {
+        const items = dbOrder.order_items || [];
+        const desc  = items.length
+          ? `${items[0].quantity}x ${items[0].description}${items[0].decoration ? ', ' + items[0].decoration : ''}`
+          : 'Order items';
+        setOrder({ ...dbOrder, description: desc, isMock: false });
+      } else if (MOCK_ORDERS[id]) {
+        setOrder({ ...MOCK_ORDERS[id], isMock: true });
+      } else {
+        setOrder(null);
+      }
+
+      setLoading(false);
+    }
+    if (id) load();
+  }, [id]);
+
+  async function uploadArtwork(fileList) {
+    if (!userId || !fileList?.length) return;
+    setArtUploading(true);
+    setArtMsg('');
+
+    for (const file of Array.from(fileList)) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('clientId', userId);
+      if (artLabel.trim()) fd.append('label', artLabel.trim());
+      if (order?.id && !order.isMock) fd.append('orderId', order.id);
+
+      const res  = await fetch('/api/artwork/upload', { method:'POST', body:fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setArtMsg(`⚠ ${data.error || 'Upload failed'}`);
+        setArtUploading(false);
+        return;
+      }
+    }
+
+    setArtMsg(`✓ ${fileList.length} file${fileList.length > 1 ? 's' : ''} submitted — S&A will review and confirm.`);
+    setArtLabel('');
+    setArtFiles([]);
+    setArtUploading(false);
+    setTimeout(() => setArtMsg(''), 5000);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    uploadArtwork(e.dataTransfer.files);
   }
 
   function handleReorder() {
-    setReorderMsg('✓ Reorder request sent! S&A will reach out to confirm details.')
-    setTimeout(() => setReorderMsg(''), 4000)
+    setReorderMsg('✓ Reorder request sent! S&A will reach out to confirm details.');
+    setTimeout(() => setReorderMsg(''), 4000);
   }
 
-  const completedSteps = [
-    order.art_approved_at,
-    order.in_production_at,
-    order.quality_check_at,
-    order.shipped_at,
-  ]
+  const displayName = profile?.business_name || profile?.contact_name || 'Client';
+  const initial     = displayName[0]?.toUpperCase() || '?';
+
+  // Theme (basic, keep classic only for simplicity)
+  const t = {
+    sidebar:'#EFEDE8', sidebarText:'#666', sidebarActive:'#1a1a1a', sidebarActiveTxt:'white',
+    main:'#f5f5f0', card:'white', cardText:'#1a1a1a', cardSub:'#9ca3af', accent:'#1a1a1a', accentText:'white',
+  };
+
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif', color:'#aaa', fontSize:'14px' }}>
+      Loading order…
+    </div>
+  );
+
+  if (!order) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif', flexDirection:'column', gap:'12px' }}>
+      <div style={{ fontSize:'32px' }}>📦</div>
+      <div style={{ fontSize:'16px', fontWeight:'600', color:'#374151' }}>Order not found</div>
+      <a href="/orders" style={{ fontSize:'13px', color:'#6b7280', textDecoration:'none' }}>← Back to orders</a>
+    </div>
+  );
+
+  const stepIdx    = getStepIndex(order.status);
+  const statusColor = STATUS_COLOR[order.status] || '#6b7280';
+  const isAwaiting  = order.status === 'Awaiting Artwork';
+  const dateStr     = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:t.main, fontFamily:'Inter, sans-serif' }}>
 
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between' }}>
+      <div style={{ width:'220px', background:t.sidebar, display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'4px' }}>✕</button>
+        )}
         <div>
           <div style={{ marginBottom:'32px' }}>
-            <img src="/Logoblack.png" alt="S&A" style={{ width:'110px', filter:t.logoFilter }}/>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'110px' }}/>
           </div>
           <div style={{ marginBottom:'36px' }}>
-            <div style={{ width:'48px', height:'48px', borderRadius:'50%', background:t.accent, display:'flex', alignItems:'center', justifyContent:'center', color:t.accentText, fontWeight:'700', fontSize:'18px', marginBottom:'12px' }}>R</div>
-            <div style={{ fontSize:'14px', fontWeight:'600', color:t.cardText }}>Riverside Youth</div>
-            <div style={{ fontSize:'12px', color:t.cardSub }}>Sports</div>
+            <div style={{ width:'48px', height:'48px', borderRadius:'50%', background:'#1a1a1a', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'700', fontSize:'18px', marginBottom:'12px' }}>{initial}</div>
+            <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>{displayName}</div>
           </div>
           <nav style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
             {NAV.map(item => {
-              const active = item.id === 'orders'
+              const isActive = item.id === 'orders';
               return (
                 <a key={item.id} href={item.href}
-                  style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'10px', textDecoration:'none', background:active?t.sidebarActive:'transparent', color:active?t.sidebarActiveTxt:t.sidebarText, fontSize:'13px', fontWeight:active?'600':'400' }}>
+                  style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'10px', textDecoration:'none', background:isActive?'#1a1a1a':'transparent', color:isActive?'white':'#666', fontSize:'13px', fontWeight:isActive?'600':'400' }}>
                   <span style={{ fontSize:'16px' }}>{item.icon}</span>
                   {item.label}
                 </a>
-              )
+              );
             })}
           </nav>
         </div>
-        <a href="/" style={{ display:'block', padding:'8px 12px', color:t.sidebarText, fontSize:'12px', textDecoration:'none', textAlign:'center' }}>Sign Out</a>
+        <a href="/" onClick={async e => { e.preventDefault(); await supabase.auth.signOut(); router.push('/'); }}
+          style={{ display:'block', padding:'8px 12px', color:'#666', fontSize:'12px', textDecoration:'none', textAlign:'center' }}>
+          Sign Out
+        </a>
       </div>
 
       {/* Main */}
-      <div style={{ marginLeft:'220px', flex:1, padding:'36px 40px', maxWidth:'1100px' }}>
-
-        {/* Header */}
-        <div style={{ marginBottom:'28px' }}>
-          <a href="/orders" style={{ fontSize:'13px', color:t.cardSub, textDecoration:'none', display:'inline-block', marginBottom:'10px' }}>← Back to orders</a>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-            <div>
-              <h1 style={{ fontSize:'28px', fontWeight:'800', color:t.cardText, margin:'0 0 4px' }}>Order {order.id}</h1>
-              <p style={{ fontSize:'13px', color:t.cardSub, margin:0 }}>Placed {order.date} · {order.description}</p>
-            </div>
-            <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
-              {/* Reorder button */}
-              <button onClick={handleReorder}
-                style={{ padding:'9px 18px', background:'transparent', border:`1px solid ${t.accent}`, color:t.accent, borderRadius:'10px', fontSize:'13px', fontWeight:'600', cursor:'pointer' }}>
-                🔄 Reorder
-              </button>
-              <span style={{ fontSize:'13px', fontWeight:'600', padding:'8px 16px', borderRadius:'20px', background:`${t.accent}15`, color:t.accent }}>
-                {order.status}
-              </span>
-            </div>
-          </div>
-          {reorderMsg && (
-            <div style={{ marginTop:'12px', padding:'10px 16px', background:'#d1fae5', border:'1px solid #6ee7b7', borderRadius:'10px', fontSize:'13px', color:'#065f46' }}>
-              {reorderMsg}
-            </div>
-          )}
-        </div>
-
-        {/* ── TRACKING PROGRESS BAR ── */}
-        <div style={{ background:t.card, borderRadius:'16px', padding:'28px', marginBottom:'20px', border:`1px solid ${t.cardSub}20` }}>
-          <h2 style={{ fontSize:'15px', fontWeight:'700', color:t.cardText, margin:'0 0 24px' }}>Order Progress</h2>
-          <div style={{ display:'flex', alignItems:'flex-start', position:'relative' }}>
-            {/* connecting line */}
-            <div style={{ position:'absolute', top:'18px', left:'18px', right:'18px', height:'3px', background:`${t.cardSub}25`, zIndex:0 }}/>
-            <div style={{ position:'absolute', top:'18px', left:'18px', height:'3px', background:t.accent, zIndex:1, width:`${Math.min(100, (stepIdx / 4) * 100)}%`, transition:'width 0.6s ease' }}/>
-            {TRACK_STEPS.map((step, i) => {
-              const done    = i < stepIdx
-              const current = i === stepIdx - 1
-              const estDate = [order.est_art_approved_at, order.est_in_production_at, order.est_quality_check_at, order.est_shipped_at][i]
-              const actDate = completedSteps[i]
-              return (
-                <div key={step.key} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', position:'relative', zIndex:2 }}>
-                  <div style={{ width:'36px', height:'36px', borderRadius:'50%', background: done||current ? t.accent : `${t.cardSub}25`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', marginBottom:'10px', border:`3px solid ${done||current ? t.accent : t.card}`, boxShadow: current ? `0 0 0 4px ${t.accent}30` : 'none', transition:'all 0.3s' }}>
-                    {done || current ? '✓' : step.icon}
-                  </div>
-                  <div style={{ textAlign:'center' }}>
-                    <div style={{ fontSize:'12px', fontWeight:'600', color:done||current ? t.cardText : t.cardSub, marginBottom:'3px' }}>{step.label}</div>
-                    {actDate ? (
-                      <div style={{ fontSize:'11px', color:t.accent, fontWeight:'500' }}>✓ {actDate}</div>
-                    ) : (
-                      <div style={{ fontSize:'11px', color:t.cardSub }}>Est. {estDate}</div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          {order.tracking && (
-            <div style={{ marginTop:'20px', padding:'12px 16px', background:'#d1fae5', borderRadius:'10px', display:'flex', gap:'12px', alignItems:'center' }}>
-              <span style={{ fontSize:'13px', fontWeight:'600', color:'#065f46' }}>Tracking:</span>
-              <span style={{ fontSize:'13px', fontFamily:'monospace', color:'#065f46' }}>{order.tracking}</span>
-              {order.carrier && <span style={{ fontSize:'12px', color:'#6ee7b7' }}>({order.carrier})</span>}
-            </div>
-          )}
-        </div>
-
-        {/* ── PROOF APPROVAL ── */}
-        {order.proof && (
-          <div style={{ background:t.card, borderRadius:'16px', padding:'24px', marginBottom:'20px', border:`2px solid ${order.proof.status === 'Pending' ? '#f59e0b' : order.proof.status === 'Approved' ? '#10b981' : '#ef4444'}40` }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' }}>
-              <div>
-                <h2 style={{ fontSize:'15px', fontWeight:'700', color:t.cardText, margin:'0 0 3px' }}>Proof Review — Version {order.proof.version}</h2>
-                <p style={{ fontSize:'13px', color:t.cardSub, margin:0 }}>Review and approve your print proof before we go to production.</p>
-              </div>
-              <span style={{ fontSize:'12px', fontWeight:'700', padding:'4px 12px', borderRadius:'20px',
-                background: order.proof.status === 'Approved' ? '#d1fae5' : order.proof.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
-                color:      order.proof.status === 'Approved' ? '#065f46' : order.proof.status === 'Rejected' ? '#991b1b' : '#92400e'
-              }}>{order.proof.status}</span>
-            </div>
-
-            {/* Proof image placeholder */}
-            <div style={{ background:`${t.cardSub}10`, borderRadius:'12px', padding:'40px', textAlign:'center', marginBottom:'16px', border:`1px dashed ${t.cardSub}40` }}>
-              {order.proof.thumbnail_url ? (
-                <img src={order.proof.thumbnail_url} alt="Proof" style={{ maxWidth:'100%', maxHeight:'300px', objectFit:'contain', borderRadius:'8px' }}/>
-              ) : (
-                <div>
-                  <div style={{ fontSize:'40px', marginBottom:'10px' }}>🖨️</div>
-                  <p style={{ fontSize:'14px', fontWeight:'600', color:t.cardText, margin:'0 0 4px' }}>Proof will appear here</p>
-                  <p style={{ fontSize:'13px', color:t.cardSub, margin:0 }}>S&A will upload your print proof for review before production begins.</p>
-                </div>
-              )}
-            </div>
-
-            {order.proof.status === 'Pending' && (
-              <>
-                <div style={{ marginBottom:'12px' }}>
-                  <label style={{ display:'block', fontSize:'11px', fontWeight:'600', color:t.cardSub, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px' }}>Note (optional)</label>
-                  <textarea value={proofNote} onChange={e => setProofNote(e.target.value)}
-                    placeholder="Any changes or comments before we print?"
-                    rows={2}
-                    style={{ width:'100%', background:`${t.cardSub}10`, border:`1px solid ${t.cardSub}30`, borderRadius:'8px', padding:'10px 12px', fontSize:'13px', color:t.cardText, outline:'none', resize:'vertical', fontFamily:'Inter, sans-serif' }}/>
-                </div>
-                <div style={{ display:'flex', gap:'10px' }}>
-                  <button onClick={() => handleProof('approved')}
-                    style={{ flex:1, padding:'12px', background:'#10b981', color:'white', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:'700', cursor:'pointer' }}>
-                    ✓ Approve Proof — Start Production
-                  </button>
-                  <button onClick={() => handleProof('rejected')}
-                    style={{ padding:'12px 20px', background:'#fee2e2', color:'#991b1b', border:'1px solid #fca5a5', borderRadius:'10px', fontSize:'13px', fontWeight:'700', cursor:'pointer' }}>
-                    ✗ Request Changes
-                  </button>
-                </div>
-              </>
-            )}
-            {proofAction === 'approved' && (
-              <div style={{ padding:'12px 16px', background:'#d1fae5', borderRadius:'10px', fontSize:'13px', color:'#065f46', fontWeight:'500' }}>
-                ✓ Proof approved! We'll begin production shortly.
-              </div>
-            )}
-            {proofAction === 'rejected' && (
-              <div style={{ padding:'12px 16px', background:'#fee2e2', borderRadius:'10px', fontSize:'13px', color:'#991b1b', fontWeight:'500' }}>
-                Changes requested. S&A will send a revised proof soon.
-              </div>
-            )}
+      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
+        {isMobile && (
+          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:'#EFEDE8', borderBottom:'1px solid rgba(0,0,0,0.08)', display:'flex', alignItems:'center', gap:'12px' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'2px 4px' }}>☰</button>
+            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
           </div>
         )}
 
-        {/* Main grid */}
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:'20px' }}>
-          <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+        <div style={{ padding: isMobile ? '16px 14px' : '36px 40px', maxWidth:'860px' }}>
 
-            {/* Product details */}
-            <div style={{ background:t.card, borderRadius:'16px', padding:'24px', border:`1px solid ${t.cardSub}20` }}>
-              <h2 style={{ fontSize:'15px', fontWeight:'700', color:t.cardText, margin:'0 0 16px' }}>Product Details</h2>
-              <div style={{ background:`${t.cardSub}08`, borderRadius:'10px', padding:'14px', marginBottom:'14px' }}>
-                <p style={{ fontSize:'11px', fontWeight:'600', color:t.cardSub, textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 6px' }}>SKU</p>
-                <p style={{ fontSize:'15px', fontWeight:'700', color:t.accent, fontFamily:'monospace', margin:'0 0 14px' }}>{order.product}</p>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-                  {[
-                    { label:'Product',  value:decoded.product },
-                    { label:'Color',    value:decoded.color },
-                    { label:'Size',     value:decoded.size },
-                    { label:'Method',   value:decoded.method },
-                    { label:'Location', value:decoded.location },
-                    { label:'Quantity', value:order.qty },
-                  ].map(item => (
-                    <div key={item.label} style={{ background:t.card, borderRadius:'8px', padding:'10px 12px' }}>
-                      <p style={{ fontSize:'10px', color:t.cardSub, textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 2px' }}>{item.label}</p>
-                      <p style={{ fontSize:'13px', fontWeight:'600', color:t.cardText, margin:0 }}>{item.value}</p>
-                    </div>
-                  ))}
-                </div>
+          {/* Header */}
+          <div style={{ marginBottom:'28px' }}>
+            <a href="/orders" style={{ fontSize:'13px', color:'#9ca3af', textDecoration:'none', display:'inline-block', marginBottom:'10px' }}>← Back to orders</a>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+              <div>
+                <h1 style={{ fontSize:'26px', fontWeight:'800', color:'#1a1a1a', margin:'0 0 4px' }}>Order {order.order_number}</h1>
+                <p style={{ fontSize:'13px', color:'#9ca3af', margin:0 }}>Placed {dateStr} · {order.description}</p>
               </div>
-              {order.notes && (
-                <div style={{ background:'#fffbeb', borderRadius:'10px', padding:'12px 14px', border:'1px solid #fde68a' }}>
-                  <p style={{ fontSize:'11px', fontWeight:'600', color:'#92400e', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 3px' }}>Order Note</p>
-                  <p style={{ fontSize:'13px', color:'#b45309', margin:0 }}>{order.notes}</p>
-                </div>
-              )}
+              <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
+                <button onClick={handleReorder}
+                  style={{ padding:'8px 16px', background:'transparent', border:'1px solid #d1d5db', color:'#374151', borderRadius:'10px', fontSize:'13px', fontWeight:'600', cursor:'pointer' }}>
+                  🔄 Reorder
+                </button>
+                <span style={{ fontSize:'13px', fontWeight:'700', padding:'8px 16px', borderRadius:'20px', background:`${statusColor}18`, color:statusColor }}>
+                  {order.status}
+                </span>
+              </div>
             </div>
+            {reorderMsg && (
+              <div style={{ marginTop:'12px', padding:'10px 16px', background:'#d1fae5', border:'1px solid #6ee7b7', borderRadius:'10px', fontSize:'13px', color:'#065f46' }}>
+                {reorderMsg}
+              </div>
+            )}
+          </div>
 
-            {/* Shipping */}
-            <div style={{ background:t.card, borderRadius:'16px', padding:'24px', border:`1px solid ${t.cardSub}20` }}>
-              <h2 style={{ fontSize:'15px', fontWeight:'700', color:t.cardText, margin:'0 0 12px' }}>Ship To</h2>
-              <p style={{ fontSize:'13px', color:t.cardSub, margin:0 }}>{order.address}</p>
+          {/* Progress tracker */}
+          <div style={{ background:'white', borderRadius:'16px', padding:'28px', marginBottom:'20px', border:'1px solid #e5e7eb' }}>
+            <h2 style={{ fontSize:'15px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 24px' }}>Order Progress</h2>
+            <div style={{ display:'flex', alignItems:'flex-start', position:'relative' }}>
+              <div style={{ position:'absolute', top:'18px', left:'18px', right:'18px', height:'3px', background:'#f3f4f6', zIndex:0 }}/>
+              <div style={{ position:'absolute', top:'18px', left:'18px', height:'3px', background:'#1a1a1a', zIndex:1, width:`${Math.min(100, ((stepIdx - 1) / (TRACK_STEPS.length - 1)) * 100)}%`, transition:'width 0.6s ease' }}/>
+              {TRACK_STEPS.map((step, i) => {
+                const done    = i < stepIdx - 1;
+                const current = i === stepIdx - 1;
+                return (
+                  <div key={step.key} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', position:'relative', zIndex:2 }}>
+                    <div style={{ width:'36px', height:'36px', borderRadius:'50%', background: done ? '#1a1a1a' : current ? statusColor : '#f3f4f6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'15px', marginBottom:'10px', border:`3px solid ${done ? '#1a1a1a' : current ? statusColor : '#e5e7eb'}`, boxShadow: current ? `0 0 0 4px ${statusColor}25` : 'none', transition:'all 0.3s' }}>
+                      {done ? <span style={{ color:'white', fontSize:'13px', fontWeight:'700' }}>✓</span> : <span>{step.icon}</span>}
+                    </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:'11px', fontWeight:'600', color: done || current ? '#1a1a1a' : '#9ca3af' }}>{step.label}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Right column */}
-          <div>
-            <div style={{ background:t.card, borderRadius:'16px', padding:'24px', border:`1px solid ${t.cardSub}20` }}>
-              <h2 style={{ fontSize:'15px', fontWeight:'700', color:t.cardText, margin:'0 0 16px' }}>Order Summary</h2>
-              {[
-                { label:'Product cost', value:order.cost },
-                { label:'Shipping',     value:order.shipping },
-              ].map(row => (
-                <div key={row.label} style={{ display:'flex', justifyContent:'space-between', marginBottom:'10px' }}>
-                  <span style={{ fontSize:'13px', color:t.cardSub }}>{row.label}</span>
-                  <span style={{ fontSize:'13px', color:t.cardText, fontWeight:'500' }}>{row.value}</span>
-                </div>
-              ))}
-              <div style={{ height:'1px', background:`${t.cardSub}20`, margin:'12px 0' }}/>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'20px' }}>
-                <span style={{ fontSize:'14px', fontWeight:'700', color:t.cardText }}>Total</span>
-                <span style={{ fontSize:'14px', fontWeight:'700', color:t.cardText }}>{order.total}</span>
+          {/* Artwork upload — only when Awaiting Artwork */}
+          {isAwaiting && (
+            <div style={{ background:'white', borderRadius:'16px', padding:'24px', marginBottom:'20px', border:'2px solid #8b5cf630' }}>
+              <div style={{ display:'flex', align:'center', gap:'10px', marginBottom:'6px' }}>
+                <span style={{ fontSize:'18px' }}>🎨</span>
+                <h2 style={{ fontSize:'15px', fontWeight:'700', color:'#1a1a1a', margin:0 }}>Upload Your Artwork</h2>
               </div>
-              <button onClick={handleReorder}
-                style={{ width:'100%', padding:'11px', background:`${t.accent}15`, color:t.accent, border:`1px solid ${t.accent}40`, borderRadius:'10px', fontSize:'13px', fontWeight:'700', cursor:'pointer' }}>
-                🔄 Reorder This
-              </button>
+              <p style={{ fontSize:'13px', color:'#9ca3af', margin:'0 0 18px 28px' }}>
+                This order is waiting on your artwork. Upload your design files below and S&A will review and confirm before production starts.
+              </p>
+
+              <div style={{ marginBottom:'12px' }}>
+                <label style={{ fontSize:'12px', fontWeight:'600', color:'#6b7280', display:'block', marginBottom:'5px' }}>Design Label <span style={{ fontWeight:'400', color:'#9ca3af' }}>(optional)</span></label>
+                <input
+                  type="text"
+                  value={artLabel}
+                  onChange={e => setArtLabel(e.target.value)}
+                  placeholder="e.g. Front Logo, Jersey Back…"
+                  style={{ width:'100%', padding:'9px 12px', border:'1px solid #e5e7eb', borderRadius:'8px', fontSize:'13px', color:'#1a1a1a', boxSizing:'border-box', outline:'none', fontFamily:'inherit' }}
+                />
+              </div>
+
+              <div
+                onDragEnter={() => setDragging(true)}
+                onDragLeave={() => setDragging(false)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => !artUploading && fileRef.current?.click()}
+                style={{ border:`2px dashed ${dragging ? '#8b5cf6' : '#d1d5db'}`, borderRadius:'12px', padding:'28px', textAlign:'center', cursor: artUploading ? 'default' : 'pointer', background: dragging ? '#f5f3ff' : '#fafafa', transition:'all 0.15s' }}>
+                <input ref={fileRef} type="file" multiple accept=".svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp" style={{ display:'none' }} onChange={e => uploadArtwork(e.target.files)}/>
+                {artUploading ? (
+                  <div>
+                    <div style={{ fontSize:'26px', marginBottom:'6px' }}>⏳</div>
+                    <div style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a' }}>Uploading…</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize:'28px', marginBottom:'8px' }}>🎨</div>
+                    <div style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a', marginBottom:'3px' }}>Drop files here or click to browse</div>
+                    <div style={{ fontSize:'12px', color:'#9ca3af' }}>SVG · AI · PDF · PNG · JPG · EPS · Max 20MB</div>
+                  </div>
+                )}
+              </div>
+
+              {artMsg && (
+                <div style={{ marginTop:'12px', padding:'10px 14px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', background: artMsg.startsWith('✓') ? '#d1fae5' : '#fee2e2', color: artMsg.startsWith('✓') ? '#065f46' : '#991b1b' }}>
+                  {artMsg}
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Order details grid */}
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap:'16px' }}>
+
+            {/* Left: details */}
+            <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+              <div style={{ background:'white', borderRadius:'16px', padding:'24px', border:'1px solid #e5e7eb' }}>
+                <h2 style={{ fontSize:'15px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 14px' }}>Order Details</h2>
+                <div style={{ fontSize:'14px', color:'#374151', marginBottom:'10px' }}>{order.description}</div>
+                {order.notes ? (
+                  <div style={{ background:'#fffbeb', borderRadius:'10px', padding:'12px 14px', border:'1px solid #fde68a' }}>
+                    <p style={{ fontSize:'11px', fontWeight:'600', color:'#92400e', textTransform:'uppercase', letterSpacing:'0.05em', margin:'0 0 3px' }}>Order Note</p>
+                    <p style={{ fontSize:'13px', color:'#b45309', margin:0 }}>{order.notes}</p>
+                  </div>
+                ) : (
+                  <div style={{ fontSize:'13px', color:'#9ca3af' }}>No special notes.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: summary */}
+            <div>
+              <div style={{ background:'white', borderRadius:'16px', padding:'24px', border:'1px solid #e5e7eb' }}>
+                <h2 style={{ fontSize:'15px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 16px' }}>Order Summary</h2>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
+                  <span style={{ fontSize:'13px', color:'#9ca3af' }}>Order total</span>
+                  <span style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a' }}>
+                    {order.total_amount ? `$${parseFloat(order.total_amount).toFixed(2)}` : '—'}
+                  </span>
+                </div>
+                <div style={{ height:'1px', background:'#f3f4f6', margin:'12px 0' }}/>
+                <button onClick={handleReorder}
+                  style={{ width:'100%', padding:'10px', background:'#f3f4f6', color:'#374151', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:'600', cursor:'pointer' }}>
+                  🔄 Reorder This
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

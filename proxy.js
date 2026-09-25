@@ -26,6 +26,15 @@ export async function proxy(request) {
 
   const { pathname } = request.nextUrl
 
+  // Email links (password reset, invites) can land on the home page with a ?code if the
+  // project's redirect settings send them there. Finish the sign-in instead of dropping it.
+  if (pathname === '/' && request.nextUrl.searchParams.get('code')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    url.searchParams.set('next', '/settings?reset=true')
+    return NextResponse.redirect(url)
+  }
+
   // Public routes — anyone can access
   const publicRoutes = ['/', '/auth/callback']
 

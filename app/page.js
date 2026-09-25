@@ -42,7 +42,7 @@ export default function Home() {
     setResetMsg('')
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/settings?reset=true`,
+      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/settings?reset=true')}`,
     })
     if (error) setResetMsg('Something went wrong. Check the email address and try again.')
     else setResetMsg('Check your email — a reset link is on its way.')

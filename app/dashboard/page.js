@@ -67,6 +67,7 @@ export default function DashboardPage() {
 
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [designs, setDesigns] = useState([]);
   const [stats, setStats] = useState({ active: 0, pendingArt: 0, totalOrders: 0, balanceDue: 0, balanceDueDate: '' });
   const [loading, setLoading] = useState(true);
   const [onboardingStep, setOnboardingStep] = useState(-1);
@@ -116,6 +117,10 @@ export default function DashboardPage() {
       ? new Date(invoices[0].due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 
     setStats({ active, pendingArt, totalOrders: (allOrders || []).length, balanceDue, balanceDueDate });
+    try {
+      const dres = await fetch('/api/designs/list?limit=4', { cache: 'no-store' });
+      if (dres.ok) setDesigns((await dres.json()).designs || []);
+    } catch {}
     setLoading(false);
   }, [supabase, router]);
 
@@ -155,7 +160,7 @@ export default function DashboardPage() {
   const actions = [
     { label: 'Upload Artwork', sub: 'Add files to your orders', icon: 'artwork', href: '/artwork' },
     { label: 'Design Studio', sub: 'Build a design on real garments', icon: 'studio', href: '/studio' },
-    { label: 'View Invoices', sub: 'Billing and payment status', icon: 'billing', href: '/billing' },
+    { label: 'Designs', sub: 'Everything you have created', icon: 'designs', href: '/designs' },
   ];
 
   return (
@@ -233,6 +238,29 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {designs.length > 0 && (
+        <section className="sp-card sp-in" style={{ '--i': 7, marginBottom: 14 }}>
+          <div className="sp-panel-head">
+            <h2>Recent designs</h2>
+            <a href="/designs" className="sp-link">View all <Arrow /></a>
+          </div>
+          <div className="sp-dgrid" style={{ padding: 14 }}>
+            {designs.map((d) => (
+              <a key={d.id} href={`/designs/${d.id}`} className="sp-card sp-lift sp-dcard">
+                <div className="sp-dthumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {d.thumbnail && <img src={d.thumbnail} alt="" loading="lazy" />}
+                </div>
+                <div className="sp-dbody">
+                  <div className="sp-dnum">{d.name}</div>
+                  <div className="sp-dprod" style={{ margin: '6px 0 0' }}>{d.product?.productTitle}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="sp-actions">
         {actions.map((a, k) => (

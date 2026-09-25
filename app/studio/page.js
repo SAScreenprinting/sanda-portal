@@ -99,16 +99,16 @@ export default function StudioPage() {
       const variant = (bootstrap.variants || []).find((v) => v.id === d.variantId);
       setSaving(true);
       try {
-        const res = await fetch('/api/designer-order', {
+        const res = await fetch('/api/designs/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...d, variantTitle: variant?.title && variant.title !== 'Default Title' ? variant.title : null }),
         });
         const out = await res.json();
-        if (!res.ok) throw new Error(out.error || 'Could not save your order.');
+        if (!res.ok) throw new Error(out.error || 'Could not save your design.');
         setResult(out);
       } catch (err) {
-        setError(err.message || 'Could not save your order.');
+        setError(err.message || 'Could not save your design.');
       } finally {
         setSaving(false);
       }
@@ -149,7 +149,7 @@ export default function StudioPage() {
               <a key={p.id} href={`/studio?product=${encodeURIComponent(p.id)}`}
                 style={{ display: 'block', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden', textDecoration: 'none', color: '#eee' }}>
                 <div style={{ aspectRatio: '1', background: '#fff', display: 'grid', placeItems: 'center' }}>
-                  {p.image && <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                  {p.image && <img src={p.image} alt="" loading="lazy" decoding="async" width="240" height="240" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
                 </div>
                 <div style={{ padding: '10px 12px', fontSize: 13, lineHeight: 1.35 }}>{p.title}</div>
               </a>
@@ -176,11 +176,11 @@ export default function StudioPage() {
             {result && (
               <>
                 <div style={{ fontSize: 34, marginBottom: 8 }}>✓</div>
-                <h2 style={{ margin: '0 0 8px', color: '#fff', fontSize: 20 }}>Order {result.orderNumber} created</h2>
-                <p style={{ margin: '0 0 20px', color: '#aaa', fontSize: 14, lineHeight: 1.5 }}>Your design and print files are attached. S&A will review it and update the order status.</p>
+                <h2 style={{ margin: '0 0 8px', color: '#fff', fontSize: 20 }}>Design #{result.designNumber} saved</h2>
+                <p style={{ margin: '0 0 20px', color: '#aaa', fontSize: 14, lineHeight: 1.5 }}>Your design and print files are saved to your POD profile. S&A will set it up with your stores.</p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <a href={`/orders/${result.orderId}`} style={{ padding: '10px 18px', background: '#e8a020', color: '#1a1a1a', borderRadius: 8, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>View order</a>
-                  <a href="/studio" style={{ padding: '10px 18px', background: '#2a2a2a', color: '#ddd', borderRadius: 8, textDecoration: 'none', fontSize: 14 }}>Design another</a>
+                  <a href={`/designs/${result.id}`} style={{ padding: '10px 18px', background: '#ffc800', color: '#000', textDecoration: 'none', fontWeight: 800, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>View design</a>
+                  <a href="/studio" style={{ padding: '10px 18px', background: '#2a2a2a', color: '#ddd', textDecoration: 'none', fontSize: 13 }}>Design another</a>
                 </div>
               </>
             )}

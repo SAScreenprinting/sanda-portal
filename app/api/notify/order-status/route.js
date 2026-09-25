@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -17,6 +18,9 @@ const STATUS_LABELS = {
 };
 
 export async function POST(req) {
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
+  if (!auth.isAdmin) return forbidden();
   try {
     const { orderId, newStatus, trackingNumber } = await req.json();
     if (!orderId || !newStatus) {

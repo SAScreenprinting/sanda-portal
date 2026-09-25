@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,9 +9,12 @@ const supabase = createClient(
 // GET: list inquiries for a client, or all inquiries for admin
 export async function GET(req) {
   try {
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
     const { searchParams } = new URL(req.url);
-    const clientId = searchParams.get('clientId');
     const isAdmin  = searchParams.get('admin') === 'true';
+    if (isAdmin && !auth.isAdmin) return forbidden();
+    const clientId = auth.user.id;
 
     let query = supabase
       .from('inquiries')
@@ -21,7 +25,7 @@ export async function GET(req) {
       `)
       .order('updated_at', { ascending: false });
 
-    if (!isAdmin && clientId) {
+    if (!isAdmin) {
       query = query.eq('client_id', clientId);
     }
 
@@ -45,6 +49,9 @@ export async function GET(req) {
 // PATCH: update inquiry status (admin only)
 export async function PATCH(req) {
   try {
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    if (!auth.isAdmin) return forbidden();
     const { id, status } = await req.json();
     if (!id || !status) return Response.json({ error: 'id and status required' }, { status: 400 });
 

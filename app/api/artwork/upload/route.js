@@ -1,9 +1,13 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
   const formData = await request.formData();
   const file     = formData.get('file');
-  const clientId = formData.get('clientId');
+  const requested = formData.get('clientId');
+  const clientId = auth.isAdmin && requested ? requested : auth.user.id;
   const orderId  = formData.get('orderId') || null;
   const label    = formData.get('label') || null;
 

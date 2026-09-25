@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -6,9 +7,19 @@ const supabase = createClient(
 );
 
 // GET: all messages in an inquiry thread
+async function canAccess(auth, id) {
+  if (!auth.user) return false;
+  if (auth.isAdmin) return true;
+  const { data } = await supabase.from('inquiries').select('client_id').eq('id', id).maybeSingle();
+  return data?.client_id === auth.user.id;
+}
+
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    if (!(await canAccess(auth, id))) return forbidden();
     const { data, error } = await supabase
       .from('inquiry_messages')
       .select('*, sender:sender_id ( business_name, contact_name, is_admin )')
@@ -25,9 +36,14 @@ export async function GET(req, { params }) {
 // POST: add a reply to an inquiry thread
 export async function POST(req, { params }) {
   try {
-    const { id } = params;
-    const { senderId, body, isAdmin } = await req.json();
-    if (!senderId || !body?.trim()) {
+    const { id } = await params;
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    if (!(await canAccess(auth, id))) return forbidden();
+    const { body } = await req.json();
+    const senderId = auth.user.id;
+    const isAdmin = auth.isAdmin;
+    if (!body?.trim()) {
       return Response.json({ error: 'senderId and body required' }, { status: 400 });
     }
 

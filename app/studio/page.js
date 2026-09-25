@@ -121,12 +121,12 @@ export default function StudioPage() {
   const shown = (products || []).filter((p) => category === 'All' || p.category === category);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0d0d', color: '#eee', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#0d0d0d', color: '#eee', fontFamily: "var(--font-dm), 'DM Sans', system-ui, sans-serif" }}>
       <div style={{ height: 52, background: '#111', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: 14, padding: '0 16px', position: 'sticky', top: 0, zIndex: 50 }}>
         <a href="/dashboard" style={{ color: '#aaa', textDecoration: 'none', fontSize: 13 }}>&larr; Dashboard</a>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>Design Studio</span>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: "var(--font-sora), sans-serif", letterSpacing: '-0.01em' }}>Design Studio</span>
         <div style={{ flex: 1 }} />
-        {productId && <a href="/studio" style={{ color: '#e8a020', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>Change product</a>}
+        {productId && <a href="/studio" style={{ color: '#ffc800', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>Change product</a>}
       </div>
 
       {error && <div style={{ margin: 20, padding: '12px 16px', background: '#3a1414', border: '1px solid #7a2a2a', borderRadius: 8, color: '#ffb4b4', fontSize: 14 }}>{error}</div>}
@@ -140,14 +140,14 @@ export default function StudioPage() {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
               {categories.map((c) => (
                 <button key={c} onClick={() => setCategory(c)}
-                  style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: category === c ? 700 : 400, background: category === c ? '#e8a020' : '#2a2a2a', color: category === c ? '#1a1a1a' : '#999' }}>{c}</button>
+                  style={{ padding: '6px 14px', borderRadius: 0, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: category === c ? 700 : 400, background: category === c ? '#ffc800' : '#2a2a2a', color: category === c ? '#1a1a1a' : '#999' }}>{c}</button>
               ))}
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
             {shown.map((p) => (
               <a key={p.id} href={`/studio?product=${encodeURIComponent(p.id)}`}
-                style={{ display: 'block', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden', textDecoration: 'none', color: '#eee' }}>
+                style={{ display: 'block', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 0, overflow: 'hidden', textDecoration: 'none', color: '#eee' }}>
                 <div style={{ aspectRatio: '1', background: '#fff', display: 'grid', placeItems: 'center' }}>
                   {p.image && <img src={p.image} alt="" loading="lazy" decoding="async" width="240" height="240" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
                 </div>
@@ -171,7 +171,7 @@ export default function StudioPage() {
 
       {(saving || result) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'grid', placeItems: 'center', padding: 20 }}>
-          <div style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: 12, padding: '30px 32px', maxWidth: 420, textAlign: 'center' }}>
+          <div style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: 0, padding: '30px 32px', maxWidth: 420, textAlign: 'center' }}>
             {saving && !result && <div style={{ color: '#fff', fontSize: 16 }}>Saving your design…</div>}
             {result && (
               <>

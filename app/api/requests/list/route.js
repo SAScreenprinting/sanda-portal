@@ -1,6 +1,10 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
+  if (!auth.isAdmin) return forbidden();
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -16,6 +20,9 @@ export async function GET() {
 }
 
 export async function PATCH(request) {
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
+  if (!auth.isAdmin) return forbidden();
   const { id, status } = await request.json();
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

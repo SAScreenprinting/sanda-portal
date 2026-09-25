@@ -1,327 +1,188 @@
 'use client';
-import { useState } from 'react';
-import { useMobile } from '@/hooks/useMobile';
-
-const NAV = [
-  { id:'dashboard', label:'Dashboard',       icon:'◉', href:'/dashboard' },
-  { id:'orders',    label:'Orders',          icon:'▦', href:'/orders' },
-  { id:'artwork',   label:'Artwork Library', icon:'◈', href:'/artwork' },
-  { id:'studio',    label:'Design Studio',   icon:'✦', href:'/studio' },
-  { id:'billing',   label:'Billing',         icon:'◎', href:'/billing' },
-  { id:'messages',  label:'Messages',        icon:'✉', href:'/messages' },
-  { id:'settings',  label:'Settings',        icon:'⚙', href:'/settings' },
-];
-
-const INVOICES = [
-  { id:'INV-093', amount:342.00, issued:'May 10, 2026', due:'Jun 9, 2026',  status:'pending', items:[{desc:'24x T-Shirts, Front Print',qty:24,price:10.50},{desc:'Setup fee',qty:1,price:90.00}] },
-  { id:'INV-091', amount:180.00, issued:'Apr 10, 2026', due:'May 10, 2026', status:'overdue', items:[{desc:'36x Jerseys, Name+Number',qty:36,price:5.00}] },
-  { id:'INV-087', amount:480.00, issued:'Mar 2, 2026',  due:'Apr 1, 2026',  status:'paid',    items:[{desc:'60x T-Shirts, 2-color print',qty:60,price:8.00}] },
-  { id:'INV-082', amount:240.00, issued:'Jan 15, 2026', due:'Feb 14, 2026', status:'paid',    items:[{desc:'24x Hoodies, Full Back',qty:24,price:10.00}] },
-];
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
+import PortalShell from '@/components/PortalShell';
 
 const STATUS = {
-  pending: { bg:'#fef3c7', color:'#92400e', label:'Pending' },
-  overdue: { bg:'#fee2e2', color:'#991b1b', label:'Overdue' },
-  paid:    { bg:'#d1fae5', color:'#065f46', label:'Paid' },
+  pending: { label: 'Pending', color: '#ffc800' },
+  overdue: { label: 'Overdue', color: '#f87171' },
+  paid: { label: 'Paid', color: '#34d399' },
 };
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
+const money = (n) => `$${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const VENMO_HANDLE = 'SandAScreenPrinting';
-const ZELLE_EMAIL  = 'billing@sascreenprinting.com';
-const ZELLE_PHONE  = '(973) 555-0100';
+function invoiceStatus(inv) {
+  if (inv.paid) return 'paid';
+  if (inv.due_date && new Date(inv.due_date) < new Date(new Date().toDateString())) return 'overdue';
+  return 'pending';
+}
+
+const Arrow = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+);
+const Close = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
 export default function BillingPage() {
-  const [viewing, setViewing]     = useState(null);
-  const [payModal, setPayModal]   = useState(null);
+  const router = useRouter();
+  const supabase = createClient();
+  const [profile, setProfile] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [invoices, setInvoices] = useState(null);
+  const [viewing, setViewing] = useState(null);
   const [showQuote, setShowQuote] = useState(false);
-  const [quote, setQuote]         = useState({ description:'', qty:'', notes:'' });
-  const [quoteSent, setQuoteSent] = useState(false);
-  const [copied, setCopied]       = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isMobile = useMobile();
+  const [quote, setQuote] = useState({ description: '', qty: '', notes: '' });
+  const [quoteState, setQuoteState] = useState(''); // '' | sending | sent | error
+  const [copied, setCopied] = useState('');
 
-  const outstanding = INVOICES.filter(i => i.status !== 'paid').reduce((s,i) => s+i.amount, 0);
-  const paid        = INVOICES.filter(i => i.status === 'paid').reduce((s,i) => s+i.amount, 0);
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/'); return; }
+      setUserId(user.id);
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (prof) setProfile(prof);
+      const { data } = await supabase.from('invoices').select('*').eq('client_id', user.id).order('created_at', { ascending: false });
+      setInvoices(data || []);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function sendQuote() {
-    setQuoteSent(true);
-    setTimeout(() => { setShowQuote(false); setQuoteSent(false); setQuote({description:'',qty:'',notes:''}); }, 2500);
-  }
+  async function signOut() { await supabase.auth.signOut(); router.push('/'); router.refresh(); }
 
-  function copyToClipboard(text, key) {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(''), 2000);
+  async function sendQuote(e) {
+    e.preventDefault();
+    setQuoteState('sending');
+    const body = [`What I need: ${quote.description}`, quote.qty ? `Quantity: ${quote.qty}` : '', quote.notes ? `Notes: ${quote.notes}` : ''].filter(Boolean).join('\n');
+    const res = await fetch('/api/inquiries/create', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: userId, title: 'Quote request', body }),
     });
+    if (!res.ok) { setQuoteState('error'); return; }
+    setQuoteState('sent');
+    setTimeout(() => { setShowQuote(false); setQuoteState(''); setQuote({ description: '', qty: '', notes: '' }); }, 2500);
   }
 
-  function venmoLink(inv) {
-    const note = encodeURIComponent(`Invoice ${inv.id} — S&A Screen Printing`);
-    return `venmo://paycharge?txn=pay&recipients=${VENMO_HANDLE}&amount=${inv.amount.toFixed(2)}&note=${note}`;
+  function copy(text, key) {
+    navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(''), 2000); });
   }
 
-  function venmoWebLink(inv) {
-    const note = encodeURIComponent(`Invoice ${inv.id} — S&A Screen Printing`);
-    return `https://venmo.com/${VENMO_HANDLE}?txn=pay&amount=${inv.amount.toFixed(2)}&note=${note}`;
-  }
+  const list = invoices || [];
+  const outstanding = list.filter((i) => !i.paid).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const paidTotal = list.filter((i) => i.paid).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const overdueCount = list.filter((i) => invoiceStatus(i) === 'overdue').length;
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'#f5f5f0', fontFamily:'Inter, sans-serif' }}>
-
-      {isMobile && sidebarOpen && (
-        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:140, cursor:'pointer' }} />
-      )}
-
-      {/* Sidebar */}
-      <div style={{ width:'220px', background:'#EFEDE8', display:'flex', flexDirection:'column', padding:'28px 20px', position:'fixed', height:'100vh', justifyContent:'space-between', transform: isMobile && !sidebarOpen ? 'translateX(-220px)' : 'none', transition:'transform 0.25s ease', zIndex:150 }}>
-        {isMobile && (
-          <button onClick={() => setSidebarOpen(false)} style={{ position:'absolute', top:'14px', right:'14px', background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'4px' }}>✕</button>
-        )}
-        <div>
-          <div style={{ marginBottom:'32px' }}>
-            <img src="/Logoblack.png" alt="S&A" style={{ width:'110px' }}/>
-          </div>
-          <div style={{ marginBottom:'36px' }}>
-            <div style={{ width:'48px', height:'48px', borderRadius:'50%', background:'#1a1a1a', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'700', fontSize:'18px', marginBottom:'12px' }}>R</div>
-            <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>Riverside Youth</div>
-            <div style={{ fontSize:'12px', color:'#aaa' }}>Sports</div>
-          </div>
-          <nav style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
-            {NAV.map(item => {
-              const isActive = item.id === 'billing';
-              return (
-                <a key={item.id} href={item.href}
-                  style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'10px', textDecoration:'none', background:isActive?'#1a1a1a':'transparent', color:isActive?'white':'#666', fontSize:'13px', fontWeight:isActive?'600':'400' }}>
-                  <span style={{ fontSize:'16px' }}>{item.icon}</span>
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
+    <PortalShell active="billing" profile={profile} loading={!profile} onSignOut={signOut}>
+      <header className="sp-head">
+        <div className="sp-in">
+          <div className="sp-eyebrow">Account</div>
+          <h1>Billing</h1>
+          <p>Invoices and payments for your account.</p>
         </div>
-        <a href="/" style={{ display:'block', padding:'8px 12px', color:'#666', fontSize:'12px', textDecoration:'none', textAlign:'center' }}>Sign Out</a>
+        <button className="sp-btn sp-in" style={{ '--i': 1 }} onClick={() => setShowQuote(true)}>Request a quote <Arrow /></button>
+      </header>
+
+      <section className="sp-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="sp-card sp-stat sp-in" style={{ '--i': 1 }}>
+          <div className="sp-label">Outstanding</div>
+          <div className={`sp-num${outstanding > 0 ? ' is-accent' : ''}`}>{money(outstanding)}</div>
+          <div className="sp-sub">{overdueCount > 0 ? `${overdueCount} overdue` : 'Nothing overdue'}</div>
+        </div>
+        <div className="sp-card sp-stat sp-in" style={{ '--i': 2 }}>
+          <div className="sp-label">Paid to date</div>
+          <div className="sp-num">{money(paidTotal)}</div>
+          <div className="sp-sub">All time</div>
+        </div>
+        <div className="sp-card sp-stat sp-in" style={{ '--i': 3 }}>
+          <div className="sp-label">Invoices</div>
+          <div className="sp-num">{list.length}</div>
+          <div className="sp-sub">{list.filter((i) => !i.paid).length} open</div>
+        </div>
+      </section>
+
+      <div className="sp-card sp-in" style={{ '--i': 4 }}>
+        <div className="sp-panel-head"><h2>Invoices</h2></div>
+        {invoices === null ? <div className="sp-empty">Loading…</div>
+          : list.length === 0 ? <div className="sp-empty"><b>No invoices yet</b>When S&amp;A bills you for an order, the invoice will show up here.</div>
+          : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="sp-table">
+                <thead><tr><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th><th /></tr></thead>
+                <tbody>
+                  {list.map((inv) => {
+                    const st = STATUS[invoiceStatus(inv)];
+                    return (
+                      <tr key={inv.id} style={{ cursor: 'pointer' }} onClick={() => setViewing(inv)}>
+                        <td className="sp-order-no">{inv.invoice_number}</td>
+                        <td style={{ color: 'var(--muted)' }}>{fmtDate(inv.due_date)}</td>
+                        <td className="sp-money">{money(inv.amount)}</td>
+                        <td><span className="sp-chip" style={{ '--c': st.color }}><i />{st.label}</span></td>
+                        <td style={{ textAlign: 'right' }}><span className="sp-link">View <Arrow /></span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
       </div>
 
-      {/* Main */}
-      <div style={{ flex:1, marginLeft: isMobile ? 0 : '220px' }}>
-        {isMobile && (
-          <div style={{ position:'sticky', top:0, zIndex:50, padding:'12px 16px', background:'#EFEDE8', borderBottom:'1px solid rgba(0,0,0,0.08)', display:'flex', alignItems:'center', gap:'12px' }}>
-            <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', fontSize:'22px', cursor:'pointer', color:'#666', lineHeight:1, padding:'2px 4px' }}>☰</button>
-            <img src="/Logoblack.png" alt="S&A" style={{ width:'80px' }}/>
-          </div>
-        )}
-        <div style={{ padding: isMobile ? '16px 14px' : '36px 32px' }}>
-        <div className="page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px' }}>
-          <div>
-            <h1 style={{ fontSize:'26px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 4px' }}>Billing</h1>
-            <p style={{ fontSize:'14px', color:'#aaa', margin:0 }}>Your invoices and payment history</p>
-          </div>
-          <button onClick={() => setShowQuote(true)}
-            style={{ padding:'10px 20px', background:'#1a1a1a', color:'white', borderRadius:'10px', fontSize:'13px', fontWeight:'600', border:'none', cursor:'pointer' }}>
-            + Request a Quote
-          </button>
-        </div>
-
-        {/* Summary cards */}
-        <div className="grid-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'16px', marginBottom:'24px' }}>
-          {[
-            { label:'Outstanding Balance', value:`$${outstanding.toFixed(2)}`, color:outstanding>0?'#dc2626':'#059669', sub:`${INVOICES.filter(i=>i.status!=='paid').length} unpaid` },
-            { label:'Paid to Date',        value:`$${paid.toFixed(2)}`,        color:'#059669', sub:`${INVOICES.filter(i=>i.status==='paid').length} invoices` },
-            { label:'Total Invoices',      value:String(INVOICES.length),      color:'#1a1a1a', sub:'All time' },
-          ].map(stat => (
-            <div key={stat.label} style={{ background:'white', borderRadius:'12px', padding:'20px', border:'1px solid #e5e5e5' }}>
-              <div style={{ fontSize:'12px', color:'#aaa', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.5px' }}>{stat.label}</div>
-              <div style={{ fontSize:'26px', fontWeight:'700', color:stat.color, marginBottom:'4px' }}>{stat.value}</div>
-              <div style={{ fontSize:'12px', color:'#aaa' }}>{stat.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Invoices */}
-        <div style={{ background:'white', borderRadius:'14px', padding:'22px', border:'1px solid #e5e5e5', marginBottom:'16px' }}>
-          <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#1a1a1a', marginBottom:'16px', marginTop:0 }}>Your Invoices</h2>
-          <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-            {INVOICES.map(inv => {
-              const st = STATUS[inv.status];
-              return (
-                <div key={inv.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px', background:'#f9fafb', borderRadius:'10px', border:`1px solid #e5e5e5`, gap:'16px', ...(inv.status==='overdue'?{borderLeft:'3px solid #dc2626'}:{}) }}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px' }}>
-                      <span style={{ fontSize:'14px', fontWeight:'700', color:'#1a1a1a' }}>{inv.id}</span>
-                      <span style={{ fontSize:'11px', fontWeight:'600', padding:'2px 8px', borderRadius:'20px', background:st.bg, color:st.color }}>{st.label}</span>
-                      {inv.status==='overdue' && <span style={{ fontSize:'11px', color:'#dc2626', fontWeight:'600' }}>⚠ Overdue</span>}
-                    </div>
-                    <div style={{ fontSize:'13px', color:'#6b7280' }}>Issued {inv.issued} · Due {inv.due}</div>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                    <div style={{ fontSize:'20px', fontWeight:'700', color:'#1a1a1a' }}>${inv.amount.toFixed(2)}</div>
-                    {inv.status !== 'paid' && (
-                      <button onClick={() => setPayModal(inv)}
-                        style={{ padding:'7px 14px', background:'#059669', color:'white', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap' }}>
-                        Pay Now
-                      </button>
-                    )}
-                    <button onClick={() => setViewing(inv)}
-                      style={{ padding:'7px 14px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', whiteSpace:'nowrap' }}>
-                      View
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Payment info */}
-        <div style={{ background:'white', borderRadius:'14px', padding:'22px', border:'1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#1a1a1a', marginBottom:'14px', marginTop:0 }}>How to Pay</h2>
-          <div className="grid-3col" style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'12px' }}>
-            {[
-              { icon:'💙', label:'Venmo', detail:`@${VENMO_HANDLE}`, action:() => window.open(venmoWebLink({ id:'', amount:0 }), '_blank') },
-              { icon:'💜', label:'Zelle', detail:ZELLE_EMAIL, action:() => copyToClipboard(ZELLE_EMAIL, 'zelle') },
-              { icon:'🏦', label:'Bank Transfer', detail:'Contact us for routing info', action:null },
-              { icon:'✉', label:'Questions?', detail:'info@sascreenprinting.com', action:null },
-            ].map(m => (
-              <div key={m.label} style={{ display:'flex', alignItems:'center', gap:'12px', padding:'14px', background:'#f9fafb', borderRadius:'10px', border:'1px solid #e5e5e5' }}>
-                <span style={{ fontSize:'22px' }}>{m.icon}</span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:'13px', fontWeight:'600', color:'#1a1a1a' }}>{m.label}</div>
-                  <div style={{ fontSize:'12px', color:'#6b7280' }}>{m.detail}</div>
-                </div>
-                {m.action && (
-                  <button onClick={m.action}
-                    style={{ padding:'5px 12px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'6px', fontSize:'11px', fontWeight:'600', cursor:'pointer' }}>
-                    {m.label==='Zelle' && copied==='zelle' ? 'Copied!' : 'Open'}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-        </div>
-      </div>
-
-      {/* Pay Now modal */}
-      {payModal && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, padding:'20px' }}>
-          <div style={{ background:'white', borderRadius:'16px', padding:'32px', maxWidth:'440px', width:'100%', position:'relative' }}>
-            <button onClick={() => setPayModal(null)} style={{ position:'absolute', top:'16px', right:'16px', background:'#f3f4f6', border:'none', borderRadius:'6px', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px' }}>✕</button>
-            <div style={{ marginBottom:'20px' }}>
-              <div style={{ fontSize:'12px', color:'#aaa', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.5px' }}>Invoice {payModal.id}</div>
-              <div style={{ fontSize:'32px', fontWeight:'800', color:'#1a1a1a' }}>${payModal.amount.toFixed(2)}</div>
-              <div style={{ fontSize:'13px', color:'#dc2626', fontWeight:'600', marginTop:'4px' }}>
-                {payModal.status === 'overdue' ? '⚠ Payment Overdue' : `Due ${payModal.due}`}
-              </div>
-            </div>
-
-            <div style={{ display:'flex', flexDirection:'column', gap:'12px', marginBottom:'24px' }}>
-              {/* Venmo */}
-              <a href={venmoLink(payModal)}
-                onClick={e => { e.preventDefault(); window.open(venmoWebLink(payModal), '_blank'); }}
-                style={{ display:'flex', alignItems:'center', gap:'14px', padding:'16px', background:'#3D95CE', borderRadius:'12px', textDecoration:'none', cursor:'pointer' }}>
-                <div style={{ width:'36px', height:'36px', background:'white', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px', flexShrink:0 }}>💙</div>
-                <div>
-                  <div style={{ fontSize:'14px', fontWeight:'700', color:'white' }}>Pay with Venmo</div>
-                  <div style={{ fontSize:'12px', color:'rgba(255,255,255,0.7)' }}>@{VENMO_HANDLE}</div>
-                </div>
-                <span style={{ marginLeft:'auto', color:'white', fontSize:'18px' }}>→</span>
-              </a>
-
-              {/* Zelle */}
-              <div style={{ padding:'16px', background:'#6B2FA0', borderRadius:'12px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'12px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'white', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px', flexShrink:0 }}>💜</div>
-                  <div>
-                    <div style={{ fontSize:'14px', fontWeight:'700', color:'white' }}>Pay with Zelle</div>
-                    <div style={{ fontSize:'12px', color:'rgba(255,255,255,0.7)' }}>Open your bank app → Send with Zelle</div>
-                  </div>
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
-                  <button onClick={() => copyToClipboard(ZELLE_EMAIL, 'email')}
-                    style={{ padding:'8px 10px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'8px', color:'white', fontSize:'11px', cursor:'pointer', fontWeight:'600' }}>
-                    {copied === 'email' ? '✓ Copied!' : `📧 Copy Email`}
-                  </button>
-                  <button onClick={() => copyToClipboard(ZELLE_PHONE, 'phone')}
-                    style={{ padding:'8px 10px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'8px', color:'white', fontSize:'11px', cursor:'pointer', fontWeight:'600' }}>
-                    {copied === 'phone' ? '✓ Copied!' : `📞 Copy Phone`}
-                  </button>
-                </div>
-                <div style={{ marginTop:'8px', fontSize:'11px', color:'rgba(255,255,255,0.5)', textAlign:'center' }}>
-                  {ZELLE_EMAIL} · {ZELLE_PHONE}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ padding:'12px', background:'#f9fafb', borderRadius:'8px', fontSize:'12px', color:'#6b7280', lineHeight:'1.5' }}>
-              <strong>Include in your payment note:</strong> {payModal.id} — {payModal.amount.toFixed(2)}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Invoice viewer */}
       {viewing && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, padding:'20px' }}>
-          <div style={{ background:'white', borderRadius:'14px', padding:'32px', maxWidth:'640px', width:'100%', maxHeight:'90vh', overflowY:'auto', position:'relative' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' }}>
-              <h3 style={{ margin:0, fontSize:'16px', fontWeight:'700' }}>Invoice {viewing.id}</h3>
-              <div style={{ display:'flex', gap:'8px' }}>
-                {viewing.status !== 'paid' && (
-                  <button onClick={() => { setViewing(null); setPayModal(viewing); }}
-                    style={{ padding:'6px 14px', background:'#059669', color:'white', border:'none', borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>
-                    💳 Pay Now
+        <div className="sp-modal" onClick={(e) => e.target === e.currentTarget && setViewing(null)}>
+          <div className="sp-dialog">
+            <button className="sp-x" onClick={() => setViewing(null)} aria-label="Close"><Close /></button>
+            <div className="sp-eyebrow">Invoice</div>
+            <h2>{viewing.invoice_number}</h2>
+            <p style={{ marginBottom: 16 }}>Due {fmtDate(viewing.due_date)}</p>
+            <div className="sp-num" style={{ margin: '0 0 22px', fontSize: 38 }}>{money(viewing.amount)}</div>
+            {viewing.pdf_url && <a href={viewing.pdf_url} target="_blank" rel="noopener noreferrer" className="sp-link" style={{ marginBottom: 20, display: 'inline-flex' }}>Download invoice <Arrow /></a>}
+
+            {viewing.paid ? (
+              <div className="sp-msg ok">Paid{viewing.paid_at ? ` on ${fmtDate(viewing.paid_at)}` : ''}. Thank you.</div>
+            ) : (
+              <>
+                <div className="sp-label" style={{ margin: '4px 0 12px' }}>How to pay</div>
+                {viewing.venmo_link && <a href={viewing.venmo_link} target="_blank" rel="noopener noreferrer" className="sp-btn" style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }}>Pay with Venmo <Arrow /></a>}
+                {viewing.zelle_info && (
+                  <button className="sp-btn sp-btn--ghost" style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }} onClick={() => copy(viewing.zelle_info, 'zelle')}>
+                    {copied === 'zelle' ? 'Copied' : `Zelle: ${viewing.zelle_info}`}
                   </button>
                 )}
-                <button onClick={() => window.print()} style={{ padding:'6px 14px', background:'#1a1a1a', color:'white', border:'none', borderRadius:'6px', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>🖨 Print</button>
-                <button onClick={() => setViewing(null)} style={{ padding:'6px 14px', background:'#f3f4f6', border:'1px solid #e5e5e5', borderRadius:'6px', fontSize:'12px', cursor:'pointer' }}>✕ Close</button>
-              </div>
-            </div>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'20px' }}>
-              <div><div style={{ fontSize:'18px', fontWeight:'800', color:'#1a1a2e' }}>S&A Screen Printing</div><div style={{ fontSize:'13px', color:'#6b7280', marginTop:'4px', lineHeight:1.6 }}>123 Print Ave, Newark NJ<br/>(973) 555-0100</div></div>
-              <div style={{ textAlign:'right' }}><div style={{ fontSize:'22px', fontWeight:'800' }}>INVOICE</div><div style={{ fontSize:'16px', fontWeight:'700', color:'#e8a020' }}>{viewing.id}</div></div>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'20px', padding:'14px', background:'#f9fafb', borderRadius:'8px' }}>
-              <div><div style={{ fontSize:'11px', fontWeight:'700', color:'#9ca3af', textTransform:'uppercase', letterSpacing:1, marginBottom:'4px' }}>Bill To</div><div style={{ fontSize:'14px', fontWeight:'600' }}>Riverside Youth Sports</div></div>
-              <div><div style={{ fontSize:'11px', fontWeight:'700', color:'#9ca3af', textTransform:'uppercase', letterSpacing:1, marginBottom:'4px' }}>Details</div><div style={{ fontSize:'13px', color:'#374151', lineHeight:1.7 }}><div>Issued: {viewing.issued}</div><div>Due: {viewing.due}</div></div></div>
-            </div>
-            <table style={{ width:'100%', borderCollapse:'collapse', marginBottom:'16px' }}>
-              <thead><tr style={{ background:'#1a1a2e' }}>{['Description','Qty','Price','Total'].map(h=><th key={h} style={{ padding:'9px 12px', textAlign:h==='Description'?'left':'right', color:'#e8a020', fontSize:'12px', fontWeight:'700' }}>{h}</th>)}</tr></thead>
-              <tbody>{viewing.items.map((item,i)=><tr key={i} style={{ borderBottom:'1px solid #f3f4f6' }}><td style={{ padding:'10px 12px', fontSize:'13px' }}>{item.desc}</td><td style={{ padding:'10px 12px', fontSize:'13px', textAlign:'right' }}>{item.qty}</td><td style={{ padding:'10px 12px', fontSize:'13px', textAlign:'right' }}>${item.price.toFixed(2)}</td><td style={{ padding:'10px 12px', fontSize:'13px', fontWeight:'600', textAlign:'right' }}>${(item.qty*item.price).toFixed(2)}</td></tr>)}</tbody>
-            </table>
-            {(() => { const sub=viewing.items.reduce((s,i)=>s+i.qty*i.price,0); const tax=sub*0.07; return (
-              <div style={{ display:'flex', justifyContent:'flex-end' }}>
-                <div style={{ width:'200px' }}>
-                  {[['Subtotal',sub],['Tax (7%)',tax]].map(([l,v])=><div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'5px 0', fontSize:'13px', color:'#6b7280', borderBottom:'1px solid #f3f4f6' }}><span>{l}</span><span>${v.toFixed(2)}</span></div>)}
-                  <div style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', fontSize:'16px', fontWeight:'700', color:'#1a1a1a' }}><span>Total</span><span>${(sub*1.07).toFixed(2)}</span></div>
-                </div>
-              </div>
-            ); })()}
-          </div>
-        </div>
-      )}
-
-      {/* Quote modal */}
-      {showQuote && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, padding:'20px' }}>
-          <div style={{ background:'white', borderRadius:'14px', padding:'32px', maxWidth:'440px', width:'100%', position:'relative' }}>
-            <button onClick={() => setShowQuote(false)} style={{ position:'absolute', top:'16px', right:'16px', background:'#f3f4f6', border:'none', borderRadius:'6px', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px' }}>✕</button>
-            <h2 style={{ fontSize:'18px', fontWeight:'700', margin:'0 0 4px' }}>Request a Quote</h2>
-            <p style={{ fontSize:'13px', color:'#6b7280', marginBottom:'20px' }}>Tell us what you need and we'll get back to you.</p>
-            {quoteSent ? (
-              <div style={{ textAlign:'center', padding:'30px 0', color:'#059669', fontSize:'16px', fontWeight:'600' }}>✓ Request sent! We'll be in touch soon.</div>
-            ) : (
-              <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
-                <div><label style={{ display:'block', fontSize:'11px', fontWeight:'600', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.4px', marginBottom:'5px' }}>What do you need?</label>
-                  <textarea value={quote.description} onChange={e=>setQuote(q=>({...q,description:e.target.value}))} style={{ width:'100%', padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:'6px', fontSize:'13px', height:'80px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box' }} placeholder="e.g. T-shirts with logo on front left chest…"/></div>
-                <div><label style={{ display:'block', fontSize:'11px', fontWeight:'600', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.4px', marginBottom:'5px' }}>Quantity</label>
-                  <input value={quote.qty} onChange={e=>setQuote(q=>({...q,qty:e.target.value}))} style={{ width:'100%', padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:'6px', fontSize:'13px', fontFamily:'inherit', boxSizing:'border-box' }} placeholder="e.g. 48"/></div>
-                <div><label style={{ display:'block', fontSize:'11px', fontWeight:'600', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.4px', marginBottom:'5px' }}>Additional notes</label>
-                  <textarea value={quote.notes} onChange={e=>setQuote(q=>({...q,notes:e.target.value}))} style={{ width:'100%', padding:'8px 10px', border:'1px solid #d1d5db', borderRadius:'6px', fontSize:'13px', height:'60px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box' }} placeholder="Colors, deadline, special requests…"/></div>
-                <button onClick={sendQuote} style={{ padding:'11px 0', background:'#1a1a1a', color:'white', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:'700', cursor:'pointer' }}>Send Quote Request</button>
-              </div>
+                {!viewing.venmo_link && !viewing.zelle_info && (
+                  <p style={{ margin: 0 }}>To arrange payment, call <a href="tel:+12019498343" style={{ color: 'var(--y)' }}>(201) 949-8343</a> or email <a href="mailto:sascreenprinting@outlook.com" style={{ color: 'var(--y)' }}>sascreenprinting@outlook.com</a> and mention {viewing.invoice_number}.</p>
+                )}
+              </>
             )}
           </div>
         </div>
       )}
-    </div>
+
+      {showQuote && (
+        <div className="sp-modal" onClick={(e) => e.target === e.currentTarget && setShowQuote(false)}>
+          <div className="sp-dialog">
+            <button className="sp-x" onClick={() => setShowQuote(false)} aria-label="Close"><Close /></button>
+            {quoteState === 'sent' ? (
+              <div style={{ textAlign: 'center', padding: '14px 0 8px' }}><h2>Quote request sent</h2><p style={{ margin: 0 }}>We will get back to you shortly. You can follow up in Messages.</p></div>
+            ) : (
+              <>
+                <h2>Request a quote</h2>
+                <p>Tell us what you need and we will send you pricing.</p>
+                <form onSubmit={sendQuote}>
+                  <div className="sp-field"><label>What do you need? *</label>
+                    <input required value={quote.description} onChange={(e) => setQuote((q) => ({ ...q, description: e.target.value }))} placeholder="Custom hoodies with a back print" /></div>
+                  <div className="sp-field"><label>Quantity</label>
+                    <input value={quote.qty} onChange={(e) => setQuote((q) => ({ ...q, qty: e.target.value }))} placeholder="48" /></div>
+                  <div className="sp-field"><label>Notes</label>
+                    <textarea rows={3} value={quote.notes} onChange={(e) => setQuote((q) => ({ ...q, notes: e.target.value }))} placeholder="Deadline, colors, print locations" /></div>
+                  {quoteState === 'error' && <div className="sp-msg err">Could not send that. Please try again.</div>}
+                  <button type="submit" disabled={quoteState === 'sending'} className="sp-btn" style={{ width: '100%', justifyContent: 'center' }}>{quoteState === 'sending' ? 'Sending…' : 'Send request'} <Arrow /></button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </PortalShell>
   );
 }

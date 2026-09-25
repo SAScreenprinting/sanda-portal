@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,16 +9,19 @@ const supabase = createClient(
 // GET: list artwork for a client or all artwork for admin
 export async function GET(req) {
   try {
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
     const { searchParams } = new URL(req.url);
-    const clientId = searchParams.get('clientId');
     const isAdmin  = searchParams.get('admin') === 'true';
+    if (isAdmin && !auth.isAdmin) return forbidden();
+    const clientId = auth.user.id;
 
     let query = supabase
       .from('artwork')
       .select('*, client:client_id ( business_name, contact_name )')
       .order('created_at', { ascending: false });
 
-    if (!isAdmin && clientId) {
+    if (!isAdmin) {
       query = query.eq('client_id', clientId);
     }
 

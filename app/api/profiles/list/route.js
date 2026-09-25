@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,6 +9,9 @@ const supabase = createClient(
 // GET: list all client profiles (admin use only)
 export async function GET() {
   try {
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    if (!auth.isAdmin) return forbidden();
     const { data, error } = await supabase
       .from('profiles')
       .select('id, business_name, contact_name, email')

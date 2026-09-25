@@ -1,8 +1,12 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
-  const { brand, sku, garment, notes, clientId } = await request.json();
-  if (!garment || !clientId) return Response.json({ error: 'Missing required fields' }, { status: 400 });
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
+  const { brand, sku, garment, notes } = await request.json();
+  const clientId = auth.user.id;
+  if (!garment) return Response.json({ error: 'Missing required fields' }, { status: 400 });
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

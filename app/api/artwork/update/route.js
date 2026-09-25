@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -8,6 +9,9 @@ const supabase = createClient(
 // PATCH: update artwork status, label, or admin notes
 export async function PATCH(req) {
   try {
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    if (!auth.isAdmin) return forbidden();
     const { id, status, label, admin_notes } = await req.json();
     if (!id) return Response.json({ error: 'id required' }, { status: 400 });
 

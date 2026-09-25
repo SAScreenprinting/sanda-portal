@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -8,6 +9,9 @@ const serviceClient = createClient(
 );
 
 export async function POST(req) {
+  const auth = await getAuth();
+  if (!auth.user) return unauthorized();
+  if (!auth.isAdmin) return forbidden();
   try {
     const { orderId } = await req.json();
     if (!orderId) return NextResponse.json({ error: 'orderId required' }, { status: 400 });

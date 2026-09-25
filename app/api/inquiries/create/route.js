@@ -1,3 +1,4 @@
+import { getAuth, unauthorized, forbidden } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -7,7 +8,10 @@ const supabase = createClient(
 
 export async function POST(req) {
   try {
-    const { clientId, title, body } = await req.json();
+    const auth = await getAuth();
+    if (!auth.user) return unauthorized();
+    const { title, body, clientId: requestedClient } = await req.json();
+    const clientId = auth.isAdmin && requestedClient ? requestedClient : auth.user.id;
     if (!clientId || !title?.trim() || !body?.trim()) {
       return Response.json({ error: 'Title, description, and client are required.' }, { status: 400 });
     }

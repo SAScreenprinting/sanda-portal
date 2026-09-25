@@ -4,6 +4,13 @@ import { recoveryEmailHtml } from '@/lib/recoveryEmail';
 
 // Password reset email sent by S&A itself (through Resend), not by Supabase.
 // Supabase only produces the one-time token; the link points at this portal.
+// Shows as "S&A POD" in the inbox; the address itself still comes from EMAIL_FROM.
+function senderAddress(emailFrom) {
+  const match = /<([^>]+)>/.exec(emailFrom || '');
+  const address = match ? match[1] : (emailFrom || '').trim();
+  return `S&A POD <${address}>`;
+}
+
 export async function POST(request) {
   const { email } = await request.json().catch(() => ({}));
   const ok = NextResponse.json({ ok: true }); // same answer whether or not the account exists
@@ -24,7 +31,7 @@ export async function POST(request) {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM,
+      from: senderAddress(process.env.EMAIL_FROM),
       to: [email.trim()],
       reply_to: 'sascreenprinting@outlook.com',
       subject: 'Reset your S&A portal password',

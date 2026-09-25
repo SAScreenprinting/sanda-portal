@@ -1,4 +1,5 @@
 'use client';
+import { downloadFile } from '@/lib/downloadFile';
 import { useState, useEffect, useRef } from 'react';
 import { DEFAULT_PRODUCTS, toAdminFormat } from '@/lib/products';
 
@@ -126,6 +127,8 @@ export default function AdminPage() {
   const [denyNote, setDenyNote]     = useState('');
   const [viewerBg, setViewerBg]     = useState('checker');
   const [viewerFile, setViewerFile] = useState(null);
+  const [viewerZoom, setViewerZoom] = useState(1);
+  const pickViewer = (f) => { setViewerFile(f); setViewerZoom(1); };
   const [designsLoading, setDesignsLoading] = useState(false);
   const [artwork, setArtwork]     = useState([]);
   const [artworkLoading, setArtworkLoading] = useState(false);
@@ -1112,7 +1115,7 @@ export default function AdminPage() {
                 const who = d.client?.business_name || d.client?.contact_name || 'Client';
                 const first = Object.values(d.decorations?.previews || {})[0] || d.thumbnail;
                 return (
-                  <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
+                  <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);setViewerZoom(1);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
                     <div style={{background:'#fff',borderBottom:'1px solid #e5e7eb',height:190,display:'grid',placeItems:'center'}}>
                       {first && <img src={first} alt="" style={{maxWidth:'100%',maxHeight:190,objectFit:'contain'}}/>}
                     </div>
@@ -1143,28 +1146,35 @@ export default function AdminPage() {
               const bgStyle = viewerBg==='checker'
                 ? {backgroundColor:'#fff',backgroundImage:'linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%),linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%)',backgroundSize:'20px 20px',backgroundPosition:'0 0,10px 10px'}
                 : {background: viewerBg==='black' ? '#000' : '#fff'};
-              const shown = viewerFile || (files[0] ? {url:files[0].url,label:`${files[0].viewName} · ${files[0].printAreaLabel} (print file)`} : (previews[0] ? {url:previews[0][1],label:`${previews[0][0]} preview`} : null));
+              const shown = viewerFile || (files[0] ? {url:files[0].url,label:`${files[0].viewName} · ${files[0].printAreaLabel} (print file)`,file:`${d.name}-${files[0].viewName}-${files[0].printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')} : (previews[0] ? {url:previews[0][1],label:`${previews[0][0]} preview`} : null));
               return (
                 <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
                   <div style={{background:'#fff',borderRadius:14,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}>
                     <div style={{padding:20,borderRight:'1px solid #e5e7eb'}}>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}>
                         <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>{shown?.label || 'No image'}</div>
-                        <div style={{display:'flex',gap:6}}>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                          <button onClick={()=>setViewerZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={viewerZoom<=1} title="Zoom out" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:viewerZoom<=1?'default':'pointer',opacity:viewerZoom<=1?0.4:1}}>−</button>
+                          <button onClick={()=>setViewerZoom(1)} title="Fit to window" style={{minWidth:58,height:30,fontSize:12,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{viewerZoom===1?'Fit':Math.round(viewerZoom*100)+'%'}</button>
+                          <button onClick={()=>setViewerZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} title="Zoom in" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>+</button>
+                          <span style={{width:8}}/>
                           {[['checker','Checker'],['white','White'],['black','Black']].map(([k,l])=>(
                             <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#111827':'#d1d5db'),background:viewerBg===k?'#111827':'#fff',color:viewerBg===k?'#fff':'#111827',borderRadius:6,cursor:'pointer'}}>{l}</button>
                           ))}
                         </div>
                       </div>
-                      <div style={{...bgStyle,borderRadius:10,border:'1px solid #d1d5db',minHeight:420,display:'grid',placeItems:'center',padding:12}}>
-                        {shown && <img src={shown.url} alt="" style={{maxWidth:'100%',maxHeight:'62vh',objectFit:'contain'}}/>}
+                      <div style={{...bgStyle,borderRadius:10,border:'1px solid #d1d5db',height:'62vh',minHeight:380,overflow:'auto',display:'flex',alignItems:viewerZoom>1?'flex-start':'center',justifyContent:viewerZoom>1?'flex-start':'center',padding:12}}>
+                        {shown && <img src={shown.url} alt="" draggable={false} style={viewerZoom===1?{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}:{width:(viewerZoom*100)+'%',maxWidth:'none',height:'auto',flex:'none',imageRendering:viewerZoom>=4?'pixelated':'auto'}}/>}
                       </div>
+                      {shown && shown.file && (
+                        <button onClick={()=>downloadFile(shown.url, shown.file)} style={{marginTop:12,padding:'10px 16px',background:'#111827',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer'}}>Download this print file</button>
+                      )}
                       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
                         {previews.map(([view,url])=>(
-                          <button key={'p'+view} onClick={()=>setViewerFile({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{view} preview</button>
+                          <button key={'p'+view} onClick={()=>pickViewer({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{view} preview</button>
                         ))}
                         {files.map(f=>(
-                          <button key={f.url} onClick={()=>setViewerFile({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'#eff6ff',color:'#1d4ed8',borderRadius:6,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
+                          <button key={f.url} onClick={()=>pickViewer({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`,file:`${d.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'#eff6ff',color:'#1d4ed8',borderRadius:6,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
                         ))}
                       </div>
                     </div>

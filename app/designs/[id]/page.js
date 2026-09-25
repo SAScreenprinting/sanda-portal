@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import PortalShell from '@/components/PortalShell';
+import { downloadFile } from '@/lib/downloadFile';
 
 const COLORS = { Submitted: '#ffc800', Approved: '#a3e635', Denied: '#f87171', 'In Setup': '#60a5fa', Live: '#34d399' };
 const STEPS = [
@@ -38,6 +39,7 @@ export default function DesignDetailPage() {
   const stepIdx = Math.max(0, STEPS.findIndex((s) => s.key === status));
   const [viewer, setViewer] = useState(null);
   const [bg, setBg] = useState('checker');
+  const [zoom, setZoom] = useState(1);
   const previews = Object.entries(design?.decorations?.previews || {});
   const files = design?.decorations?.printFiles || [];
 
@@ -115,7 +117,7 @@ export default function DesignDetailPage() {
                 <div className="sp-card sp-in" style={{ '--i': 5 }}>
                   <div className="sp-panel-head"><h2>Print files</h2></div>
                   {files.map((f) => (
-                    <button key={f.url} onClick={() => setViewer({ url: f.url, label: `${f.viewName} · ${f.printAreaLabel}` })} className="sp-file" style={{ width: '100%', background: 'none', border: 0, borderTop: '1px solid var(--line)', color: 'inherit', font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
+                    <button key={f.url} onClick={() => { setZoom(1); setViewer({ url: f.url, label: `${f.viewName} · ${f.printAreaLabel}`, file: `${design.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g, '-') }); }} className="sp-file" style={{ width: '100%', background: 'none', border: 0, borderTop: '1px solid var(--line)', color: 'inherit', font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
                       <span>{f.viewName} · {f.printAreaLabel}</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                     </button>
@@ -131,14 +133,19 @@ export default function DesignDetailPage() {
           <div className="sp-dialog" style={{ maxWidth: 820 }}>
             <button className="sp-x" onClick={() => setViewer(null)} aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
             <h2 style={{ fontSize: 18 }}>{viewer.label}</h2>
-            <div className="sp-tabs" style={{ margin: '12px 0' }}>
+            <div className="sp-tabs" style={{ margin: '12px 0', alignItems: 'center' }}>
+              <button className="sp-tab" onClick={() => setZoom((z) => Math.max(1, +(z / 1.5).toFixed(2)))} disabled={zoom <= 1} aria-label="Zoom out">−</button>
+              <button className="sp-tab" onClick={() => setZoom(1)} style={{ minWidth: 64 }}>{zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}</button>
+              <button className="sp-tab" onClick={() => setZoom((z) => Math.min(12, +(z * 1.5).toFixed(2)))} aria-label="Zoom in">+</button>
+              <span style={{ width: 10 }} />
               {[['checker', 'Checker'], ['white', 'White'], ['black', 'Black']].map(([k, l]) => <button key={k} className={`sp-tab${bg === k ? ' on' : ''}`} onClick={() => setBg(k)}>{l}</button>)}
             </div>
-            <div style={{ display: 'grid', placeItems: 'center', minHeight: 360, padding: 12, border: '1px solid var(--line2)',
+            <div style={{ height: '58vh', minHeight: 320, overflow: 'auto', display: 'flex', alignItems: zoom > 1 ? 'flex-start' : 'center', justifyContent: zoom > 1 ? 'flex-start' : 'center', padding: 12, border: '1px solid var(--line2)',
               ...(bg === 'checker' ? { backgroundColor: '#fff', backgroundImage: 'linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%),linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0,10px 10px' } : { background: bg === 'black' ? '#000' : '#fff' }) }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={viewer.url} alt="" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
+              <img src={viewer.url} alt="" draggable={false} style={zoom === 1 ? { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' } : { width: `${zoom * 100}%`, maxWidth: 'none', height: 'auto', flex: 'none', imageRendering: zoom >= 4 ? 'pixelated' : 'auto' }} />
             </div>
+            <button className="sp-btn" style={{ marginTop: 16 }} onClick={() => downloadFile(viewer.url, viewer.file)}>Download print file</button>
           </div>
         </div>
       )}

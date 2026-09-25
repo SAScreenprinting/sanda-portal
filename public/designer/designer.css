@@ -1,0 +1,2082 @@
+/* Defined on :root (not [data-sa-designer-root]) because the studio overlay
+   is rendered via a React portal directly onto <body> — it's not a DOM
+   descendant of the block's own root element, so CSS custom properties
+   scoped there don't reach it (they'd resolve to nothing, leaving the
+   overlay transparent and the page behind it visible through it). */
+:root {
+  --sa-accent: #000052;
+  --sa-accent-soft: rgba(0, 0, 82, 0.08);
+  --sa-accent-soft-strong: rgba(0, 0, 82, 0.14);
+  --sa-border: #e4e4e0;
+  --sa-ink: #17171b;
+  --sa-ink-soft: #63636b;
+  --sa-surface: #ffffff;
+  --sa-bg: #f6f5f2;
+  --sa-radius-sm: 8px;
+  --sa-radius-md: 12px;
+  --sa-radius-lg: 18px;
+  --sa-shadow-sm: 0 1px 2px rgba(20, 20, 25, 0.05), 0 1px 3px rgba(20, 20, 25, 0.06);
+  --sa-shadow-md: 0 8px 24px rgba(20, 20, 25, 0.1);
+  --sa-shadow-lg: 0 16px 40px rgba(20, 20, 25, 0.14);
+  --sa-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-sa-designer-root] {
+  font-family: inherit;
+}
+
+.sa-designer-root {
+  margin: 24px 0;
+}
+
+/* Placeholder shown in the launcher button's exact spot while config is
+   still loading — same size as the real button so nothing shifts once it
+   swaps in, and a visible pulse instead of a silent, easy-to-miss gap. */
+.sa-designer-btn-skeleton {
+  width: 100%;
+  height: 42px;
+  border-radius: var(--sa-radius-sm, 8px);
+  background: linear-gradient(90deg, #ececeb 25%, #f5f5f4 37%, #ececeb 63%);
+  background-size: 400% 100%;
+  animation: sa-skeleton-pulse 1.4s ease infinite;
+}
+
+@keyframes sa-skeleton-pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* ============ Studio overlay shell ============ */
+
+.sa-studio-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: var(--sa-bg);
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  color: var(--sa-ink);
+}
+
+/* The overlay (and the canvas inside it) stays mounted continuously even
+   when closed, rather than being conditionally unmounted, so an in-progress
+   design survives the shopper closing and reopening the studio. */
+.sa-studio-overlay.sa-hidden {
+  display: none;
+}
+
+.sa-studio-canvas-scroll.sa-hidden {
+  display: none;
+}
+
+/* Loading state: a plain color-matched cover would otherwise read as a
+   frozen/broken page during the config fetch, so give it a spinner. */
+.sa-studio-loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-studio-loading::after {
+  content: "";
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--sa-accent-soft-strong);
+  border-top-color: var(--sa-accent);
+  animation: sa-spin 0.8s linear infinite;
+}
+
+@keyframes sa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sa-studio-topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+}
+
+.sa-studio-topbar-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sa-studio-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  color: var(--sa-ink);
+  transition: background-color 0.15s var(--sa-ease), transform 0.15s var(--sa-ease), color 0.15s var(--sa-ease);
+}
+
+.sa-studio-icon-btn:hover:not(:disabled) {
+  background: var(--sa-bg);
+  transform: translateY(-1px);
+}
+
+.sa-studio-icon-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sa-studio-icon-btn:disabled {
+  color: #cfcfd2;
+  cursor: default;
+}
+
+.sa-studio-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sa-studio-live-total-wrap {
+  position: relative;
+}
+
+.sa-studio-live-total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s var(--sa-ease);
+}
+
+.sa-studio-live-total:hover {
+  background: var(--sa-bg);
+}
+
+.sa-studio-live-total-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sa-ink-soft);
+}
+
+.sa-studio-live-total-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sa-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-studio-live-total-chevron {
+  color: var(--sa-ink-soft);
+  transition: transform 0.15s var(--sa-ease);
+  flex: none;
+  align-self: center;
+}
+
+.sa-studio-live-total-chevron.open {
+  transform: rotate(180deg);
+}
+
+.sa-price-breakdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.sa-price-breakdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  min-width: 280px;
+  background: var(--sa-surface);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-md);
+  box-shadow: var(--sa-shadow-lg);
+  padding: 12px 14px;
+}
+
+.sa-price-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--sa-ink-soft);
+}
+
+.sa-price-breakdown-row span:first-child {
+  flex: 1;
+}
+
+.sa-price-breakdown-row span:last-child {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--sa-ink);
+}
+
+.sa-price-breakdown-negative {
+  color: #067647 !important;
+}
+
+.sa-price-breakdown-total {
+  border-top: 1px solid var(--sa-border);
+  margin-top: 4px;
+  padding-top: 10px;
+  font-weight: 700;
+}
+
+.sa-price-breakdown-total span {
+  color: var(--sa-ink) !important;
+  font-size: 14px;
+}
+
+.sa-volume-tier-table {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sa-border);
+}
+
+.sa-volume-tier-table-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sa-ink-soft);
+  margin-bottom: 6px;
+}
+
+.sa-volume-tier-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-volume-tier-row.active {
+  background: var(--sa-accent-soft);
+  color: var(--sa-accent);
+  font-weight: 700;
+}
+
+.sa-studio-segmented {
+  display: flex;
+  border: 1px solid var(--sa-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--sa-bg);
+  padding: 3px;
+}
+
+.sa-studio-segmented button {
+  padding: 7px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sa-ink-soft);
+  transition: background-color 0.2s var(--sa-ease), color 0.2s var(--sa-ease), box-shadow 0.2s var(--sa-ease);
+}
+
+.sa-studio-segmented button.active {
+  background: var(--sa-accent);
+  color: #fff;
+  box-shadow: var(--sa-shadow-sm);
+}
+
+.sa-studio-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  /* Positioning context for the mobile floating panels below -- without
+     this, their position:absolute resolves against .sa-studio-overlay
+     instead (the next positioned ancestor up), stretching them over the
+     full screen height and covering the top toolbar and bottom zoom bar
+     instead of just the canvas area. */
+  position: relative;
+}
+
+.sa-studio-rail {
+  flex: none;
+  width: 76px;
+  background: var(--sa-surface);
+  border-right: 1px solid var(--sa-border);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 10px 0;
+  overflow-y: auto;
+}
+
+.sa-studio-rail-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 4px;
+  margin: 1px 6px;
+  border: none;
+  border-radius: var(--sa-radius-sm);
+  background: transparent;
+  cursor: pointer;
+  color: var(--sa-ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  transition: background-color 0.15s var(--sa-ease), color 0.15s var(--sa-ease);
+}
+
+.sa-studio-rail-btn:hover {
+  background: var(--sa-bg);
+  color: var(--sa-ink);
+}
+
+.sa-studio-rail-btn.active {
+  color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  font-weight: 600;
+}
+
+.sa-studio-rail-btn.active::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sa-accent);
+}
+
+.sa-studio-panel {
+  flex: none;
+  width: 340px;
+  background: var(--sa-surface);
+  border-right: 1px solid var(--sa-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow: var(--sa-shadow-sm);
+  animation: sa-panel-in 0.18s var(--sa-ease);
+}
+
+.sa-product-info {
+  transition: width 0.18s var(--sa-ease);
+  overflow: hidden;
+}
+
+.sa-product-info.collapsed {
+  width: 44px;
+}
+
+.sa-product-info.collapsed .sa-product-info-header span {
+  display: none;
+}
+
+.sa-product-info.collapsed .sa-product-info-header {
+  justify-content: center;
+  padding: 18px 0;
+}
+
+/* Small floating dock in the canvas's own bottom-right corner -- unlike
+   Product Details it isn't a full-height sidebar, since its content
+   (print-area picker + layer count + delete) is light and the garment
+   preview should keep as much of the screen as possible. */
+.sa-layers-dock {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  width: 240px;
+  max-height: min(320px, calc(100% - 32px));
+  background: var(--sa-surface);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-md);
+  box-shadow: var(--sa-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sa-panel-in 0.18s var(--sa-ease);
+}
+
+.sa-layers-dock .sa-studio-panel-header {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.sa-layers-dock .sa-studio-panel-content {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sa-layer-list-panel {
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sa-layer-panel-toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px 8px;
+}
+
+.sa-layer-panel-area-select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  background: var(--sa-bg);
+  color: var(--sa-ink);
+}
+
+.sa-layer-panel-undo-redo {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+.sa-layer-panel-undo-redo button {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  color: var(--sa-ink);
+}
+
+.sa-layer-panel-undo-redo button:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+  color: var(--sa-accent);
+}
+
+.sa-layer-panel-undo-redo button:disabled {
+  color: #cfcfd2;
+  cursor: default;
+}
+
+.sa-layer-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sa-layer-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.sa-layer-row:hover {
+  background: var(--sa-bg);
+}
+
+.sa-layer-row.active {
+  background: var(--sa-accent-soft);
+  border-color: var(--sa-accent);
+}
+
+.sa-layer-thumb {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: repeating-conic-gradient(#e8e8ea 0% 25%, var(--sa-surface) 0% 50%) 50% / 10px 10px;
+  border: 1px solid var(--sa-border);
+}
+
+.sa-layer-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--sa-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-layer-name-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 5px;
+  border: 1px solid var(--sa-accent);
+  border-radius: 4px;
+  background: var(--sa-surface);
+  color: var(--sa-ink);
+}
+
+.sa-layer-list-panel .sa-designer-layer-row {
+  flex: none;
+  padding: 8px 12px 10px;
+  margin-top: 0;
+  gap: 8px;
+}
+
+.sa-layers-dock.collapsed {
+  width: auto;
+}
+
+.sa-layers-dock.collapsed .sa-product-info-header span {
+  display: none;
+}
+
+.sa-layers-dock.collapsed .sa-product-info-header {
+  padding: 10px 12px;
+}
+
+@keyframes sa-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sa-studio-panel-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px 12px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.sa-studio-panel-header button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--sa-ink-soft);
+  display: flex;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background-color 0.15s var(--sa-ease), color 0.15s var(--sa-ease);
+}
+
+.sa-studio-panel-header button:hover {
+  background: var(--sa-bg);
+  color: var(--sa-ink);
+}
+
+.sa-product-info-header {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--sa-ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sa-product-info-chevron {
+  color: var(--sa-ink-soft);
+  transition: transform 0.15s var(--sa-ease);
+  flex: none;
+  /* Base icon points down; rotated to point left ("collapse sideways") when
+     expanded, and right ("expand") when collapsed — a sidebar-rail toggle,
+     not an accordion. */
+  transform: rotate(90deg);
+}
+
+.sa-product-info-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.sa-studio-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sa-product-info-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: 10px;
+}
+
+.sa-product-info-title {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--sa-ink);
+}
+
+.sa-product-info-price {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--sa-ink-soft);
+}
+
+.sa-product-info-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--sa-ink-soft);
+}
+
+.sa-product-info-options {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sa-product-info-option-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--sa-border);
+}
+
+.sa-product-info-option-row dt {
+  color: var(--sa-ink-soft);
+}
+
+.sa-product-info-option-row dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--sa-ink);
+  text-align: right;
+}
+
+.sa-product-info-option-select {
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--sa-ink);
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  max-width: 60%;
+}
+
+.sa-product-info-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 60%;
+}
+
+.sa-product-info-color-swatches button {
+  padding: 4px 10px;
+  border: 1px solid var(--sa-border);
+  border-radius: 20px;
+  background: var(--sa-surface);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--sa-ink);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-product-info-color-swatches button.active {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  font-weight: 600;
+}
+
+.sa-product-info-decoration-hint {
+  margin-top: -4px;
+}
+
+.sa-product-info-decoration-hint .sa-designer-size-hint {
+  margin-top: 0;
+}
+
+.sa-studio-canvas-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.sa-garment-3d {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sa-garment-3d:active {
+  cursor: grabbing;
+}
+
+.sa-garment-3d canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sa-studio-canvas-scroll {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-studio-canvas-scroll.panning {
+  cursor: grab;
+}
+
+.sa-studio-canvas-scroll.panning:active {
+  cursor: grabbing;
+}
+
+.sa-studio-canvas-zoom {
+  padding: 120px;
+}
+
+/* Fabric.js renders two stacked <canvas> elements per instance: .lower-canvas
+   (actual content) and .upper-canvas (selection/interaction overlay, kept
+   transparent so it doesn't visually cover the rendered design). */
+.sa-studio-canvas-zoom .canvas-container {
+  /* No border-radius/shadow — the garment template's background already
+     matches the studio's own background exactly, so a card outline here
+     would only draw a visible seam where none is otherwise needed. */
+}
+
+.sa-studio-canvas-zoom .lower-canvas {
+  /* Matches the studio's own background so the flat-template artwork's
+     transparent margin (outside the garment silhouette) blends in instead
+     of showing a checkerboard — the templates are opaque art on a
+     transparent canvas, not something a shopper needs a transparency cue
+     for. */
+  background: var(--sa-bg);
+  touch-action: none;
+}
+
+.sa-studio-canvas-zoom .upper-canvas {
+  background: transparent !important;
+  touch-action: none;
+}
+
+/* Docked to the top-center of the canvas viewport itself (.sa-studio-canvas-
+   area is the positioned ancestor) rather than glued to the selected
+   object's own moving/rotating box — stays put through zoom/pan/rotation
+   and never covers whatever's actually selected. */
+.sa-selection-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--sa-ink);
+  border-radius: var(--sa-radius-sm);
+  box-shadow: var(--sa-shadow-md);
+  z-index: 5;
+  white-space: nowrap;
+  /* More buttons than fit a narrow viewport at once -- scroll within the
+     pill itself rather than spilling past the canvas edge. */
+  max-width: calc(100% - 24px);
+  overflow-x: auto;
+}
+
+.sa-selection-toolbar button {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  opacity: 0.85;
+  transition: background-color 0.15s var(--sa-ease), opacity 0.15s var(--sa-ease);
+}
+
+.sa-selection-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.sa-selection-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+  flex: none;
+}
+
+.sa-selection-toolbar-danger:hover {
+  background: #dc2626 !important;
+}
+
+.sa-selection-opacity {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 6px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sa-selection-opacity input[type="range"] {
+  width: 64px;
+  accent-color: var(--sa-accent);
+}
+
+.sa-selection-crop-label {
+  flex: none;
+  padding: 0 6px 0 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sa-selection-crop-apply,
+.sa-selection-crop-cancel {
+  flex: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sa-selection-crop-apply {
+  background: var(--sa-accent);
+  color: #fff;
+}
+
+.sa-selection-crop-apply:hover {
+  filter: brightness(1.1);
+}
+
+.sa-selection-crop-cancel {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sa-selection-crop-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.sa-selection-size-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.sa-selection-size-input {
+  width: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-radius: 5px;
+  padding: 4px 2px;
+  /* Hide the native up/down spinner — at this width it crowds the digits
+     and duplicates what dragging the object's own resize handle already does. */
+  -moz-appearance: textfield;
+}
+
+.sa-selection-size-input::-webkit-outer-spin-button,
+.sa-selection-size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.sa-selection-size-input:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sa-selection-size-x,
+.sa-selection-size-unit {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+  flex: none;
+}
+
+.sa-selection-hint {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.sa-selection-hint kbd {
+  font: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 860px) {
+  /* No physical Ctrl key to hold on a touchscreen -- the hint would just be
+     confusing noise there. */
+  .sa-selection-hint {
+    display: none;
+  }
+}
+
+.sa-studio-toast {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--sa-shadow-md);
+  animation: sa-toast-in 0.25s var(--sa-ease);
+}
+
+@keyframes sa-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.sa-studio-toast.error {
+  background: #fbe8e8;
+  color: #b42318;
+}
+
+.sa-studio-toast.success {
+  background: #e3f5ec;
+  color: #067647;
+}
+
+.sa-studio-bottombar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+}
+
+.sa-studio-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.sa-studio-zoom-controls button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  color: var(--sa-ink);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-studio-zoom-controls button:hover {
+  border-color: var(--sa-accent);
+}
+
+.sa-studio-zoom-controls button.active {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+}
+
+.sa-studio-zoom-controls span {
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-zoom-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: unset !important;
+}
+
+.sa-zoom-input {
+  width: 36px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--sa-ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.sa-zoom-input:hover {
+  border-color: var(--sa-border);
+}
+
+.sa-zoom-input:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+  background: var(--sa-surface);
+  color: var(--sa-ink);
+}
+
+.sa-studio-bottombar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-studio-quantity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.sa-studio-quantity-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sa-ink-soft);
+  margin-right: 2px;
+}
+
+.sa-studio-quantity button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  color: var(--sa-ink);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-studio-quantity button:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+}
+
+.sa-studio-quantity button:disabled {
+  color: #cfcfd2;
+  cursor: default;
+}
+
+.sa-studio-quantity-input {
+  width: 44px;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-bg);
+  color: var(--sa-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-radius: var(--sa-radius-sm);
+  padding: 5px 2px;
+}
+
+.sa-studio-quantity-input:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+}
+
+.sa-studio-view-row {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+}
+
+.sa-designer-view-switcher {
+  display: flex;
+  gap: 8px;
+}
+
+.sa-designer-view-switcher button {
+  padding: 8px 18px;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: 999px;
+  white-space: nowrap;
+  flex: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--sa-ink);
+  transition: background-color 0.15s var(--sa-ease), color 0.15s var(--sa-ease), border-color 0.15s var(--sa-ease);
+}
+
+.sa-designer-view-switcher button:hover:not(.active) {
+  border-color: var(--sa-accent);
+}
+
+.sa-designer-view-switcher button.active {
+  background: var(--sa-accent);
+  border-color: var(--sa-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Extra class-qualified selector deliberately, not just .sa-studio-add-to-cart
+   -- .sa-designer-btn-primary's shared width:100% is defined LATER in this
+   file, and with equal (single-class) specificity source order would let it
+   win and stretch this button to its flex container's full hypothetical
+   width, pushing it out past the viewport edge. Doubling the class here
+   raises specificity so this override always wins regardless of rule order. */
+.sa-studio-bottombar-right .sa-studio-add-to-cart {
+  flex: none;
+  width: auto;
+  padding: 12px 26px;
+}
+
+/* Same width:100% cascade issue as .sa-studio-add-to-cart above (see its
+   comment) -- .sa-designer-btn-secondary is defined later in this file with
+   width:100%, so this needs the same specificity bump to actually win. */
+.sa-studio-bottombar-right .sa-studio-save-for-later {
+  flex: none;
+  width: auto;
+  padding: 12px 18px;
+  white-space: nowrap;
+}
+
+/* Same specificity-bump reasoning as .sa-studio-save-for-later above. */
+.sa-studio-bottombar-right .sa-studio-preview-3d {
+  flex: none;
+  width: auto;
+  padding: 12px 18px;
+  white-space: nowrap;
+}
+
+/* Floating over the 3D canvas (not in the bottombar) since the 3D view is a
+   one-way step away from editing, not a persistent toggle -- this is the
+   only way back. */
+.sa-studio-3d-back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sa-studio-3d-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 860px) {
+  .sa-studio-topbar-right {
+    gap: 8px;
+  }
+  /* "Total" plus a currency amount plus Edit/Preview is tight next to
+     Back/Undo/Redo at this width -- the amount alone (still title="..."
+     hinting what it is) is enough. */
+  .sa-studio-live-total-label {
+    display: none;
+  }
+  .sa-studio-live-total-amount {
+    font-size: 14px;
+  }
+  .sa-studio-rail {
+    width: 64px;
+  }
+  /* Two-word labels ("My Library", "Add Text"...) wrap to two lines at this
+     width and look broken -- icon-only is the standard mobile pattern
+     anyway, and the icon alone is still identifiable. */
+  .sa-studio-rail-btn span {
+    display: none;
+  }
+  .sa-studio-rail-btn {
+    padding: 14px 4px;
+    min-height: 48px;
+    justify-content: center;
+  }
+  .sa-studio-panel {
+    position: absolute;
+    left: 64px;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    box-shadow: var(--sa-shadow-lg);
+    /* Wide enough to read comfortably, but never so wide it swallows the
+       whole screen and hides the canvas behind it entirely. */
+    width: min(340px, calc(100vw - 64px - 32px));
+  }
+  .sa-product-info.collapsed {
+    /* Same fixed rail width as desktop -- at this size it's already just an
+       icon strip, no extra shrinking needed. */
+    width: 44px;
+  }
+  /* The floating layers dock (see its own rule above) already sits in the
+     canvas's own bottom-right corner via position:absolute, independent of
+     .sa-studio-panel's mobile left-edge docking -- nothing to override here. */
+  /* Tap-anywhere-outside-to-dismiss backdrop, shown only while the panel is
+     open on a narrow screen -- the header toggle alone was easy to miss. */
+  .sa-product-info-backdrop {
+    display: block;
+    position: absolute;
+    left: 64px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    background: rgba(17, 17, 17, 0.25);
+    border: none;
+    padding: 0;
+  }
+  .sa-product-info-header {
+    /* Full-height tap target down the rail, not just the header row, so
+       collapsing/expanding is easy to hit with a thumb. */
+    min-height: 48px;
+  }
+  .sa-product-info-chevron {
+    width: 20px;
+    height: 20px;
+  }
+  .sa-studio-view-row {
+    padding: 8px 12px;
+  }
+  .sa-designer-view-switcher {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  /* Zoom controls + qty stepper + Add to Cart together are wider than a
+     phone screen -- space-between just let the right-hand group (qty + Add
+     to Cart, the actual checkout CTA) spill past the viewport edge instead
+     of wrapping. Give Add to Cart its own full-width row above the zoom
+     controls so it's always fully visible and easy to tap. */
+  .sa-studio-bottombar {
+    flex-wrap: wrap;
+    row-gap: 10px;
+    padding: 10px 12px;
+  }
+  .sa-studio-zoom-controls {
+    order: 2;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .sa-studio-bottombar-right {
+    order: 1;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .sa-studio-quantity {
+    flex: none;
+  }
+  /* Add to Cart is the one thing that must never be squeezed off-screen --
+     always its own full-width row. Save for Later shares the row with Qty
+     above it. */
+  .sa-studio-bottombar-right .sa-studio-preview-3d,
+  .sa-studio-bottombar-right .sa-studio-save-for-later {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .sa-studio-bottombar-right .sa-studio-add-to-cart {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+.sa-product-info-backdrop {
+  display: none;
+}
+
+/* ============ Shared panel-internal styling (Upload/Text/Graphics/Layers/Options panels) ============ */
+
+.sa-designer-panel {
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-md);
+  padding: 14px;
+  background: var(--sa-surface);
+}
+
+.sa-designer-panel-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sa-ink-soft);
+  margin-bottom: 8px;
+}
+
+.sa-designer-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sa-designer-color-swatches button {
+  padding: 5px 12px;
+  border: 1px solid var(--sa-border);
+  border-radius: 20px;
+  background: var(--sa-surface);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--sa-ink);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-designer-color-swatches button.active {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  font-weight: 600;
+  color: var(--sa-accent);
+}
+
+.sa-designer-upload-source {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px dashed var(--sa-border);
+  border-radius: var(--sa-radius-md);
+  background: var(--sa-surface);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sa-ink);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-designer-upload-source:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+}
+
+.sa-designer-upload-source:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-designer-upload-requirements {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: var(--sa-radius-sm);
+  background: var(--sa-bg);
+}
+
+.sa-designer-upload-requirements ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sa-designer-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.sa-designer-shape-item {
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  padding: 10px;
+  background: var(--sa-surface);
+  cursor: pointer;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sa-ink-soft);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease), transform 0.15s var(--sa-ease);
+}
+
+.sa-designer-shape-item:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  transform: translateY(-1px);
+}
+
+.sa-designer-search-input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  font-size: 13px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.15s var(--sa-ease);
+}
+
+.sa-designer-search-input:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+}
+
+.sa-designer-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sa-designer-category-chips button {
+  padding: 4px 10px;
+  border: 1px solid var(--sa-border);
+  border-radius: 999px;
+  background: var(--sa-surface);
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease), color 0.15s var(--sa-ease);
+}
+
+.sa-designer-category-chips button.active {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  color: var(--sa-accent);
+  font-weight: 600;
+}
+
+.sa-designer-clipart-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.sa-designer-clipart-item {
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  padding: 4px;
+  background: var(--sa-surface);
+  cursor: pointer;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s var(--sa-ease), transform 0.15s var(--sa-ease);
+}
+
+.sa-designer-clipart-item:hover {
+  border-color: var(--sa-accent);
+  transform: translateY(-1px);
+}
+
+.sa-designer-clipart-item img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.sa-designer-library-item {
+  position: relative;
+}
+
+.sa-designer-library-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sa-ink);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--sa-ease);
+}
+
+.sa-designer-library-remove:hover {
+  transform: scale(1.1);
+}
+
+.sa-designer-empty-hint {
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  margin: 0;
+}
+
+.sa-designer-btn-primary,
+.sa-designer-btn-secondary,
+.sa-designer-btn-danger {
+  width: 100%;
+  padding: 11px 0;
+  border-radius: var(--sa-radius-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background-color 0.15s var(--sa-ease), transform 0.15s var(--sa-ease), box-shadow 0.15s var(--sa-ease);
+}
+
+.sa-designer-btn-primary {
+  background: var(--sa-accent);
+  color: #fff;
+  box-shadow: var(--sa-shadow-sm);
+}
+
+.sa-designer-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.sa-designer-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sa-designer-btn-secondary {
+  background: var(--sa-bg);
+  color: var(--sa-ink);
+}
+
+.sa-designer-btn-secondary:hover:not(:disabled) {
+  background: var(--sa-border);
+}
+
+.sa-designer-btn-danger {
+  background: #fbe8e8;
+  color: #b42318;
+  width: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.sa-designer-btn-danger:hover {
+  background: #f8d5d5;
+}
+
+.sa-designer-btn-primary:disabled,
+.sa-designer-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sa-designer-layer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  margin-top: 8px;
+}
+
+.sa-designer-error {
+  color: #b42318;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.sa-designer-success {
+  color: #067647;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sa-designer-method-single {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sa-designer-size-hint {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  margin-top: 8px;
+}
+
+.sa-designer-method-description {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  line-height: 1.5;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.sa-designer-color-hint {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sa-border);
+  line-height: 1.5;
+}
+
+.sa-designer-color-hint strong {
+  color: var(--sa-ink);
+}
+
+.sa-embroidery-complexity {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sa-border);
+}
+
+.sa-embroidery-complexity-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sa-ink);
+  margin-bottom: 6px;
+}
+
+.sa-embroidery-complexity-options {
+  display: flex;
+  gap: 6px;
+}
+
+.sa-embroidery-complexity-options button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-embroidery-complexity-options button:hover {
+  border-color: var(--sa-accent);
+}
+
+.sa-embroidery-complexity-options button.active {
+  border-color: var(--sa-accent);
+  background: color-mix(in srgb, var(--sa-accent) 10%, var(--sa-surface));
+}
+
+.sa-embroidery-complexity-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sa-ink);
+}
+
+.sa-embroidery-complexity-price {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Named "detected-color" (not "color-swatches") to stay distinct from
+   ColorVariantPicker's own .sa-designer-color-swatches pill buttons — both
+   now render together in Product Details, so a shared class name would mean
+   one's styles bleeding into the other. */
+.sa-detected-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sa-detected-color-swatch {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  /* A pale swatch (e.g. white/cream ink) would otherwise vanish into the
+     panel's own light background with no way to tell it's there. */
+  box-shadow: 0 0 0 1px var(--sa-surface), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.sa-color-correction {
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+}
+
+.sa-color-correction-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sa-ink);
+}
+
+.sa-color-correction-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.sa-color-correction-stepper span {
+  min-width: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-color-correction-stepper button {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sa-border);
+  background: var(--sa-surface);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--sa-ink);
+  font-size: 13px;
+  line-height: 1;
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-color-correction-stepper button:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+}
+
+.sa-color-correction-stepper button:disabled {
+  color: #cfcfd2;
+  cursor: default;
+}
+
+.sa-color-correction-hint {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.sa-knockout-warning {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding: 10px;
+  background: #fff8e6;
+  border: 1px solid #f0dca0;
+  border-radius: var(--sa-radius-sm);
+}
+
+.sa-knockout-warning .sa-detected-color-swatch {
+  margin-top: 2px;
+}
+
+.sa-knockout-warning-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sa-ink);
+}
+
+.sa-knockout-warning-body {
+  font-size: 11px;
+  color: var(--sa-ink-soft);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.sa-knockout-warning-btn {
+  margin-top: 8px;
+  padding: 5px 12px;
+  border: 1px solid var(--sa-accent);
+  background: var(--sa-surface);
+  color: var(--sa-accent);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s var(--sa-ease), color 0.15s var(--sa-ease);
+}
+
+.sa-knockout-warning-btn:hover {
+  background: var(--sa-accent);
+  color: #fff;
+}
+
+.sa-knockout-skipped {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sa-border);
+}
+
+.sa-knockout-skipped-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sa-ink-soft);
+  margin-bottom: 6px;
+}
+
+.sa-knockout-skipped-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.sa-knockout-skipped-row .sa-detected-color-swatch {
+  width: 16px;
+  height: 16px;
+}
+
+.sa-knockout-skipped-row button {
+  border: none;
+  background: transparent;
+  color: var(--sa-accent);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sa-knockout-skipped-row button:hover {
+  text-decoration: underline;
+}
+
+.sa-designer-text-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sa-designer-ai-quota {
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  margin: 0 0 8px;
+}
+
+.sa-designer-ai-prompt {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  transition: border-color 0.15s var(--sa-ease);
+}
+
+.sa-designer-ai-prompt:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+}
+
+.sa-designer-panel select {
+  width: 100%;
+  padding: 8px 8px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.sa-designer-text-controls select {
+  width: 100%;
+  padding: 8px 8px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  font-size: 13px;
+}
+
+.sa-designer-text-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-designer-size-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+}
+
+.sa-designer-size-label input[type="range"] {
+  flex: 1;
+  accent-color: var(--sa-accent);
+}
+
+.sa-designer-size-value {
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-toggle-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  background: var(--sa-surface);
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.15s var(--sa-ease), background-color 0.15s var(--sa-ease);
+}
+
+.sa-toggle-btn:hover {
+  border-color: var(--sa-accent);
+}
+
+.sa-toggle-btn.active {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+}
+
+.sa-designer-color-input {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.sa-designer-swatches {
+  display: flex;
+  gap: 6px;
+}
+
+.sa-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--sa-border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s var(--sa-ease), outline-color 0.15s var(--sa-ease);
+}
+
+.sa-swatch:hover {
+  transform: scale(1.08);
+}
+
+.sa-swatch.active {
+  outline: 2px solid var(--sa-accent);
+  outline-offset: 1px;
+}
+
+.sa-thread-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.sa-designer-panel-hint {
+  font-size: 12px;
+  color: var(--sa-text-subdued, #6b6f76);
+  line-height: 1.4;
+}

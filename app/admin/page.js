@@ -130,6 +130,15 @@ export default function AdminPage() {
   const [viewerBg, setViewerBg]     = useState('checker');
   const [viewerFile, setViewerFile] = useState(null);
   const [viewerZoom, setViewerZoom] = useState(1);
+  const [skuDraft, setSkuDraft] = useState({});
+  async function saveSku(id) {
+    const v = skuDraft[id];
+    if (v === undefined) return;
+    const res = await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sku: v }) });
+    const out = await res.json().catch(()=>({}));
+    if (res.ok) setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product||{}), sku: out.sku } } : d));
+    setSkuDraft(x => { const n = { ...x }; delete n[id]; return n; });
+  }
   const pickViewer = (f) => { setViewerFile(f); setViewerZoom(1); };
   const [designsLoading, setDesignsLoading] = useState(false);
   const [artwork, setArtwork]     = useState([]);
@@ -207,7 +216,7 @@ export default function AdminPage() {
 
   async function setDesignStatus(id, status, note) {
     setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product || {}), status, reviewNote: status === 'Denied' ? (note || '') : '' } } : d));
-    await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status, note }) });
+    await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status, note }) }).then(r => r.json()).catch(() => ({})).then(out => { if (out.sku) setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product||{}), sku: out.sku } } : d)); });
   }
 
   useEffect(() => { loadDesigns(); }, []);
@@ -837,7 +846,7 @@ export default function AdminPage() {
                   <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);setViewerZoom(1);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
                     <div style={{background:'#fff',borderBottom:'1px solid #e5e7eb',height:190,display:'grid',placeItems:'center'}}>
                       {first && <img src={first} alt="" style={{maxWidth:'100%',maxHeight:190,objectFit:'contain'}}/>}
-                    </div><div style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}><strong style={{fontSize:16,color:'#f4f4f5'}}>{d.name}</strong><span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:0,background:stc[0],color:stc[1]}}>{st}</span></div><div style={{fontSize:14,color:'#f4f4f5',fontWeight:600}}>{who}</div><div style={{fontSize:13,color:'#e4e4e7',margin:'3px 0 12px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
+                    </div><div style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}><strong style={{fontSize:16,color:'#f4f4f5'}}>{d.name}</strong><span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:0,background:stc[0],color:stc[1]}}>{st}</span></div><div style={{fontSize:14,color:'#f4f4f5',fontWeight:600}}>{who}</div><div style={{fontSize:13,color:'#e4e4e7',margin:'3px 0 6px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>{d.product?.sku && <div style={{fontSize:12,color:'#ffc800',fontWeight:700,letterSpacing:0.5,margin:'0 0 10px'}}>SKU {d.product.sku}</div>}
                       {st==='Submitted' ? (
                         <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}><button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button><button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#0e0e10',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button></div>
                       ) : <div style={{fontSize:13,color:'#93c5fd',fontWeight:600}}>Open to review</div>}
@@ -875,7 +884,7 @@ export default function AdminPage() {
                         ))}
                       </div></div><div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}><div><div style={{fontSize:20,fontWeight:800,color:'#f4f4f5'}}>{d.name}</div><div style={{fontSize:14,color:'#e4e4e7',marginTop:2}}>{d.client?.business_name || d.client?.contact_name || 'Client'}{d.client?.email?` · ${d.client.email}`:''}</div></div><button onClick={()=>setReviewing(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#e4e4e7'}}>×</button></div><div style={{fontSize:14,color:'#f4f4f5',lineHeight:1.6}}><div><strong>Product:</strong> {d.product?.productTitle}</div>
                         {d.product?.variantTitle && <div><strong>Variant:</strong> {d.product.variantTitle}</div>}
-                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div><div><strong>Status:</strong> {st}</div>
+                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div><div><strong>Status:</strong> {st}</div>{d.product?.sku && (<div style={{marginTop:10}}><label style={{fontSize:12,fontWeight:700,color:'#b3b3bc',letterSpacing:1,textTransform:'uppercase',display:'block',marginBottom:5}}>SKU</label><div style={{display:'flex',gap:6}}><input value={skuDraft[d.id] ?? d.product.sku} onChange={e=>setSkuDraft(x=>({...x,[d.id]:e.target.value}))} style={{flex:1,minWidth:0,padding:'9px 10px',border:'1px solid #34343a',background:'#070708',color:'#ffc800',fontWeight:700,fontSize:14,borderRadius:0,letterSpacing:0.5}}/><button onClick={()=>saveSku(d.id)} disabled={skuDraft[d.id]===undefined || skuDraft[d.id]===d.product.sku} style={{padding:'9px 14px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:13,cursor:'pointer',opacity:(skuDraft[d.id]===undefined||skuDraft[d.id]===d.product.sku)?0.4:1}}>Save</button><button onClick={()=>navigator.clipboard?.writeText(d.product.sku)} style={{padding:'9px 12px',background:'transparent',color:'#f4f4f5',border:'1px solid #34343a',fontWeight:700,fontSize:13,cursor:'pointer'}}>Copy</button></div></div>)}
                         {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'rgba(248,113,113,0.12)',border:'1px solid rgba(248,113,113,0.35)',borderRadius:0,color:'#fca5a5'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
                       </div>
 

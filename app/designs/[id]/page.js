@@ -107,6 +107,7 @@ export default function DesignDetailPage() {
                 <div className="sp-panel-head"><h2>Details</h2></div>
                 <dl className="sp-kv" style={{ margin: 0 }}>
                   <div><span className="k">Design number</span><span>{p.designNumber}</span></div>
+                  {p.sku && <div><span className="k">SKU</span><span style={{ color: 'var(--y)', fontWeight: 700 }}>{p.sku}</span></div>}
                   <div><span className="k">Product</span><span style={{ textAlign: 'right' }}>{p.productTitle}</span></div>
                   {p.variantTitle && <div><span className="k">Variant</span><span>{p.variantTitle}</span></div>}
                   <div><span className="k">Created</span><span>{new Date(design.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></div>

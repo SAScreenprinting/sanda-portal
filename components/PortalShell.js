@@ -13,6 +13,12 @@ const I = {
   settings: <><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></>,
   admin: <><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" /><path d="M9 12l2 2 4-4" /></>,
   out: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></>,
+  alerts: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>,
+  clients: <><circle cx="9" cy="8" r="3.5" /><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" /><path d="M17 4.5a3.5 3.5 0 0 1 0 7M22 21v-1a6 6 0 0 0-4-5.6" /></>,
+  requests: <><rect x="5" y="3" width="14" height="18" /><path d="M9 3v3h6V3M9 11h6M9 15h6" /></>,
+  products: <><path d="M20 12l-8 8-9-9V3h8l9 9z" /><circle cx="8" cy="8" r="1.5" /></>,
+  inventory: <><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5M3 17l9 5 9-5" /></>,
+  orderdesk: <><path d="M2 6h11v10H2zM13 9h5l4 4v3h-9" /><circle cx="6" cy="18" r="2" /><circle cx="17" cy="18" r="2" /></>,
   menu: <><path d="M3 6h18M3 12h18M3 18h18" /></>,
 };
 export function Icon({ name, size = 18 }) {

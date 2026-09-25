@@ -1,5 +1,7 @@
 'use client';
 import { downloadFile } from '@/lib/downloadFile';
+import '@/components/portal.css';
+import { Icon } from '@/components/PortalShell';
 import { useState, useEffect, useRef } from 'react';
 import { DEFAULT_PRODUCTS, toAdminFormat } from '@/lib/products';
 
@@ -71,43 +73,43 @@ const PRODUCT_CATEGORIES = ['T-Shirts','Hoodies','Sweatshirts','Polos','Jackets'
 const DECORATION_OPTIONS = ['Screen Print','Embroidery','DTG','Sublimation','Heat Transfer','Vinyl'];
 const BLANK_PRODUCT = { name:'', brand:'', sku:'', category:'T-Shirts', price:'', colors:'', printAreas:'', decorations:[], frontImage:'', backImage:'' };
 const NAV = [
-  { id:'dashboard', icon:'📊', label:'Dashboard' },
-  { id:'alerts',    icon:'🔔', label:'Alerts' },
-  { id:'clients',   icon:'👥', label:'Clients' },
-  { id:'requests',  icon:'📋', label:'Requests' },
-  { id:'messages',  icon:'💬', label:'Messages' },
-  { id:'orders',    icon:'📦', label:'Orders' },
-  { id:'products',  icon:'🏷️', label:'Products' },
-  { id:'designs',   icon:'✏️', label:'Designs' },
-  { id:'artwork',   icon:'🎨', label:'Artwork' },
-  { id:'billing',   icon:'💰', label:'Billing' },
-  { id:'inventory', icon:'📋', label:'Inventory' },
-  { id:'orderdesk', icon:'🚚', label:'Order Desk' },
-  { id:'settings',  icon:'⚙️', label:'Settings' },
+  { id:'dashboard', icon:'', label:'Dashboard' },
+  { id:'alerts',    icon:'', label:'Alerts' },
+  { id:'clients',   icon:'', label:'Clients' },
+  { id:'requests',  icon:'', label:'Requests' },
+  { id:'messages',  icon:'', label:'Messages' },
+  { id:'orders',    icon:'', label:'Orders' },
+  { id:'products',  icon:'', label:'Products' },
+  { id:'designs',   icon:'', label:'Designs' },
+  { id:'artwork',   icon:'', label:'Artwork' },
+  { id:'billing',   icon:'', label:'Billing' },
+  { id:'inventory', icon:'', label:'Inventory' },
+  { id:'orderdesk', icon:'', label:'Order Desk' },
+  { id:'settings',  icon:'', label:'Settings' },
 ];
 
 const SC = {
-  new:      {bg:'#dbeafe',color:'#1e40af'},
-  printing: {bg:'#fef3c7',color:'#92400e'},
-  review:   {bg:'#ede9fe',color:'#5b21b6'},
-  shipped:  {bg:'#d1fae5',color:'#065f46'},
-  overdue:  {bg:'#fee2e2',color:'#991b1b'},
-  active:   {bg:'#d1fae5',color:'#065f46'},
-  vip:      {bg:'#fef3c7',color:'#92400e'},
-  new_c:    {bg:'#dbeafe',color:'#1e40af'},
-  pending:  {bg:'#fef3c7',color:'#92400e'},
-  paid:     {bg:'#d1fae5',color:'#065f46'},
-  waived:   {bg:'#f3f4f6',color:'#6b7280'},
-  approved: {bg:'#d1fae5',color:'#065f46'},
-  rejected: {bg:'#fee2e2',color:'#991b1b'},
-  low:      {bg:'#fef3c7',color:'#92400e'},
-  critical: {bg:'#fee2e2',color:'#991b1b'},
-  ok:       {bg:'#d1fae5',color:'#065f46'},
+  new:      {bg:'rgba(96,165,250,0.14)',color:'#93c5fd'},
+  printing: {bg:'rgba(255,200,0,0.14)',color:'#ffc800'},
+  review:   {bg:'rgba(167,139,250,0.14)',color:'#c4b5fd'},
+  shipped:  {bg:'rgba(52,211,153,0.14)',color:'#34d399'},
+  overdue:  {bg:'rgba(248,113,113,0.14)',color:'#fca5a5'},
+  active:   {bg:'rgba(52,211,153,0.14)',color:'#34d399'},
+  vip:      {bg:'rgba(255,200,0,0.14)',color:'#ffc800'},
+  new_c:    {bg:'rgba(96,165,250,0.14)',color:'#93c5fd'},
+  pending:  {bg:'rgba(255,200,0,0.14)',color:'#ffc800'},
+  paid:     {bg:'rgba(52,211,153,0.14)',color:'#34d399'},
+  waived:   {bg:'#141417',color:'#b3b3bc'},
+  approved: {bg:'rgba(52,211,153,0.14)',color:'#34d399'},
+  rejected: {bg:'rgba(248,113,113,0.14)',color:'#fca5a5'},
+  low:      {bg:'rgba(255,200,0,0.14)',color:'#ffc800'},
+  critical: {bg:'rgba(248,113,113,0.14)',color:'#fca5a5'},
+  ok:       {bg:'rgba(52,211,153,0.14)',color:'#34d399'},
 };
 
 function Badge({ status, label }) {
-  const c = SC[status] || {bg:'#f3f4f6',color:'#6b7280'};
-  return <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:20,background:c.bg,color:c.color,whiteSpace:'nowrap'}}>{label||status}</span>;
+  const c = SC[status] || {bg:'#141417',color:'#b3b3bc'};
+  return <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:0,background:c.bg,color:c.color,whiteSpace:'nowrap'}}>{label||status}</span>;
 }
 
 export default function AdminPage() {
@@ -251,9 +253,9 @@ export default function AdminPage() {
   }
 
   const INQ_STATUS = {
-    open:        { bg:'#fef3c7', color:'#92400e', label:'Open' },
-    in_progress: { bg:'#dbeafe', color:'#1e40af', label:'In Progress' },
-    resolved:    { bg:'#d1fae5', color:'#065f46', label:'Resolved' },
+    open:        { bg:'rgba(255,200,0,0.14)', color:'#ffc800', label:'Open' },
+    in_progress: { bg:'rgba(96,165,250,0.14)', color:'#93c5fd', label:'In Progress' },
+    resolved:    { bg:'rgba(52,211,153,0.14)', color:'#34d399', label:'Resolved' },
   };
 
   async function updateRequestStatus(id, status) {
@@ -346,14 +348,14 @@ export default function AdminPage() {
         body: JSON.stringify(createClientForm),
       });
       const data = await res.json();
-      if (!res.ok) { setCreateClientMsg('⚠ ' + data.error); }
+      if (!res.ok) { setCreateClientMsg(' ' + data.error); }
       else {
-        setCreateClientMsg('✓ Account created! They can log in now.');
+        setCreateClientMsg(' Account created! They can log in now.');
         setCreateClientForm({ email:'', password:'', business_name:'', contact_name:'', phone:'' });
         setTimeout(() => { setShowCreateClient(false); setCreateClientMsg(''); }, 2500);
       }
     } catch {
-      setCreateClientMsg('⚠ Network error. Try again.');
+      setCreateClientMsg(' Network error. Try again.');
     }
     setCreateClientLoading(false);
   }
@@ -384,14 +386,14 @@ export default function AdminPage() {
   function addLine()    { setLineItems(l => [...l,{desc:'',qty:'',price:''}]); }
   function removeLine(idx) { setLineItems(l => l.filter((_,i)=>i!==idx)); }
   function createInvoice() {
-    if (!newInv.client||!newInv.due||lineItems.some(l=>!l.desc||!l.qty||!l.price)) { setCreateMsg('⚠ Fill in all fields.'); return; }
+    if (!newInv.client||!newInv.due||lineItems.some(l=>!l.desc||!l.qty||!l.price)) { setCreateMsg(' Fill in all fields.'); return; }
     const items = lineItems.map(l=>({desc:l.desc,qty:Number(l.qty),price:Number(l.price)}));
     const sub = items.reduce((s,i)=>s+i.qty*i.price,0);
     const total = parseFloat((sub*(1+TAX_RATE)).toFixed(2));
     const id = `INV-${100+invoices.length+1}`;
     const today = new Date().toISOString().split('T')[0];
     setInvoices(inv=>[{id,client:newInv.client,amount:total,issued:today,due:newInv.due,status:'pending',items,note:newInv.note},...inv]);
-    setCreateMsg(`✓ ${id} created!`);
+    setCreateMsg(` ${id} created!`);
     setNewInv({client:'',due:'',note:''});
     setLineItems([{desc:'',qty:'',price:''}]);
     setTimeout(()=>setCreateMsg(''),4000);
@@ -399,15 +401,15 @@ export default function AdminPage() {
 
   // Discounts
   function applyDiscount() {
-    if (discountTarget==='client' && !discountClient) { setDiscountMsg('⚠ Select a client.'); return; }
-    if (discountTarget==='order' && !discountOrder)   { setDiscountMsg('⚠ Select an order.'); return; }
-    if (!discountAmt) { setDiscountMsg('⚠ Enter an amount.'); return; }
+    if (discountTarget==='client' && !discountClient) { setDiscountMsg(' Select a client.'); return; }
+    if (discountTarget==='order' && !discountOrder)   { setDiscountMsg(' Select an order.'); return; }
+    if (!discountAmt) { setDiscountMsg(' Enter an amount.'); return; }
     const target = discountTarget==='client' ? discountClient : discountOrder;
     const suffix = discountType==='percent' ? '%' : '$';
     if (discountTarget==='order') {
       setOrders(o => o.map(x => x.id===discountOrder ? {...x, discount:Number(discountAmt)} : x));
     }
-    setDiscountMsg(`✓ ${discountAmt}${suffix} discount applied to ${target}`);
+    setDiscountMsg(` ${discountAmt}${suffix} discount applied to ${target}`);
     setDiscountClient(''); setDiscountOrder(''); setDiscountAmt('');
     setTimeout(()=>setDiscountMsg(''),4000);
   }
@@ -438,7 +440,7 @@ export default function AdminPage() {
       if (artworkAdminUpLabel.trim()) fd.append('label', artworkAdminUpLabel.trim());
       const res  = await fetch('/api/artwork/upload', { method:'POST', body:fd });
       const data = await res.json();
-      if (!res.ok) { setArtworkAdminUpMsg(`⚠ ${data.error}`); setArtworkAdminUploading(false); return; }
+      if (!res.ok) { setArtworkAdminUpMsg(` ${data.error}`); setArtworkAdminUploading(false); return; }
     }
     // Auto-approve admin uploads
     const res2 = await fetch('/api/artwork/list?admin=true');
@@ -450,7 +452,7 @@ export default function AdminPage() {
         await fetch('/api/artwork/update', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:a.id, status:'approved', label: artworkAdminUpLabel.trim()||null }) });
       }
     }
-    setArtworkAdminUpMsg(`✓ ${fileList.length} file${fileList.length>1?'s':''} uploaded & approved`);
+    setArtworkAdminUpMsg(` ${fileList.length} file${fileList.length>1?'s':''} uploaded & approved`);
     setArtworkAdminUpLabel('');
     setTimeout(() => setArtworkAdminUpMsg(''), 4000);
     setArtworkAdminUploading(false);
@@ -497,238 +499,118 @@ export default function AdminPage() {
 
   // ── LOGIN ──────────────────────────────────────────────────────────────────
   if (!authed) return (
-    <div style={s.loginBg}>
-      <div style={s.loginCard}>
-        <div style={{fontSize:40,marginBottom:12}}>⚡</div>
-        <h1 style={s.loginTitle}>S&A Admin</h1>
-        <p style={s.loginSub}>Command Center · Staff Only</p>
-        <form onSubmit={login} style={{display:'flex',flexDirection:'column',gap:10}}>
-          <input type="password" placeholder="Admin password" value={pw} onChange={e=>setPw(e.target.value)} style={s.loginInput} autoFocus/>
+    <div style={s.loginBg}><div style={s.loginCard}><img src="/logo.png" alt="S&A" style={{height:64,display:'block',margin:'0 auto 18px'}}/><h1 style={s.loginTitle}>S&A Admin</h1><p style={s.loginSub}>Command Center · Staff Only</p><form onSubmit={login} style={{display:'flex',flexDirection:'column',gap:10}}><input type="password" placeholder="Admin password" value={pw} onChange={e=>setPw(e.target.value)} style={s.loginInput} autoFocus/>
           {pwErr && <p style={{color:'#f87171',fontSize:13,margin:0}}>{pwErr}</p>}
-          <button type="submit" style={s.loginBtn}>Enter Admin</button>
-        </form>
-      </div>
-    </div>
+          <button type="submit" style={s.loginBtn}>Enter Admin</button></form></div></div>
   );
 
   // ── SHELL ──────────────────────────────────────────────────────────────────
   return (
-    <div style={s.shell}>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}} *{box-sizing:border-box} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#374151;border-radius:2px} input:focus,select:focus,textarea:focus{outline:2px solid #e8a020;outline-offset:-1px} @media print{.no-print{display:none!important}}`}</style>
+    <div style={s.shell}><style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}} *{box-sizing:border-box} ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#374151;border-radius:2px} input:focus,select:focus,textarea:focus{outline:2px solid #e8a020;outline-offset:-1px} @media print{.no-print{display:none!important}}`}</style>
 
       {/* Sidebar */}
-      <aside style={s.sidebar}>
-        <div style={{padding:'16px 12px 8px'}}>
-          <div style={s.logo}>
-            <span style={{fontSize:20}}>⚡</span>
-            <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>S&A Admin</span>
-          </div>
-          {urgentCount>0 && <div style={s.urgentBanner}>🔴 {urgentCount} urgent item{urgentCount>1?'s':''}</div>}
-        </div>
-        <nav style={s.nav}>
+      <aside style={s.sidebar}><div style={{padding:'16px 12px 8px'}}><div style={s.logo}><img src="/logo.png" alt="" style={{height:34,display:'block'}}/><span style={{fontSize:12,fontWeight:700,color:'#fff',letterSpacing:3,textTransform:'uppercase',lineHeight:1.35,fontFamily:"var(--font-sora),sans-serif"}}>S&A<br/><span style={{color:'#ffc800'}}>Admin</span></span></div>
+          {urgentCount>0 && <div style={s.urgentBanner}> {urgentCount} urgent item{urgentCount>1?'s':''}</div>}
+        </div><nav style={s.nav}>
           {NAV.map(item=>{
             const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:item.id==='designs'?newDesigns:0;
             return (
-              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}>
-                <span style={{fontSize:16}}>{item.icon}</span>
-                <span style={{flex:1,textAlign:'left'}}>{item.label}</span>
+              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
                 {badge>0 && <span style={{...s.navBadge,...(item.id==='alerts'&&urgentCount>0?{background:'#dc2626'}:{})}}>{badge}</span>}
               </button>
             );
           })}
-        </nav>
-        <div style={s.sideBottom}>
-          <a href="/dashboard" style={{color:'#6b7280',fontSize:12,textDecoration:'none',textAlign:'center'}}>← Client Portal</a>
-          <button onClick={()=>setAuthed(false)} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#6b7280',padding:'6px',borderRadius:6,fontSize:12,cursor:'pointer'}}>Sign Out</button>
-        </div>
-      </aside>
+        </nav><div style={s.sideBottom}><a href="/dashboard" style={{color:'#b3b3bc',fontSize:12,textDecoration:'none',textAlign:'center'}}>← Client Portal</a><button onClick={()=>setAuthed(false)} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#b3b3bc',padding:'6px',borderRadius:0,fontSize:12,cursor:'pointer'}}>Sign Out</button></div></aside>
 
       {/* Main */}
       <main style={s.main}>
 
         {/* DASHBOARD */}
         {section==='dashboard' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Dashboard</h1>
-            <p style={s.sub}>Here's what needs your attention today.</p>
-            {urgentCount>0 && <div style={s.alertBanner}>🔴 <strong>{urgentCount} urgent alert{urgentCount>1?'s':''}</strong> need immediate attention. <button onClick={()=>setSection('alerts')} style={s.alertBannerBtn}>View →</button></div>}
+          <div style={s.sec}><h1 style={s.h1}>Dashboard</h1><p style={s.sub}>Here's what needs your attention today.</p>
+            {urgentCount>0 && <div style={s.alertBanner}> <strong>{urgentCount} urgent alert{urgentCount>1?'s':''}</strong> need immediate attention. <button onClick={()=>setSection('alerts')} style={s.alertBannerBtn}>View →</button></div>}
             <div style={s.statsGrid}>
               {[
-                {label:'Active Clients',   value:clients.length,                                       icon:'👥'},
-                {label:'Open Orders',      value:orders.filter(o=>o.status!=='shipped').length,         icon:'📦'},
-                {label:'New Designs',      value:newDesigns,                                            icon:'✏️'},
-                {label:'Pending Artwork',  value:pendingArt,                                            icon:'🎨'},
-                {label:'Unpaid Invoices',  value:invoices.filter(i=>i.status==='pending'||i.status==='overdue').length, icon:'💰'},
-                {label:'Unread Messages',  value:unreadCount,                                           icon:'💬'},
-                {label:'Low Stock Items',  value:inventory.filter(i=>i.status!=='ok').length,           icon:'📋'},
+                {label:'Active Clients',   value:clients.length,                                       icon:''},
+                {label:'Open Orders',      value:orders.filter(o=>o.status!=='shipped').length,         icon:''},
+                {label:'New Designs',      value:newDesigns,                                            icon:''},
+                {label:'Pending Artwork',  value:pendingArt,                                            icon:''},
+                {label:'Unpaid Invoices',  value:invoices.filter(i=>i.status==='pending'||i.status==='overdue').length, icon:''},
+                {label:'Unread Messages',  value:unreadCount,                                           icon:''},
+                {label:'Low Stock Items',  value:inventory.filter(i=>i.status!=='ok').length,           icon:''},
               ].map(st=>(
-                <div key={st.label} style={s.statCard}>
-                  <div style={{fontSize:26,marginBottom:6}}>{st.icon}</div>
-                  <div style={{fontSize:30,fontWeight:700,color:'#111827'}}>{st.value}</div>
-                  <div style={{fontSize:12,color:'#6b7280'}}>{st.label}</div>
-                </div>
+                <div key={st.label} style={s.statCard}><div style={{fontSize:30,fontWeight:700,color:'#f4f4f5'}}>{st.value}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{st.label}</div></div>
               ))}
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>Recent Orders</h3>
+            </div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}><div style={s.card}><h3 style={s.cardTitle}>Recent Orders</h3>
                 {orders.slice(0,4).map(o=>(
-                  <div key={o.id} style={s.row}>
-                    <div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#6b7280'}}>{o.items}</div></div>
-                    <div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#6b7280',marginTop:3}}>${o.total.toFixed(2)}</div></div>
-                  </div>
+                  <div key={o.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{o.items}</div></div><div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#b3b3bc',marginTop:3}}>${o.total.toFixed(2)}</div></div></div>
                 ))}
-                <button onClick={()=>setSection('orders')} style={s.viewAll}>View all orders →</button>
-              </div>
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>Pending Actions</h3>
+                <button onClick={()=>setSection('orders')} style={s.viewAll}>View all orders →</button></div><div style={s.card}><h3 style={s.cardTitle}>Pending Actions</h3>
                 {alerts.filter(a=>a.level!=='info').slice(0,5).map(a=>(
-                  <div key={a.id} style={s.row}>
-                    <div><div style={{fontSize:13,fontWeight:600}}>{a.level==='urgent'?'🔴':'🟡'} {a.title}</div><div style={{fontSize:12,color:'#6b7280'}}>{a.detail}</div></div>
-                  </div>
+                  <div key={a.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{a.level==='urgent'?'':''} {a.title}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{a.detail}</div></div></div>
                 ))}
-                <button onClick={()=>setSection('alerts')} style={s.viewAll}>View all alerts →</button>
-              </div>
-            </div>
-          </div>
+                <button onClick={()=>setSection('alerts')} style={s.viewAll}>View all alerts →</button></div></div></div>
         )}
 
         {/* ALERTS */}
         {section==='alerts' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Alerts</h1>
-            <p style={s.sub}>{alerts.length} active alerts</p>
+          <div style={s.sec}><h1 style={s.h1}>Alerts</h1><p style={s.sub}>{alerts.length} active alerts</p>
             {['urgent','action','info'].map(level=>{
               const items=alerts.filter(a=>a.level===level);
               if(!items.length) return null;
               return (
-                <div key={level} style={{marginBottom:24}}>
-                  <h3 style={{fontSize:12,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>
-                    {level==='urgent'?'🔴 Urgent':level==='action'?'🟡 Action Needed':'🟢 Info'}
+                <div key={level} style={{marginBottom:24}}><h3 style={{fontSize:12,fontWeight:700,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>
+                    {level==='urgent'?' Urgent':level==='action'?' Action Needed':' Info'}
                   </h3>
                   {items.map(a=>(
-                    <div key={a.id} style={{...s.alertRow,...(level==='urgent'?{borderLeft:'3px solid #dc2626'}:level==='action'?{borderLeft:'3px solid #f59e0b'}:{borderLeft:'3px solid #10b981'})}}>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:14,fontWeight:600,color:'#111827'}}>{a.title}</div>
-                        <div style={{fontSize:13,color:'#6b7280',marginTop:2}}>{a.detail}</div>
-                      </div>
-                      <div style={{display:'flex',gap:8}}>
-                        <button onClick={()=>setSection(a.section)} style={s.goBtn}>Go →</button>
-                        <button onClick={()=>setAlerts(al=>al.filter(x=>x.id!==a.id))} style={s.dimBtn}>Dismiss</button>
-                      </div>
-                    </div>
+                    <div key={a.id} style={{...s.alertRow,...(level==='urgent'?{borderLeft:'3px solid #dc2626'}:level==='action'?{borderLeft:'3px solid #f59e0b'}:{borderLeft:'3px solid #10b981'})}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:'#f4f4f5'}}>{a.title}</div><div style={{fontSize:13,color:'#b3b3bc',marginTop:2}}>{a.detail}</div></div><div style={{display:'flex',gap:8}}><button onClick={()=>setSection(a.section)} style={s.goBtn}>Go →</button><button onClick={()=>setAlerts(al=>al.filter(x=>x.id!==a.id))} style={s.dimBtn}>Dismiss</button></div></div>
                   ))}
                 </div>
               );
             })}
-            {!alerts.length && <div style={s.empty}>✅ All clear — no alerts!</div>}
+            {!alerts.length && <div style={s.empty}> All clear — no alerts!</div>}
           </div>
         )}
 
         {/* CLIENTS */}
         {section==='clients' && (
-          <div style={s.sec}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
-              <div>
-                <h1 style={s.h1}>Clients</h1>
-                <p style={s.sub}>{clients.length} clients</p>
-              </div>
-              <button onClick={()=>setShowCreateClient(true)}
-                style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}><div><h1 style={s.h1}>Clients</h1><p style={s.sub}>{clients.length} clients</p></div><button onClick={()=>setShowCreateClient(true)}
+                style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                 + Create Client Account
-              </button>
-            </div>
+              </button></div>
 
             {/* Create Client Modal */}
             {showCreateClient && (
               <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center'}}
-                onClick={e=>e.target===e.currentTarget&&setShowCreateClient(false)}>
-                <div style={{background:'#fff',borderRadius:16,padding:32,width:420,boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
-                  <h2 style={{fontSize:18,fontWeight:700,color:'#111827',marginBottom:4}}>Create Client Account</h2>
-                  <p style={{fontSize:13,color:'#6b7280',marginBottom:20}}>Client will be able to log in to the portal immediately.</p>
-                  <form onSubmit={handleCreateClient} style={{display:'flex',flexDirection:'column',gap:12}}>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                      <div>
-                        <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Business Name</label>
-                        <input value={createClientForm.business_name} onChange={e=>setCreateClientForm(f=>({...f,business_name:e.target.value}))}
-                          placeholder="Riverside FC" style={{...s.inp,width:'100%'}}/>
-                      </div>
-                      <div>
-                        <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Contact Name</label>
-                        <input value={createClientForm.contact_name} onChange={e=>setCreateClientForm(f=>({...f,contact_name:e.target.value}))}
-                          placeholder="John Smith" style={{...s.inp,width:'100%'}}/>
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Email Address *</label>
-                      <input type="email" required value={createClientForm.email} onChange={e=>setCreateClientForm(f=>({...f,email:e.target.value}))}
-                        placeholder="coach@riversidefc.com" style={{...s.inp,width:'100%'}}/>
-                    </div>
-                    <div>
-                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Phone</label>
-                      <input value={createClientForm.phone} onChange={e=>setCreateClientForm(f=>({...f,phone:e.target.value}))}
-                        placeholder="(201) 555-0182" style={{...s.inp,width:'100%'}}/>
-                    </div>
-                    <div>
-                      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Temporary Password *</label>
-                      <div style={{position:'relative'}}>
-                        <input type={showCreatePw?'text':'password'} required minLength={6} value={createClientForm.password} onChange={e=>setCreateClientForm(f=>({...f,password:e.target.value}))}
-                          placeholder="Min 6 characters" style={{...s.inp,width:'100%',paddingRight:36}}/>
-                        <button type="button" onClick={()=>setShowCreatePw(p=>!p)}
+                onClick={e=>e.target===e.currentTarget&&setShowCreateClient(false)}><div style={{background:'#0e0e10',borderRadius:0,padding:32,width:420,boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}><h2 style={{fontSize:18,fontWeight:700,color:'#f4f4f5',marginBottom:4}}>Create Client Account</h2><p style={{fontSize:13,color:'#b3b3bc',marginBottom:20}}>Client will be able to log in to the portal immediately.</p><form onSubmit={handleCreateClient} style={{display:'flex',flexDirection:'column',gap:12}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Business Name</label><input value={createClientForm.business_name} onChange={e=>setCreateClientForm(f=>({...f,business_name:e.target.value}))}
+                          placeholder="Riverside FC" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Contact Name</label><input value={createClientForm.contact_name} onChange={e=>setCreateClientForm(f=>({...f,contact_name:e.target.value}))}
+                          placeholder="John Smith" style={{...s.inp,width:'100%'}}/></div></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Email Address *</label><input type="email" required value={createClientForm.email} onChange={e=>setCreateClientForm(f=>({...f,email:e.target.value}))}
+                        placeholder="coach@riversidefc.com" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Phone</label><input value={createClientForm.phone} onChange={e=>setCreateClientForm(f=>({...f,phone:e.target.value}))}
+                        placeholder="(201) 555-0182" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Temporary Password *</label><div style={{position:'relative'}}><input type={showCreatePw?'text':'password'} required minLength={6} value={createClientForm.password} onChange={e=>setCreateClientForm(f=>({...f,password:e.target.value}))}
+                          placeholder="Min 6 characters" style={{...s.inp,width:'100%',paddingRight:36}}/><button type="button" onClick={()=>setShowCreatePw(p=>!p)}
                           style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:15,opacity:0.5}}>
-                          {showCreatePw?'🙈':'👁'}
-                        </button>
-                      </div>
-                    </div>
+                          {showCreatePw?'':''}
+                        </button></div></div>
                     {createClientMsg && (
-                      <div style={{padding:'8px 12px',borderRadius:8,background:createClientMsg.startsWith('✓')?'#d1fae5':'#fee2e2',color:createClientMsg.startsWith('✓')?'#065f46':'#991b1b',fontSize:13}}>
+                      <div style={{padding:'8px 12px',borderRadius:0,background:createClientMsg.startsWith('')?'rgba(52,211,153,0.14)':'rgba(248,113,113,0.14)',color:createClientMsg.startsWith('')?'#34d399':'#fca5a5',fontSize:13}}>
                         {createClientMsg}
                       </div>
                     )}
-                    <div style={{display:'flex',gap:8,marginTop:4}}>
-                      <button type="submit" disabled={createClientLoading}
-                        style={{flex:1,background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:14,fontWeight:700,cursor:'pointer',opacity:createClientLoading?0.7:1}}>
+                    <div style={{display:'flex',gap:8,marginTop:4}}><button type="submit" disabled={createClientLoading}
+                        style={{flex:1,background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'10px',fontSize:14,fontWeight:700,cursor:'pointer',opacity:createClientLoading?0.7:1}}>
                         {createClientLoading ? 'Creating…' : 'Create Account'}
-                      </button>
-                      <button type="button" onClick={()=>{setShowCreateClient(false);setCreateClientMsg('');}}
-                        style={{padding:'10px 16px',background:'#f3f4f6',border:'none',borderRadius:8,fontSize:14,cursor:'pointer',color:'#374151'}}>
+                      </button><button type="button" onClick={()=>{setShowCreateClient(false);setCreateClientMsg('');}}
+                        style={{padding:'10px 16px',background:'#141417',border:'none',borderRadius:0,fontSize:14,cursor:'pointer',color:'#e4e4e7'}}>
                         Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+                      </button></div></form></div></div>
             )}
 
             {clients.map(c=>(
-              <div key={c.id} style={s.clientCard}>
-                <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
-                  <div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                      <span style={{fontSize:15,fontWeight:700,color:'#111827'}}>{c.name}</span>
-                      <Badge status={c.status==='new'?'new_c':c.status}/>
-                    </div>
-                    <div style={{fontSize:13,color:'#6b7280'}}>{c.email} · {c.phone}</div>
-                    <div style={{fontSize:13,color:'#6b7280'}}>{c.orders} orders · Last order {c.lastOrder}</div>
-                    {c.notes && <div style={{fontSize:12,color:'#92400e',background:'#fef3c7',padding:'3px 8px',borderRadius:4,marginTop:6,display:'inline-block'}}>{c.notes}</div>}
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:20,fontWeight:700,color:c.balance>0?'#dc2626':'#059669'}}>${c.balance.toFixed(2)}</div>
-                    <div style={{fontSize:11,color:'#6b7280'}}>{c.balance>0?'balance due':'paid up'}</div>
-                  </div>
-                </div>
-                <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
-                  <button onClick={()=>{const i=messages.findIndex(m=>m.client===c.name);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}>💬 Message</button>
-                  <button onClick={()=>setSection('billing')} style={s.smBtn}>💰 Billing</button>
-                  <button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountClient(c.name);}} style={s.smBtn}>🏷️ Discount</button>
-                  <button onClick={()=>{setEditNote(c.id);setNoteText(c.notes);}} style={s.smBtn}>📝 Note</button>
-                </div>
+              <div key={c.id} style={s.clientCard}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><span style={{fontSize:15,fontWeight:700,color:'#f4f4f5'}}>{c.name}</span><Badge status={c.status==='new'?'new_c':c.status}/></div><div style={{fontSize:13,color:'#b3b3bc'}}>{c.email} · {c.phone}</div><div style={{fontSize:13,color:'#b3b3bc'}}>{c.orders} orders · Last order {c.lastOrder}</div>
+                    {c.notes && <div style={{fontSize:12,color:'#ffc800',background:'rgba(255,200,0,0.14)',padding:'3px 8px',borderRadius:0,marginTop:6,display:'inline-block'}}>{c.notes}</div>}
+                  </div><div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:700,color:c.balance>0?'#dc2626':'#059669'}}>${c.balance.toFixed(2)}</div><div style={{fontSize:11,color:'#b3b3bc'}}>{c.balance>0?'balance due':'paid up'}</div></div></div><div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}><button onClick={()=>{const i=messages.findIndex(m=>m.client===c.name);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}> Message</button><button onClick={()=>setSection('billing')} style={s.smBtn}> Billing</button><button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountClient(c.name);}} style={s.smBtn}> Discount</button><button onClick={()=>{setEditNote(c.id);setNoteText(c.notes);}} style={s.smBtn}> Note</button></div>
                 {editNote===c.id && (
-                  <div style={{marginTop:10,display:'flex',gap:8}}>
-                    <input value={noteText} onChange={e=>setNoteText(e.target.value)} style={{...s.inp,flex:1}} placeholder="Add note…"/>
-                    <button onClick={()=>{setClients(cl=>cl.map(x=>x.id===c.id?{...x,notes:noteText}:x));setEditNote(null);}} style={s.saveBtn}>Save</button>
-                    <button onClick={()=>setEditNote(null)} style={s.cancelBtn}>Cancel</button>
-                  </div>
+                  <div style={{marginTop:10,display:'flex',gap:8}}><input value={noteText} onChange={e=>setNoteText(e.target.value)} style={{...s.inp,flex:1}} placeholder="Add note…"/><button onClick={()=>{setClients(cl=>cl.map(x=>x.id===c.id?{...x,notes:noteText}:x));setEditNote(null);}} style={s.saveBtn}>Save</button><button onClick={()=>setEditNote(null)} style={s.cancelBtn}>Cancel</button></div>
                 )}
               </div>
             ))}
@@ -737,34 +619,25 @@ export default function AdminPage() {
 
         {/* INQUIRIES */}
         {section==='messages' && (
-          <div style={s.sec}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}>
-              <div>
-                <h1 style={s.h1}>Client Inquiries</h1>
-                <p style={s.sub}>{inquiries.filter(i=>i.status==='open').length} open · {inquiries.filter(i=>i.status==='in_progress').length} in progress</p>
-              </div>
-              <button onClick={loadInquiries} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}><div><h1 style={s.h1}>Client Inquiries</h1><p style={s.sub}>{inquiries.filter(i=>i.status==='open').length} open · {inquiries.filter(i=>i.status==='in_progress').length} in progress</p></div><button onClick={loadInquiries} style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                 ↻ Refresh
-              </button>
-            </div>
+              </button></div>
 
             {/* Status filter */}
             <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
               {[['all','All'],['open','Open'],['in_progress','In Progress'],['resolved','Resolved']].map(([val,label])=>(
                 <button key={val} onClick={()=>setInqFilter(val)}
-                  style={{padding:'5px 14px',borderRadius:20,border:'none',background:inqFilter===val?'#1a1a2e':'#f3f4f6',color:inqFilter===val?'#fff':'#6b7280',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                  style={{padding:'5px 14px',borderRadius:0,border:'none',background:inqFilter===val?'#ffc800':'#141417',color:inqFilter===val?'#fff':'#b3b3bc',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                   {label}
                 </button>
               ))}
-            </div>
-
-            <div style={{display:'grid',gridTemplateColumns:'300px 1fr',gap:16,minHeight:500}}>
+            </div><div style={{display:'grid',gridTemplateColumns:'300px 1fr',gap:16,minHeight:500}}>
 
               {/* Inquiry list */}
               <div style={{display:'flex',flexDirection:'column',gap:8,overflowY:'auto',maxHeight:600}}>
-                {inqLoading && <div style={{color:'#9ca3af',fontSize:13,padding:'20px',textAlign:'center'}}>Loading…</div>}
+                {inqLoading && <div style={{color:'#a0a0a9',fontSize:13,padding:'20px',textAlign:'center'}}>Loading…</div>}
                 {!inqLoading && inquiries.filter(i=>inqFilter==='all'||i.status===inqFilter).length===0 && (
-                  <div style={{color:'#9ca3af',fontSize:13,padding:'40px 20px',textAlign:'center'}}>No inquiries yet.</div>
+                  <div style={{color:'#a0a0a9',fontSize:13,padding:'40px 20px',textAlign:'center'}}>No inquiries yet.</div>
                 )}
                 {inquiries.filter(i=>inqFilter==='all'||i.status===inqFilter).map(inq=>{
                   const st = INQ_STATUS[inq.status]||INQ_STATUS.open;
@@ -772,15 +645,9 @@ export default function AdminPage() {
                   const isActive = activeInquiry?.id===inq.id;
                   return (
                     <button key={inq.id} onClick={()=>openInquiry(inq)}
-                      style={{...s.msgBtn,...(isActive?{background:'#1a1a2e',color:'#fff',borderColor:'#1a1a2e'}:{}),textAlign:'left',padding:'12px 14px'}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4,gap:6}}>
-                        <span style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:isActive?'#e8a020':'#9ca3af',flexShrink:0}}>{inq.inquiry_number}</span>
-                        <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:20,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:isActive?'#fff':'#111827'}}>{inq.title}</div>
-                      <div style={{fontSize:12,color:isActive?'#d1d5db':'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{clientName}</div>
+                      style={{...s.msgBtn,...(isActive?{background:'rgba(255,200,0,0.1)',color:'#fff',borderColor:'#ffc800'}:{}),textAlign:'left',padding:'12px 14px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4,gap:6}}><span style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:isActive?'#ffc800':'#a0a0a9',flexShrink:0}}>{inq.inquiry_number}</span><span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:0,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span></div><div style={{fontSize:13,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:isActive?'#fff':'#f4f4f5'}}>{inq.title}</div><div style={{fontSize:12,color:isActive?'#d1d5db':'#b3b3bc',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{clientName}</div>
                       {inq.last_message && (
-                        <div style={{fontSize:11,color:isActive?'#9ca3af':'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2}}>
+                        <div style={{fontSize:11,color:isActive?'#a0a0a9':'#a0a0a9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2}}>
                           {inq.last_message.is_admin?'You: ':'Client: '}{inq.last_message.body}
                         </div>
                       )}
@@ -794,155 +661,93 @@ export default function AdminPage() {
                 {activeInquiry ? (
                   <>
                     {/* Inquiry header */}
-                    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16,gap:12,flexWrap:'wrap'}}>
-                      <div>
-                        <div style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:'#9ca3af',marginBottom:3}}>{activeInquiry.inquiry_number}</div>
-                        <h3 style={{...s.cardTitle,margin:0}}>{activeInquiry.title}</h3>
-                        <div style={{fontSize:12,color:'#6b7280',marginTop:2}}>
+                    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16,gap:12,flexWrap:'wrap'}}><div><div style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:'#a0a0a9',marginBottom:3}}>{activeInquiry.inquiry_number}</div><h3 style={{...s.cardTitle,margin:0}}>{activeInquiry.title}</h3><div style={{fontSize:12,color:'#b3b3bc',marginTop:2}}>
                           {activeInquiry.client?.business_name || activeInquiry.client?.contact_name || 'Client'}
-                        </div>
-                      </div>
-                      <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
+                        </div></div><div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
                         {/* Status changer */}
                         <select value={activeInquiry.status} onChange={e=>updateInqStatus(activeInquiry.id,e.target.value)}
-                          style={{padding:'5px 10px',border:'1px solid #e5e7eb',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer',color:'#374151',background:'white'}}>
-                          <option value="open">Open</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="resolved">Resolved</option>
-                        </select>
-                      </div>
-                    </div>
+                          style={{padding:'5px 10px',border:'1px solid #222226',borderRadius:0,fontSize:12,fontWeight:600,cursor:'pointer',color:'#e4e4e7',background:'#0e0e10'}}><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
 
                     {/* Messages */}
                     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16,minHeight:220,maxHeight:380,overflowY:'auto',padding:'4px'}}>
                       {inqThread.length===0 && (
-                        <div style={{color:'#9ca3af',fontSize:13,textAlign:'center',padding:'40px 0'}}>Loading thread…</div>
+                        <div style={{color:'#a0a0a9',fontSize:13,textAlign:'center',padding:'40px 0'}}>Loading thread…</div>
                       )}
                       {inqThread.map((msg,i)=>(
-                        <div key={msg.id||i} style={{display:'flex',flexDirection:'column',alignItems:msg.is_admin?'flex-end':'flex-start',gap:2}}>
-                          <span style={{fontSize:11,color:'#9ca3af',paddingLeft:msg.is_admin?0:4,paddingRight:msg.is_admin?4:0}}>
+                        <div key={msg.id||i} style={{display:'flex',flexDirection:'column',alignItems:msg.is_admin?'flex-end':'flex-start',gap:2}}><span style={{fontSize:11,color:'#a0a0a9',paddingLeft:msg.is_admin?0:4,paddingRight:msg.is_admin?4:0}}>
                             {msg.is_admin?'You (S&A)':'Client'} · {new Date(msg.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
-                          </span>
-                          <div style={{maxWidth:'78%',padding:'9px 13px',borderRadius:12,fontSize:13,lineHeight:'1.55',background:msg.is_admin?'#1a1a2e':'#f3f4f6',color:msg.is_admin?'#fff':'#111827',borderBottomRightRadius:msg.is_admin?3:12,borderBottomLeftRadius:msg.is_admin?12:3}}>
+                          </span><div style={{maxWidth:'78%',padding:'9px 13px',borderRadius:0,fontSize:13,lineHeight:'1.55',background:msg.is_admin?'#ffc800':'#141417',color:msg.is_admin?'#fff':'#f4f4f5',borderBottomRightRadius:msg.is_admin?3:12,borderBottomLeftRadius:msg.is_admin?12:3}}>
                             {msg.body}
-                          </div>
-                        </div>
+                          </div></div>
                       ))}
                     </div>
 
                     {/* Reply */}
                     {activeInquiry.status!=='resolved' ? (
-                      <div style={{display:'flex',gap:8}}>
-                        <input
+                      <div style={{display:'flex',gap:8}}><input
                           value={inqReply}
                           onChange={e=>setInqReply(e.target.value)}
                           onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&sendInqReply()}
                           style={{...s.inp,flex:1}}
                           placeholder={`Reply to ${activeInquiry.client?.business_name||'client'}…`}
-                        />
-                        <button onClick={sendInqReply} disabled={!inqReply.trim()||inqSending} style={{...s.saveBtn,opacity:(!inqReply.trim()||inqSending)?0.5:1}}>
+                        /><button onClick={sendInqReply} disabled={!inqReply.trim()||inqSending} style={{...s.saveBtn,opacity:(!inqReply.trim()||inqSending)?0.5:1}}>
                           {inqSending?'Sending…':'Send'}
-                        </button>
-                      </div>
+                        </button></div>
                     ) : (
-                      <div style={{padding:'10px 14px',background:'#d1fae5',borderRadius:8,fontSize:12,color:'#065f46',fontWeight:600,textAlign:'center'}}>
-                        ✓ Inquiry resolved. Change status above to reopen.
+                      <div style={{padding:'10px 14px',background:'rgba(52,211,153,0.14)',borderRadius:0,fontSize:12,color:'#34d399',fontWeight:600,textAlign:'center'}}>
+                         Inquiry resolved. Change status above to reopen.
                       </div>
                     )}
                   </>
                 ) : (
                   <div style={s.empty}>Select an inquiry to view the thread and reply</div>
                 )}
-              </div>
-            </div>
-          </div>
+              </div></div></div>
         )}
 
         {/* ORDERS */}
         {section==='orders' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Orders</h1>
-            <p style={s.sub}>{orders.length} orders · {orders.filter(o=>o.urgent).length} urgent</p>
+          <div style={s.sec}><h1 style={s.h1}>Orders</h1><p style={s.sub}>{orders.length} orders · {orders.filter(o=>o.urgent).length} urgent</p>
             {orders.map(o=>(
-              <div key={o.id} style={{...s.card,...(o.urgent?{borderLeft:'3px solid #dc2626'}:{}),marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
-                  <div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                      <span style={{fontSize:15,fontWeight:700}}>{o.id}</span>
-                      <Badge status={o.status}/>
-                      {o.urgent&&<span style={{fontSize:11,background:'#fee2e2',color:'#991b1b',padding:'2px 6px',borderRadius:4,fontWeight:600}}>URGENT</span>}
-                      {o.discount>0&&<span style={{fontSize:11,background:'#fef3c7',color:'#92400e',padding:'2px 6px',borderRadius:4,fontWeight:600}}>{o.discount}% OFF</span>}
-                    </div>
-                    <div style={{fontSize:13,fontWeight:500,color:'#374151'}}>{o.client}</div>
-                    <div style={{fontSize:13,color:'#6b7280'}}>{o.items} · {o.date}</div>
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:20,fontWeight:700}}>${o.discount>0?(o.total*(1-o.discount/100)).toFixed(2):o.total.toFixed(2)}</div>
-                    {o.discount>0&&<div style={{fontSize:12,color:'#6b7280',textDecoration:'line-through'}}>${o.total.toFixed(2)}</div>}
-                  </div>
-                </div>
-                <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
+              <div key={o.id} style={{...s.card,...(o.urgent?{borderLeft:'3px solid #dc2626'}:{}),marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><span style={{fontSize:15,fontWeight:700}}>{o.id}</span><Badge status={o.status}/>
+                      {o.urgent&&<span style={{fontSize:11,background:'rgba(248,113,113,0.14)',color:'#fca5a5',padding:'2px 6px',borderRadius:0,fontWeight:600}}>URGENT</span>}
+                      {o.discount>0&&<span style={{fontSize:11,background:'rgba(255,200,0,0.14)',color:'#ffc800',padding:'2px 6px',borderRadius:0,fontWeight:600}}>{o.discount}% OFF</span>}
+                    </div><div style={{fontSize:13,fontWeight:500,color:'#e4e4e7'}}>{o.client}</div><div style={{fontSize:13,color:'#b3b3bc'}}>{o.items} · {o.date}</div></div><div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:700}}>${o.discount>0?(o.total*(1-o.discount/100)).toFixed(2):o.total.toFixed(2)}</div>
+                    {o.discount>0&&<div style={{fontSize:12,color:'#b3b3bc',textDecoration:'line-through'}}>${o.total.toFixed(2)}</div>}
+                  </div></div><div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
                   {['new','printing','review','shipped','overdue'].map(st=>(
                     <button key={st} onClick={()=>updateOrderStatus(o.id,st)}
-                      style={{...s.smBtn,...(o.status===st?{background:'#1a1a2e',color:'#fff',borderColor:'#1a1a2e'}:{})}}>
+                      style={{...s.smBtn,...(o.status===st?{background:'rgba(255,200,0,0.1)',color:'#fff',borderColor:'#ffc800'}:{})}}>
                       {st.charAt(0).toUpperCase()+st.slice(1)}
                     </button>
                   ))}
-                  <button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountTarget('order');setDiscountOrder(o.id);}} style={{...s.smBtn,color:'#e8a020'}}>🏷️ Discount</button>
-                  <button onClick={()=>{const i=messages.findIndex(m=>m.client===o.client);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}>💬 Message</button>
-                </div>
-              </div>
+                  <button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountTarget('order');setDiscountOrder(o.id);}} style={{...s.smBtn,color:'#ffc800'}}> Discount</button><button onClick={()=>{const i=messages.findIndex(m=>m.client===o.client);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}> Message</button></div></div>
             ))}
           </div>
         )}
 
         {/* REQUESTS */}
         {section==='requests' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Product Requests</h1>
-            <p style={s.sub}>{requests.filter(r=>r.status==='pending').length} pending · {requests.length} total</p>
+          <div style={s.sec}><h1 style={s.h1}>Product Requests</h1><p style={s.sub}>{requests.filter(r=>r.status==='pending').length} pending · {requests.length} total</p>
 
             {requests.length === 0 ? (
-              <div style={{...s.card,...s.empty}}>
-                <div style={{fontSize:36,marginBottom:10}}>📋</div>
-                <div style={{fontWeight:600,color:'#374151',marginBottom:4}}>No requests yet</div>
-                <div style={{fontSize:13}}>Client product requests will appear here.</div>
-              </div>
+              <div style={{...s.card,...s.empty}}><div style={{fontSize:36,marginBottom:10}}></div><div style={{fontWeight:600,color:'#e4e4e7',marginBottom:4}}>No requests yet</div><div style={{fontSize:13}}>Client product requests will appear here.</div></div>
             ) : (
               <div style={{display:'flex',flexDirection:'column',gap:12}}>
                 {requests.map(r => {
                   const clientName = r.profiles?.business_name || r.profiles?.contact_name || r.profiles?.email || 'Unknown client';
-                  const statusStyle = r.status==='pending' ? {bg:'#fef3c7',color:'#92400e'} : r.status==='sourced' ? {bg:'#d1fae5',color:'#065f46'} : r.status==='declined' ? {bg:'#fee2e2',color:'#991b1b'} : {bg:'#dbeafe',color:'#1e40af'};
+                  const statusStyle = r.status==='pending' ? {bg:'rgba(255,200,0,0.14)',color:'#ffc800'} : r.status==='sourced' ? {bg:'rgba(52,211,153,0.14)',color:'#34d399'} : r.status==='declined' ? {bg:'rgba(248,113,113,0.14)',color:'#fca5a5'} : {bg:'rgba(96,165,250,0.14)',color:'#93c5fd'};
                   return (
-                    <div key={r.id} style={{...s.card,...(r.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{})}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}>
-                        <div style={{flex:1}}>
-                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                            <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>{r.garment_name}</span>
-                            <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:20,background:statusStyle.bg,color:statusStyle.color}}>{r.status}</span>
-                          </div>
-                          <div style={{fontSize:13,color:'#6b7280',marginBottom:4}}>
-                            👤 {clientName}
+                    <div key={r.id} style={{...s.card,...(r.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{})}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}><span style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{r.garment_name}</span><span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:0,background:statusStyle.bg,color:statusStyle.color}}>{r.status}</span></div><div style={{fontSize:13,color:'#b3b3bc',marginBottom:4}}>
+                             {clientName}
                             {r.brand && <> · Brand: <strong>{r.brand}</strong></>}
                             {r.sku && <> · SKU: <strong>{r.sku}</strong></>}
                           </div>
-                          {r.notes && <div style={{fontSize:12,color:'#6b7280',fontStyle:'italic'}}>"{r.notes}"</div>}
-                          <div style={{fontSize:11,color:'#9ca3af',marginTop:6}}>{new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
-                        </div>
-                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                          {r.status==='pending' && <>
-                            <button onClick={()=>updateRequestStatus(r.id,'reviewed')} style={s.smBtn}>Mark Reviewed</button>
-                            <button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#059669',borderColor:'#6ee7b7'}}>✓ Sourced</button>
-                            <button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>Decline</button>
-                          </>}
-                          {r.status==='reviewed' && <>
-                            <button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#059669',borderColor:'#6ee7b7'}}>✓ Mark Sourced</button>
-                            <button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>Decline</button>
-                          </>}
-                          <button onClick={()=>{setSection('messages');}} style={s.smBtn}>💬 Message</button>
-                        </div>
-                      </div>
-                    </div>
+                          {r.notes && <div style={{fontSize:12,color:'#b3b3bc',fontStyle:'italic'}}>"{r.notes}"</div>}
+                          <div style={{fontSize:11,color:'#a0a0a9',marginTop:6}}>{new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                          {r.status==='pending' && <><button onClick={()=>updateRequestStatus(r.id,'reviewed')} style={s.smBtn}>Mark Reviewed</button><button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#34d399',borderColor:'rgba(52,211,153,0.4)'}}> Sourced</button><button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'rgba(248,113,113,0.4)'}}>Decline</button></>}
+                          {r.status==='reviewed' && <><button onClick={()=>updateRequestStatus(r.id,'sourced')} style={{...s.smBtn,color:'#34d399',borderColor:'rgba(52,211,153,0.4)'}}> Mark Sourced</button><button onClick={()=>updateRequestStatus(r.id,'declined')} style={{...s.smBtn,color:'#dc2626',borderColor:'rgba(248,113,113,0.4)'}}>Decline</button></>}
+                          <button onClick={()=>{setSection('messages');}} style={s.smBtn}> Message</button></div></div></div>
                   );
                 })}
               </div>
@@ -952,49 +757,29 @@ export default function AdminPage() {
 
         {/* PRODUCTS */}
         {section==='products' && (
-          <div style={s.sec}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
-              <div>
-                <h1 style={s.h1}>Products</h1>
-                <p style={s.sub}>{products.length} product{products.length!==1?'s':''} in catalog</p>
-              </div>
-              <button onClick={openAddProduct} style={{background:'#e8a020',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}><div><h1 style={s.h1}>Products</h1><p style={s.sub}>{products.length} product{products.length!==1?'s':''} in catalog</p></div><button onClick={openAddProduct} style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                 + Add Product
-              </button>
-            </div>
+              </button></div>
 
             {products.length === 0 ? (
-              <div style={{...s.card,...s.empty}}>
-                <div style={{fontSize:40,marginBottom:12}}>🏷️</div>
-                <div style={{fontWeight:600,color:'#374151',marginBottom:6}}>No products yet</div>
-                <div style={{fontSize:13}}>Click "+ Add Product" to build your catalog.</div>
-              </div>
+              <div style={{...s.card,...s.empty}}><div style={{fontSize:40,marginBottom:12}}></div><div style={{fontWeight:600,color:'#e4e4e7',marginBottom:6}}>No products yet</div><div style={{fontSize:13}}>Click "+ Add Product" to build your catalog.</div></div>
             ) : (
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:16}}>
                 {products.map(p=>(
-                  <div key={p.id} style={{background:'#fff',borderRadius:12,border:'1px solid #e5e7eb',overflow:'hidden'}}>
-                    <div style={{height:160,background:'#f9fafb',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+                  <div key={p.id} style={{background:'#0e0e10',borderRadius:0,border:'1px solid #222226',overflow:'hidden'}}><div style={{height:160,background:'#141417',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
                       {p.frontImage
                         ? <img src={p.frontImage} alt={p.name} style={{width:'100%',height:'100%',objectFit:'contain'}}/>
-                        : <span style={{fontSize:40,opacity:0.3}}>👕</span>
+                        : <span style={{fontSize:40,opacity:0.3}}></span>
                       }
                       {p.category && (
-                        <span style={{position:'absolute',top:8,left:8,fontSize:10,fontWeight:700,background:'#1a1a2e',color:'#e8a020',padding:'2px 8px',borderRadius:10}}>
+                        <span style={{position:'absolute',top:8,left:8,fontSize:10,fontWeight:700,background:'#050506',color:'#ffc800',padding:'2px 8px',borderRadius:0}}>
                           {p.category}
                         </span>
                       )}
-                    </div>
-                    <div style={{padding:'14px 16px'}}>
-                      <div style={{fontSize:14,fontWeight:700,color:'#111827',marginBottom:2}}>{p.name}</div>
-                      <div style={{fontSize:12,color:'#6b7280',marginBottom:6}}>{p.brand} · {p.sku}</div>
-                      {p.price>0 && <div style={{fontSize:13,fontWeight:600,color:'#059669',marginBottom:8}}>${parseFloat(p.price).toFixed(2)}</div>}
-                      {p.colors && <div style={{fontSize:11,color:'#9ca3af',marginBottom:10}} title={p.colors}>🎨 {p.colors.split(',').map(c=>c.trim()).filter(Boolean).join(' · ')}</div>}
-                      <div style={{display:'flex',gap:8}}>
-                        <button onClick={()=>openEditProduct(p)} style={{...s.smBtn,flex:1}}>✏️ Edit</button>
-                        <button onClick={()=>{ if(confirm('Delete this product?')) deleteProduct(p.id); }} style={{...s.smBtn,color:'#dc2626',borderColor:'#fca5a5'}}>🗑</button>
-                      </div>
-                    </div>
-                  </div>
+                    </div><div style={{padding:'14px 16px'}}><div style={{fontSize:14,fontWeight:700,color:'#f4f4f5',marginBottom:2}}>{p.name}</div><div style={{fontSize:12,color:'#b3b3bc',marginBottom:6}}>{p.brand} · {p.sku}</div>
+                      {p.price>0 && <div style={{fontSize:13,fontWeight:600,color:'#34d399',marginBottom:8}}>${parseFloat(p.price).toFixed(2)}</div>}
+                      {p.colors && <div style={{fontSize:11,color:'#a0a0a9',marginBottom:10}} title={p.colors}> {p.colors.split(',').map(c=>c.trim()).filter(Boolean).join(' · ')}</div>}
+                      <div style={{display:'flex',gap:8}}><button onClick={()=>openEditProduct(p)} style={{...s.smBtn,flex:1}}> Edit</button><button onClick={()=>{ if(confirm('Delete this product?')) deleteProduct(p.id); }} style={{...s.smBtn,color:'#dc2626',borderColor:'rgba(248,113,113,0.4)'}}></button></div></div></div>
                 ))}
               </div>
             )}
@@ -1002,138 +787,61 @@ export default function AdminPage() {
             {/* Add / Edit Product Modal */}
             {showProductModal && (
               <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:999,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'24px 16px',overflowY:'auto'}}
-                onClick={e=>e.target===e.currentTarget&&setShowProductModal(false)}>
-                <div style={{background:'#fff',borderRadius:16,padding:28,width:'100%',maxWidth:560,marginTop:8,marginBottom:24}}>
-                  <h2 style={{fontSize:18,fontWeight:700,color:'#111827',marginBottom:20}}>{editingProduct?'Edit Product':'Add Product'}</h2>
-
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-                    <div>
-                      <label style={s.label}>Product Name *</label>
-                      <input value={productForm.name} onChange={e=>setPF('name',e.target.value)} placeholder="Port & Company PC54" style={s.inp}/>
-                    </div>
-                    <div>
-                      <label style={s.label}>Brand</label>
-                      <input value={productForm.brand} onChange={e=>setPF('brand',e.target.value)} placeholder="Port & Company" style={s.inp}/>
-                    </div>
-                  </div>
-
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
-                    <div>
-                      <label style={s.label}>SKU *</label>
-                      <input value={productForm.sku} onChange={e=>setPF('sku',e.target.value)} placeholder="PC54" style={s.inp}/>
-                    </div>
-                    <div>
-                      <label style={s.label}>Category</label>
-                      <select value={productForm.category} onChange={e=>setPF('category',e.target.value)} style={s.inp}>
+                onClick={e=>e.target===e.currentTarget&&setShowProductModal(false)}><div style={{background:'#0e0e10',borderRadius:0,padding:28,width:'100%',maxWidth:560,marginTop:8,marginBottom:24}}><h2 style={{fontSize:18,fontWeight:700,color:'#f4f4f5',marginBottom:20}}>{editingProduct?'Edit Product':'Add Product'}</h2><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}><div><label style={s.label}>Product Name *</label><input value={productForm.name} onChange={e=>setPF('name',e.target.value)} placeholder="Port & Company PC54" style={s.inp}/></div><div><label style={s.label}>Brand</label><input value={productForm.brand} onChange={e=>setPF('brand',e.target.value)} placeholder="Port & Company" style={s.inp}/></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}><div><label style={s.label}>SKU *</label><input value={productForm.sku} onChange={e=>setPF('sku',e.target.value)} placeholder="PC54" style={s.inp}/></div><div><label style={s.label}>Category</label><select value={productForm.category} onChange={e=>setPF('category',e.target.value)} style={s.inp}>
                         {PRODUCT_CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={s.label}>Base Price ($)</label>
-                      <input type="number" min="0" step="0.01" value={productForm.price} onChange={e=>setPF('price',e.target.value)} placeholder="8.50" style={s.inp}/>
-                    </div>
-                  </div>
-
-                  <div style={{marginBottom:12}}>
-                    <label style={s.label}>Available Colors <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label>
-                    <input value={productForm.colors} onChange={e=>setPF('colors',e.target.value)} placeholder="White, Black, Navy, Red, Royal" style={s.inp}/>
-                  </div>
-
-                  <div style={{marginBottom:12}}>
-                    <label style={s.label}>Print Areas <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label>
-                    <input value={productForm.printAreas} onChange={e=>setPF('printAreas',e.target.value)} placeholder="Front, Back, Left Sleeve, Right Sleeve" style={s.inp}/>
-                  </div>
-
-                  <div style={{marginBottom:16}}>
-                    <label style={s.label}>Decoration Methods</label>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                      </select></div><div><label style={s.label}>Base Price ($)</label><input type="number" min="0" step="0.01" value={productForm.price} onChange={e=>setPF('price',e.target.value)} placeholder="8.50" style={s.inp}/></div></div><div style={{marginBottom:12}}><label style={s.label}>Available Colors <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label><input value={productForm.colors} onChange={e=>setPF('colors',e.target.value)} placeholder="White, Black, Navy, Red, Royal" style={s.inp}/></div><div style={{marginBottom:12}}><label style={s.label}>Print Areas <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label><input value={productForm.printAreas} onChange={e=>setPF('printAreas',e.target.value)} placeholder="Front, Back, Left Sleeve, Right Sleeve" style={s.inp}/></div><div style={{marginBottom:16}}><label style={s.label}>Decoration Methods</label><div style={{display:'flex',flexWrap:'wrap',gap:8}}>
                       {DECORATION_OPTIONS.map(d=>(
                         <button key={d} type="button" onClick={()=>toggleDecoration(d)}
-                          style={{padding:'5px 12px',borderRadius:20,border:'1px solid',fontSize:12,cursor:'pointer',fontWeight:500,
-                            background:productForm.decorations.includes(d)?'#1a1a2e':'#f9fafb',
-                            color:productForm.decorations.includes(d)?'#e8a020':'#6b7280',
-                            borderColor:productForm.decorations.includes(d)?'#1a1a2e':'#e5e7eb'}}>
+                          style={{padding:'5px 12px',borderRadius:0,border:'1px solid',fontSize:12,cursor:'pointer',fontWeight:500,
+                            background:productForm.decorations.includes(d)?'#ffc800':'#141417',
+                            color:productForm.decorations.includes(d)?'#ffc800':'#b3b3bc',
+                            borderColor:productForm.decorations.includes(d)?'#ffc800':'#222226'}}>
                           {d}
                         </button>
                       ))}
-                    </div>
-                  </div>
-
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
+                    </div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
                     {[['frontImage','Front Image'],['backImage','Back Image']].map(([field,label])=>(
-                      <div key={field}>
-                        <label style={s.label}>{label}</label>
+                      <div key={field}><label style={s.label}>{label}</label>
                         {productForm[field] && (
-                          <div style={{position:'relative',marginBottom:6}}>
-                            <img src={productForm[field]} alt={label} style={{width:'100%',height:100,objectFit:'contain',borderRadius:8,border:'1px solid #e5e7eb',background:'#f9fafb'}}/>
-                            <button onClick={()=>setPF(field,'')} style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:'50%',background:'#dc2626',color:'#fff',border:'none',fontSize:12,cursor:'pointer',lineHeight:'20px'}}>×</button>
-                          </div>
+                          <div style={{position:'relative',marginBottom:6}}><img src={productForm[field]} alt={label} style={{width:'100%',height:100,objectFit:'contain',borderRadius:0,border:'1px solid #222226',background:'#141417'}}/><button onClick={()=>setPF(field,'')} style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:0,background:'#dc2626',color:'#fff',border:'none',fontSize:12,cursor:'pointer',lineHeight:'20px'}}>×</button></div>
                         )}
-                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                          <label style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px dashed #d1d5db',borderRadius:6,cursor:'pointer',fontSize:12,color:'#6b7280'}}>
-                            <span>📁 Upload file</span>
-                            <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleProductImage(field,e.target.files[0])}/>
-                          </label>
-                          <input value={productForm[field].startsWith('data:') ? '' : productForm[field]} onChange={e=>setPF(field,e.target.value)}
-                            placeholder="or paste image URL…" style={{...s.inp,fontSize:12}}/>
-                        </div>
-                      </div>
+                        <div style={{display:'flex',flexDirection:'column',gap:6}}><label style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px dashed #34343a',borderRadius:0,cursor:'pointer',fontSize:12,color:'#b3b3bc'}}><span> Upload file</span><input type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleProductImage(field,e.target.files[0])}/></label><input value={productForm[field].startsWith('data:') ? '' : productForm[field]} onChange={e=>setPF(field,e.target.value)}
+                            placeholder="or paste image URL…" style={{...s.inp,fontSize:12}}/></div></div>
                     ))}
-                  </div>
-
-                  <div style={{display:'flex',gap:10}}>
-                    <button onClick={saveProduct} disabled={!productForm.name||!productForm.sku}
+                  </div><div style={{display:'flex',gap:10}}><button onClick={saveProduct} disabled={!productForm.name||!productForm.sku}
                       style={{...s.saveBtn,flex:1,padding:'10px',fontSize:14,opacity:(!productForm.name||!productForm.sku)?0.5:1}}>
                       {editingProduct ? 'Save Changes' : 'Add Product'}
-                    </button>
-                    <button onClick={()=>setShowProductModal(false)} style={{...s.cancelBtn,padding:'10px 20px',fontSize:14}}>Cancel</button>
-                  </div>
-                </div>
-              </div>
+                    </button><button onClick={()=>setShowProductModal(false)} style={{...s.cancelBtn,padding:'10px 20px',fontSize:14}}>Cancel</button></div></div></div>
             )}
           </div>
         )}
 
         {/* ARTWORK */}
         {section==='designs' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Designs</h1>
-            <p style={{...s.sub,color:'#374151'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p>
-            <div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
+          <div style={s.sec}><h1 style={s.h1}>Designs</h1><p style={{...s.sub,color:'#e4e4e7'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p><div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
               {['All','Submitted','Approved','In Setup','Live','Denied'].map(f=>(
-                <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#111827':'#d1d5db'),background:designFilter===f?'#111827':'#fff',color:designFilter===f?'#fff':'#111827',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#ffc800':'#34343a'),background:designFilter===f?'#ffc800':'#0e0e10',color:designFilter===f?'#fff':'#f4f4f5',borderRadius:0,fontSize:13,fontWeight:600,cursor:'pointer'}}>
                   {f}{f!=='All' ? ` (${designs.filter(d=>(d.product?.status||'Submitted')===f).length})` : ''}
                 </button>
               ))}
             </div>
-            {designsLoading && designs.length===0 && <div style={{color:'#374151',padding:20}}>Loading…</div>}
-            {!designsLoading && designs.length===0 && <div style={{...s.card,textAlign:'center',color:'#374151'}}>No designs yet.</div>}
+            {designsLoading && designs.length===0 && <div style={{color:'#e4e4e7',padding:20}}>Loading…</div>}
+            {!designsLoading && designs.length===0 && <div style={{...s.card,textAlign:'center',color:'#e4e4e7'}}>No designs yet.</div>}
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14}}>
               {designs.filter(d=>designFilter==='All'||(d.product?.status||'Submitted')===designFilter).map(d=>{
                 const st = d.product?.status || 'Submitted';
-                const stc = ({Submitted:['#fef3c7','#92400e'],Approved:['#dcfce7','#166534'],Denied:['#fee2e2','#991b1b'],'In Setup':['#dbeafe','#1e40af'],Live:['#d1fae5','#065f46']})[st] || ['#f3f4f6','#111827'];
+                const stc = ({Submitted:['rgba(255,200,0,0.14)','#ffc800'],Approved:['rgba(52,211,153,0.14)','#34d399'],Denied:['rgba(248,113,113,0.14)','#fca5a5'],'In Setup':['rgba(96,165,250,0.14)','#93c5fd'],Live:['rgba(52,211,153,0.14)','#34d399']})[st] || ['#141417','#f4f4f5'];
                 const who = d.client?.business_name || d.client?.contact_name || 'Client';
                 const first = Object.values(d.decorations?.previews || {})[0] || d.thumbnail;
                 return (
                   <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);setViewerZoom(1);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
                     <div style={{background:'#fff',borderBottom:'1px solid #e5e7eb',height:190,display:'grid',placeItems:'center'}}>
                       {first && <img src={first} alt="" style={{maxWidth:'100%',maxHeight:190,objectFit:'contain'}}/>}
-                    </div>
-                    <div style={{padding:16}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}>
-                        <strong style={{fontSize:16,color:'#111827'}}>{d.name}</strong>
-                        <span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:20,background:stc[0],color:stc[1]}}>{st}</span>
-                      </div>
-                      <div style={{fontSize:14,color:'#111827',fontWeight:600}}>{who}</div>
-                      <div style={{fontSize:13,color:'#374151',margin:'3px 0 12px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
+                    </div><div style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}><strong style={{fontSize:16,color:'#f4f4f5'}}>{d.name}</strong><span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:0,background:stc[0],color:stc[1]}}>{st}</span></div><div style={{fontSize:14,color:'#f4f4f5',fontWeight:600}}>{who}</div><div style={{fontSize:13,color:'#e4e4e7',margin:'3px 0 12px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
                       {st==='Submitted' ? (
-                        <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}>
-                          <button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button>
-                          <button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#fff',color:'#b91c1c',border:'1px solid #fca5a5',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button>
-                        </div>
-                      ) : <div style={{fontSize:13,color:'#2563eb',fontWeight:600}}>Open to review</div>}
-                    </div>
-                  </div>
+                        <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}><button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button><button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#0e0e10',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button></div>
+                      ) : <div style={{fontSize:13,color:'#93c5fd',fontWeight:600}}>Open to review</div>}
+                    </div></div>
                 );
               })}
             </div>
@@ -1148,149 +856,91 @@ export default function AdminPage() {
                 : {background: viewerBg==='black' ? '#000' : '#fff'};
               const shown = viewerFile || (files[0] ? {url:files[0].url,label:`${files[0].viewName} · ${files[0].printAreaLabel} (print file)`,file:`${d.name}-${files[0].viewName}-${files[0].printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')} : (previews[0] ? {url:previews[0][1],label:`${previews[0][0]} preview`} : null));
               return (
-                <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-                  <div style={{background:'#fff',borderRadius:14,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}>
-                    <div style={{padding:20,borderRight:'1px solid #e5e7eb'}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}>
-                        <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>{shown?.label || 'No image'}</div>
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
-                          <button onClick={()=>setViewerZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={viewerZoom<=1} title="Zoom out" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:viewerZoom<=1?'default':'pointer',opacity:viewerZoom<=1?0.4:1}}>−</button>
-                          <button onClick={()=>setViewerZoom(1)} title="Fit to window" style={{minWidth:58,height:30,fontSize:12,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{viewerZoom===1?'Fit':Math.round(viewerZoom*100)+'%'}</button>
-                          <button onClick={()=>setViewerZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} title="Zoom in" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>+</button>
-                          <span style={{width:8}}/>
+                <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}><div style={{background:'#0e0e10',borderRadius:0,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}><div style={{padding:20,borderRight:'1px solid #222226'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}><div style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{shown?.label || 'No image'}</div><div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}><button onClick={()=>setViewerZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={viewerZoom<=1} title="Zoom out" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:viewerZoom<=1?'default':'pointer',opacity:viewerZoom<=1?0.4:1}}>−</button><button onClick={()=>setViewerZoom(1)} title="Fit to window" style={{minWidth:58,height:30,fontSize:12,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{viewerZoom===1?'Fit':Math.round(viewerZoom*100)+'%'}</button><button onClick={()=>setViewerZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} title="Zoom in" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>+</button><span style={{width:8}}/>
                           {[['checker','Checker'],['white','White'],['black','Black']].map(([k,l])=>(
-                            <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#111827':'#d1d5db'),background:viewerBg===k?'#111827':'#fff',color:viewerBg===k?'#fff':'#111827',borderRadius:6,cursor:'pointer'}}>{l}</button>
+                            <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#ffc800':'#34343a'),background:viewerBg===k?'#ffc800':'#0e0e10',color:viewerBg===k?'#fff':'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{l}</button>
                           ))}
-                        </div>
-                      </div>
-                      <div style={{...bgStyle,borderRadius:10,border:'1px solid #d1d5db',height:'62vh',minHeight:380,overflow:'auto',display:'flex',alignItems:viewerZoom>1?'flex-start':'center',justifyContent:viewerZoom>1?'flex-start':'center',padding:12}}>
+                        </div></div><div style={{...bgStyle,borderRadius:0,border:'1px solid #34343a',height:'62vh',minHeight:380,overflow:'auto',display:'flex',alignItems:viewerZoom>1?'flex-start':'center',justifyContent:viewerZoom>1?'flex-start':'center',padding:12}}>
                         {shown && <img src={shown.url} alt="" draggable={false} style={viewerZoom===1?{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}:{width:(viewerZoom*100)+'%',maxWidth:'none',height:'auto',flex:'none',imageRendering:viewerZoom>=4?'pixelated':'auto'}}/>}
                       </div>
                       {shown && shown.file && (
-                        <button onClick={()=>downloadFile(shown.url, shown.file)} style={{marginTop:12,padding:'10px 16px',background:'#111827',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer'}}>Download this print file</button>
+                        <button onClick={()=>downloadFile(shown.url, shown.file)} style={{marginTop:12,padding:'10px 16px',background:'#ffc800',color:'#000',border:'none',borderRadius:0,fontSize:13,fontWeight:700,cursor:'pointer'}}>Download this print file</button>
                       )}
                       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
                         {previews.map(([view,url])=>(
-                          <button key={'p'+view} onClick={()=>pickViewer({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{view} preview</button>
+                          <button key={'p'+view} onClick={()=>pickViewer({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{view} preview</button>
                         ))}
                         {files.map(f=>(
-                          <button key={f.url} onClick={()=>pickViewer({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`,file:`${d.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'#eff6ff',color:'#1d4ed8',borderRadius:6,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
+                          <button key={f.url} onClick={()=>pickViewer({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`,file:`${d.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'rgba(96,165,250,0.12)',color:'#93c5fd',borderRadius:0,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
                         ))}
-                      </div>
-                    </div>
-                    <div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                        <div>
-                          <div style={{fontSize:20,fontWeight:800,color:'#111827'}}>{d.name}</div>
-                          <div style={{fontSize:14,color:'#374151',marginTop:2}}>{d.client?.business_name || d.client?.contact_name || 'Client'}{d.client?.email?` · ${d.client.email}`:''}</div>
-                        </div>
-                        <button onClick={()=>setReviewing(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#374151'}}>×</button>
-                      </div>
-                      <div style={{fontSize:14,color:'#111827',lineHeight:1.6}}>
-                        <div><strong>Product:</strong> {d.product?.productTitle}</div>
+                      </div></div><div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}><div><div style={{fontSize:20,fontWeight:800,color:'#f4f4f5'}}>{d.name}</div><div style={{fontSize:14,color:'#e4e4e7',marginTop:2}}>{d.client?.business_name || d.client?.contact_name || 'Client'}{d.client?.email?` · ${d.client.email}`:''}</div></div><button onClick={()=>setReviewing(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#e4e4e7'}}>×</button></div><div style={{fontSize:14,color:'#f4f4f5',lineHeight:1.6}}><div><strong>Product:</strong> {d.product?.productTitle}</div>
                         {d.product?.variantTitle && <div><strong>Variant:</strong> {d.product.variantTitle}</div>}
-                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div>
-                        <div><strong>Status:</strong> {st}</div>
-                        {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,color:'#991b1b'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
+                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div><div><strong>Status:</strong> {st}</div>
+                        {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'rgba(248,113,113,0.12)',border:'1px solid rgba(248,113,113,0.35)',borderRadius:0,color:'#fca5a5'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
                       </div>
 
                       {denying ? (
-                        <div>
-                          <label style={{fontSize:13,fontWeight:700,color:'#111827',display:'block',marginBottom:6}}>Why is it being denied? The client sees this.</label>
-                          <textarea value={denyNote} onChange={e=>setDenyNote(e.target.value)} rows={4} placeholder="Low resolution logo, please upload a vector file" style={{width:'100%',padding:10,border:'1px solid #d1d5db',borderRadius:8,fontSize:14,color:'#111827',boxSizing:'border-box'}}/>
-                          <div style={{display:'flex',gap:8,marginTop:10}}>
-                            <button disabled={!denyNote.trim()} onClick={async()=>{await setDesignStatus(d.id,'Denied',denyNote.trim());setDenying(false);setReviewing(null);}} style={{flex:1,padding:'11px',background:denyNote.trim()?'#dc2626':'#fca5a5',color:'#fff',border:'none',borderRadius:8,fontWeight:700,cursor:denyNote.trim()?'pointer':'default'}}>Send denial</button>
-                            <button onClick={()=>setDenying(false)} style={{padding:'11px 16px',background:'#fff',border:'1px solid #d1d5db',color:'#111827',borderRadius:8,fontWeight:600,cursor:'pointer'}}>Cancel</button>
-                          </div>
-                        </div>
+                        <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Why is it being denied? The client sees this.</label><textarea value={denyNote} onChange={e=>setDenyNote(e.target.value)} rows={4} placeholder="Low resolution logo, please upload a vector file" style={{width:'100%',padding:10,border:'1px solid #34343a',borderRadius:0,fontSize:14,color:'#f4f4f5',boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginTop:10}}><button disabled={!denyNote.trim()} onClick={async()=>{await setDesignStatus(d.id,'Denied',denyNote.trim());setDenying(false);setReviewing(null);}} style={{flex:1,padding:'11px',background:denyNote.trim()?'#dc2626':'#fca5a5',color:'#fff',border:'none',borderRadius:0,fontWeight:700,cursor:denyNote.trim()?'pointer':'default'}}>Send denial</button><button onClick={()=>setDenying(false)} style={{padding:'11px 16px',background:'#0e0e10',border:'1px solid #34343a',color:'#f4f4f5',borderRadius:0,fontWeight:600,cursor:'pointer'}}>Cancel</button></div></div>
                       ) : (
                         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                          {(st==='Submitted'||st==='Denied') && <button onClick={async()=>{await setDesignStatus(d.id,'Approved');setReviewing(null);}} style={{padding:'12px',background:'#16a34a',color:'#fff',border:'none',borderRadius:8,fontWeight:800,fontSize:15,cursor:'pointer'}}>Approve</button>}
-                          {st!=='Denied' && <button onClick={()=>{setDenying(true);setDenyNote('');}} style={{padding:'12px',background:'#fff',color:'#b91c1c',border:'1px solid #fca5a5',borderRadius:8,fontWeight:800,fontSize:15,cursor:'pointer'}}>Deny with a reason</button>}
+                          {(st==='Submitted'||st==='Denied') && <button onClick={async()=>{await setDesignStatus(d.id,'Approved');setReviewing(null);}} style={{padding:'12px',background:'#16a34a',color:'#fff',border:'none',borderRadius:0,fontWeight:800,fontSize:15,cursor:'pointer'}}>Approve</button>}
+                          {st!=='Denied' && <button onClick={()=>{setDenying(true);setDenyNote('');}} style={{padding:'12px',background:'#0e0e10',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,fontWeight:800,fontSize:15,cursor:'pointer'}}>Deny with a reason</button>}
                           {(st==='Approved'||st==='In Setup'||st==='Live') && (
-                            <div>
-                              <label style={{fontSize:13,fontWeight:700,color:'#111827',display:'block',marginBottom:6}}>Setup stage</label>
-                              <select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'10px',border:'1px solid #d1d5db',borderRadius:8,fontSize:14,color:'#111827'}}>
+                            <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Setup stage</label><select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'10px',border:'1px solid #34343a',borderRadius:0,fontSize:14,color:'#f4f4f5'}}>
                                 {['Approved','In Setup','Live'].map(o=><option key={o}>{o}</option>)}
-                              </select>
-                            </div>
+                              </select></div>
                           )}
                         </div>
                       )}
-                    </div>
-                  </div>
-                </div>
+                    </div></div></div>
               );
             })()}
           </div>
         )}
 
         {section==='artwork' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Design Vault</h1>
-            <p style={s.sub}>Manage client artwork — approve, reject, and upload on behalf of clients</p>
+          <div style={s.sec}><h1 style={s.h1}>Design Vault</h1><p style={s.sub}>Manage client artwork — approve, reject, and upload on behalf of clients</p>
 
             {/* Stats row */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
               {[
-                {label:'On File',    value:artwork.filter(a=>a.status==='approved').length, color:'#059669'},
-                {label:'Pending',    value:artwork.filter(a=>a.status==='pending').length,  color:'#d97706'},
-                {label:'Total Files',value:artwork.length,                                  color:'#374151'},
+                {label:'On File',    value:artwork.filter(a=>a.status==='approved').length, color:'#34d399'},
+                {label:'Pending',    value:artwork.filter(a=>a.status==='pending').length,  color:'#ffc800'},
+                {label:'Total Files',value:artwork.length,                                  color:'#e4e4e7'},
               ].map(st=>(
-                <div key={st.label} style={s.statCard}>
-                  <div style={{fontSize:11,color:'#6b7280',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div>
-                  <div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div>
-                </div>
+                <div key={st.label} style={s.statCard}><div style={{fontSize:11,color:'#b3b3bc',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div><div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div></div>
               ))}
             </div>
 
             {/* Admin upload panel */}
-            <div style={{...s.card,marginBottom:20,borderLeft:'3px solid #6366f1'}}>
-              <h3 style={{...s.cardTitle,marginBottom:14}}>📤 Upload Artwork for a Client</h3>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-                <div>
-                  <label style={{fontSize:12,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Client</label>
-                  <select value={artworkAdminUpClient} onChange={e=>setArtworkAdminUpClient(e.target.value)} style={{...s.inp,width:'100%'}}>
-                    <option value=''>— Select client —</option>
+            <div style={{...s.card,marginBottom:20,borderLeft:'3px solid #6366f1'}}><h3 style={{...s.cardTitle,marginBottom:14}}> Upload Artwork for a Client</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}><div><label style={{fontSize:12,fontWeight:600,color:'#b3b3bc',display:'block',marginBottom:4}}>Client</label><select value={artworkAdminUpClient} onChange={e=>setArtworkAdminUpClient(e.target.value)} style={{...s.inp,width:'100%'}}><option value=''>— Select client —</option>
                     {clientProfiles.map(p=>(
                       <option key={p.id} value={p.id}>{p.business_name || p.contact_name}</option>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{fontSize:12,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Design Label</label>
-                  <input type='text' placeholder='e.g. Main Logo, Jersey Front…' value={artworkAdminUpLabel} onChange={e=>setArtworkAdminUpLabel(e.target.value)} style={{...s.inp,width:'100%'}}/>
-                </div>
-              </div>
-              <input ref={artworkFileRef} type='file' multiple accept='.svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp' style={{display:'none'}} onChange={e=>adminUploadArt(e.target.files)}/>
-              <button onClick={()=>artworkAdminUpClient&&artworkFileRef.current?.click()} disabled={!artworkAdminUpClient||artworkAdminUploading}
+                  </select></div><div><label style={{fontSize:12,fontWeight:600,color:'#b3b3bc',display:'block',marginBottom:4}}>Design Label</label><input type='text' placeholder='e.g. Main Logo, Jersey Front…' value={artworkAdminUpLabel} onChange={e=>setArtworkAdminUpLabel(e.target.value)} style={{...s.inp,width:'100%'}}/></div></div><input ref={artworkFileRef} type='file' multiple accept='.svg,.ai,.pdf,.png,.jpg,.jpeg,.eps,.gif,.webp' style={{display:'none'}} onChange={e=>adminUploadArt(e.target.files)}/><button onClick={()=>artworkAdminUpClient&&artworkFileRef.current?.click()} disabled={!artworkAdminUpClient||artworkAdminUploading}
                 style={{...s.saveBtn,background:'#6366f1',opacity:(!artworkAdminUpClient||artworkAdminUploading)?0.5:1}}>
                 {artworkAdminUploading?'Uploading…':'Choose Files & Upload'}
               </button>
-              {!artworkAdminUpClient&&<span style={{fontSize:12,color:'#9ca3af',marginLeft:10}}>Select a client first</span>}
-              {artworkAdminUpMsg&&<div style={{marginTop:10,padding:'8px 12px',borderRadius:6,fontSize:13,background:artworkAdminUpMsg.startsWith('✓')?'#d1fae5':'#fee2e2',color:artworkAdminUpMsg.startsWith('✓')?'#065f46':'#991b1b'}}>{artworkAdminUpMsg}</div>}
+              {!artworkAdminUpClient&&<span style={{fontSize:12,color:'#a0a0a9',marginLeft:10}}>Select a client first</span>}
+              {artworkAdminUpMsg&&<div style={{marginTop:10,padding:'8px 12px',borderRadius:0,fontSize:13,background:artworkAdminUpMsg.startsWith('')?'rgba(52,211,153,0.14)':'rgba(248,113,113,0.14)',color:artworkAdminUpMsg.startsWith('')?'#34d399':'#fca5a5'}}>{artworkAdminUpMsg}</div>}
             </div>
 
             {/* Filters */}
             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
-              {[['pending','⏳ Pending'],['approved','✓ On File'],['rejected','✗ Rejected'],['all','All']].map(([val,label])=>(
+              {[['pending',' Pending'],['approved',' On File'],['rejected',' Rejected'],['all','All']].map(([val,label])=>(
                 <button key={val} onClick={()=>setArtworkStatusFilter(val)}
-                  style={{padding:'6px 14px',borderRadius:20,border:'none',background:artworkStatusFilter===val?'#111827':'#f3f4f6',color:artworkStatusFilter===val?'white':'#6b7280',fontSize:13,cursor:'pointer',fontWeight:artworkStatusFilter===val?'600':'400'}}>
+                  style={{padding:'6px 14px',borderRadius:0,border:'none',background:artworkStatusFilter===val?'#ffc800':'#141417',color:artworkStatusFilter===val?'white':'#b3b3bc',fontSize:13,cursor:'pointer',fontWeight:artworkStatusFilter===val?'600':'400'}}>
                   {label}
                 </button>
               ))}
-              <div style={{marginLeft:'auto'}}>
-                <select value={artworkClientFilter} onChange={e=>setArtworkClientFilter(e.target.value)} style={{...s.inp,fontSize:12,padding:'6px 10px'}}>
-                  <option value='all'>All Clients</option>
+              <div style={{marginLeft:'auto'}}><select value={artworkClientFilter} onChange={e=>setArtworkClientFilter(e.target.value)} style={{...s.inp,fontSize:12,padding:'6px 10px'}}><option value='all'>All Clients</option>
                   {[...new Map(artwork.map(a=>[a.client_id,a.client])).entries()].map(([id,cl])=>(
                     <option key={id} value={id}>{cl?.business_name||cl?.contact_name||'Unknown'}</option>
                   ))}
-                </select>
-              </div>
-            </div>
+                </select></div></div>
 
             {artworkLoading ? (
-              <div style={{textAlign:'center',padding:'40px',color:'#aaa'}}>Loading artwork…</div>
+              <div style={{textAlign:'center',padding:'40px',color:'#a0a0a9'}}>Loading artwork…</div>
             ) : (
               (() => {
                 const filtered = artwork
@@ -1298,8 +948,7 @@ export default function AdminPage() {
                   .filter(a => artworkClientFilter==='all' || a.client_id===artworkClientFilter);
 
                 if (!filtered.length) return (
-                  <div style={{textAlign:'center',padding:'48px',color:'#aaa'}}>
-                    <div style={{fontSize:32,marginBottom:8}}>🎨</div>
+                  <div style={{textAlign:'center',padding:'48px',color:'#a0a0a9'}}><div style={{fontSize:32,marginBottom:8}}></div>
                     {artwork.length===0 ? 'No artwork uploaded yet.' : 'No files match this filter.'}
                   </div>
                 );
@@ -1312,47 +961,33 @@ export default function AdminPage() {
                   const isRejected = a.status==='rejected';
                   const noteVal    = artworkNotes[a.id] ?? (a.admin_notes || '');
                   return (
-                    <div key={a.id} style={{...s.card,borderLeft:`3px solid ${isPending?'#f59e0b':isApproved?'#10b981':'#ef4444'}`,marginBottom:12}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:12}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-                            <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>
+                    <div key={a.id} style={{...s.card,borderLeft:`3px solid ${isPending?'#f59e0b':isApproved?'#10b981':'#ef4444'}`,marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:12}}><div style={{flex:1,minWidth:0}}><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}><span style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>
                               {a.label || a.file_name}
-                            </span>
-                            <Badge status={a.status==='approved'?'approved':a.status==='rejected'?'rejected':'pending'}/>
-                          </div>
-                          {a.label && <div style={{fontSize:11,color:'#9ca3af',marginBottom:2,wordBreak:'break-all'}}>{a.file_name}</div>}
-                          <div style={{fontSize:13,color:'#6b7280'}}>
-                            <strong style={{color:'#374151'}}>{clientName}</strong> · {dateStr}
+                            </span><Badge status={a.status==='approved'?'approved':a.status==='rejected'?'rejected':'pending'}/></div>
+                          {a.label && <div style={{fontSize:11,color:'#a0a0a9',marginBottom:2,wordBreak:'break-all'}}>{a.file_name}</div>}
+                          <div style={{fontSize:13,color:'#b3b3bc'}}><strong style={{color:'#e4e4e7'}}>{clientName}</strong> · {dateStr}
                             {a.file_size ? ` · ${(a.file_size/1024/1024).toFixed(1)} MB` : ''}
                           </div>
                           {a.file_url&&<a href={a.file_url} target='_blank' rel='noopener noreferrer' style={{fontSize:12,color:'#6366f1',fontWeight:500}}>View file →</a>}
                         </div>
                         {isPending&&(
-                          <div style={{display:'flex',gap:8,flexShrink:0}}>
-                            <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px'}}>✓ Approve</button>
-                            <button onClick={()=>rejectArt(a.id)}  style={{...s.saveBtn,background:'#dc2626',padding:'7px 14px'}}>✗ Reject</button>
-                          </div>
+                          <div style={{display:'flex',gap:8,flexShrink:0}}><button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px'}}> Approve</button><button onClick={()=>rejectArt(a.id)}  style={{...s.saveBtn,background:'#dc2626',padding:'7px 14px'}}> Reject</button></div>
                         )}
                         {isApproved&&(
                           <button onClick={()=>rejectArt(a.id)} style={{...s.cancelBtn,fontSize:12,padding:'6px 12px'}}>Move to Rejected</button>
                         )}
                         {isRejected&&(
-                          <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px',fontSize:12}}>✓ Approve</button>
+                          <button onClick={()=>approveArt(a.id)} style={{...s.saveBtn,background:'#059669',padding:'7px 14px',fontSize:12}}> Approve</button>
                         )}
                       </div>
 
                       {/* Notes */}
-                      <div style={{marginTop:10,display:'flex',gap:8,alignItems:'center'}}>
-                        <input
+                      <div style={{marginTop:10,display:'flex',gap:8,alignItems:'center'}}><input
                           placeholder={isRejected?'Rejection reason for client…':'Add note for client…'}
                           value={noteVal}
                           onChange={e=>setArtworkNotes(n=>({...n,[a.id]:e.target.value}))}
                           style={{...s.inp,flex:1,fontSize:12,padding:'6px 10px'}}
-                        />
-                        <button onClick={()=>saveArtNote(a.id)} style={{...s.saveBtn,padding:'6px 14px',fontSize:12}}>Save Note</button>
-                      </div>
-                    </div>
+                        /><button onClick={()=>saveArtNote(a.id)} style={{...s.saveBtn,padding:'6px 14px',fontSize:12}}>Save Note</button></div></div>
                   );
                 });
               })()
@@ -1362,186 +997,92 @@ export default function AdminPage() {
 
         {/* BILLING */}
         {section==='billing' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Billing</h1>
-            <p style={s.sub}>Invoices, discounts, and tax reports</p>
+          <div style={s.sec}><h1 style={s.h1}>Billing</h1><p style={s.sub}>Invoices, discounts, and tax reports</p>
 
             {/* Tabs */}
             <div style={s.tabs}>
-              {[['invoices','📄 Invoices'],['create','➕ Create Invoice'],['discount','🏷️ Discounts'],['reports','📊 Tax Reports']].map(([id,label])=>(
+              {[['invoices',' Invoices'],['create',' Create Invoice'],['discount',' Discounts'],['reports',' Tax Reports']].map(([id,label])=>(
                 <button key={id} onClick={()=>setBillingTab(id)} style={{...s.tab,...(billingTab===id?s.tabActive:{})}}>{label}</button>
               ))}
             </div>
 
             {/* INVOICES */}
             {billingTab==='invoices' && (
-              <div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
+              <div><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
                   {[
                     {label:'Outstanding', value:'$'+invoices.filter(i=>i.status==='pending'||i.status==='overdue').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#dc2626'},
-                    {label:'Overdue',     value:'$'+invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#f59e0b'},
-                    {label:'Paid',        value:'$'+invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#059669'},
-                    {label:'Total Billed',value:'$'+invoices.reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#111827'},
+                    {label:'Overdue',     value:'$'+invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#ffc800'},
+                    {label:'Paid',        value:'$'+invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#34d399'},
+                    {label:'Total Billed',value:'$'+invoices.reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#f4f4f5'},
                   ].map(st=>(
-                    <div key={st.label} style={s.statCard}>
-                      <div style={{fontSize:11,color:'#6b7280',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div>
-                      <div style={{fontSize:20,fontWeight:700,color:st.color}}>{st.value}</div>
-                    </div>
+                    <div key={st.label} style={s.statCard}><div style={{fontSize:11,color:'#b3b3bc',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div><div style={{fontSize:20,fontWeight:700,color:st.color}}>{st.value}</div></div>
                   ))}
-                </div>
-                <div style={s.card}>
-                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-                    <thead>
-                      <tr style={{borderBottom:'2px solid #e5e7eb'}}>
+                </div><div style={s.card}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr style={{borderBottom:'2px solid #222226'}}>
                         {['Invoice','Client','Amount','Issued','Due','Status','Actions'].map(h=>(
-                          <th key={h} style={{padding:'8px 10px',textAlign:'left',color:'#6b7280',fontWeight:600,fontSize:11,textTransform:'uppercase'}}>{h}</th>
+                          <th key={h} style={{padding:'8px 10px',textAlign:'left',color:'#b3b3bc',fontWeight:600,fontSize:11,textTransform:'uppercase'}}>{h}</th>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
+                      </tr></thead><tbody>
                       {invoices.map(inv=>{
                         const sc=SC[inv.status]||SC.pending;
                         return (
-                          <tr key={inv.id} style={{borderBottom:'1px solid #f3f4f6'}}>
-                            <td style={{padding:'10px',fontWeight:700,color:'#111827'}}>{inv.id}</td>
-                            <td style={{padding:'10px',color:'#374151'}}>{inv.client}</td>
-                            <td style={{padding:'10px',fontWeight:600}}>${inv.amount.toFixed(2)}</td>
-                            <td style={{padding:'10px',color:'#6b7280'}}>{inv.issued}</td>
-                            <td style={{padding:'10px',color:'#6b7280'}}>{inv.due}</td>
-                            <td style={{padding:'10px'}}><Badge status={inv.status}/></td>
-                            <td style={{padding:'10px'}}>
-                              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                                <button onClick={()=>setPreviewInv(inv)} style={s.smBtn}>Preview</button>
-                                {inv.status!=='paid'&&inv.status!=='waived'&&<>
-                                  <button onClick={()=>markPaid(inv.id)} style={{...s.smBtn,color:'#059669'}}>Mark Paid</button>
-                                  <button onClick={()=>waiveInv(inv.id)} style={{...s.smBtn,color:'#dc2626'}}>Waive</button>
-                                </>}
-                              </div>
-                            </td>
-                          </tr>
+                          <tr key={inv.id} style={{borderBottom:'1px solid #1c1c20'}}><td style={{padding:'10px',fontWeight:700,color:'#f4f4f5'}}>{inv.id}</td><td style={{padding:'10px',color:'#e4e4e7'}}>{inv.client}</td><td style={{padding:'10px',fontWeight:600}}>${inv.amount.toFixed(2)}</td><td style={{padding:'10px',color:'#b3b3bc'}}>{inv.issued}</td><td style={{padding:'10px',color:'#b3b3bc'}}>{inv.due}</td><td style={{padding:'10px'}}><Badge status={inv.status}/></td><td style={{padding:'10px'}}><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><button onClick={()=>setPreviewInv(inv)} style={s.smBtn}>Preview</button>
+                                {inv.status!=='paid'&&inv.status!=='waived'&&<><button onClick={()=>markPaid(inv.id)} style={{...s.smBtn,color:'#34d399'}}>Mark Paid</button><button onClick={()=>waiveInv(inv.id)} style={{...s.smBtn,color:'#dc2626'}}>Waive</button></>}
+                              </div></td></tr>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                    </tbody></table></div></div>
             )}
 
             {/* CREATE INVOICE */}
             {billingTab==='create' && (
-              <div style={{maxWidth:700}}>
-                <div style={{...s.card,marginBottom:16}}>
-                  <h3 style={s.cardTitle}>Invoice Details</h3>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-                    <div>
-                      <label style={s.label}>Client</label>
-                      <select style={s.inp} value={newInv.client} onChange={e=>setNewInv(n=>({...n,client:e.target.value}))}>
-                        <option value="">Select client…</option>
+              <div style={{maxWidth:700}}><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Invoice Details</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}><div><label style={s.label}>Client</label><select style={s.inp} value={newInv.client} onChange={e=>setNewInv(n=>({...n,client:e.target.value}))}><option value="">Select client…</option>
                         {clients.map(c=><option key={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={s.label}>Due Date</label>
-                      <input type="date" style={s.inp} value={newInv.due} onChange={e=>setNewInv(n=>({...n,due:e.target.value}))}/>
-                    </div>
-                    <div style={{gridColumn:'span 2'}}>
-                      <label style={s.label}>Note (optional)</label>
-                      <input style={s.inp} value={newInv.note} onChange={e=>setNewInv(n=>({...n,note:e.target.value}))} placeholder="e.g. Net 30, rush order…"/>
-                    </div>
-                  </div>
-                </div>
-                <div style={{...s.card,marginBottom:16}}>
-                  <h3 style={s.cardTitle}>Line Items</h3>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}>
-                    {['Description','Qty','Unit Price',''].map(h=><div key={h} style={{fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase'}}>{h}</div>)}
+                      </select></div><div><label style={s.label}>Due Date</label><input type="date" style={s.inp} value={newInv.due} onChange={e=>setNewInv(n=>({...n,due:e.target.value}))}/></div><div style={{gridColumn:'span 2'}}><label style={s.label}>Note (optional)</label><input style={s.inp} value={newInv.note} onChange={e=>setNewInv(n=>({...n,note:e.target.value}))} placeholder="e.g. Net 30, rush order…"/></div></div></div><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Line Items</h3><div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}>
+                    {['Description','Qty','Unit Price',''].map(h=><div key={h} style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase'}}>{h}</div>)}
                   </div>
                   {lineItems.map((line,idx)=>(
-                    <div key={idx} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}>
-                      <input style={s.inp} value={line.desc} onChange={e=>setLine(idx,'desc',e.target.value)} placeholder="e.g. 24x T-Shirts"/>
-                      <input style={s.inp} type="number" value={line.qty} onChange={e=>setLine(idx,'qty',e.target.value)} placeholder="24"/>
-                      <input style={s.inp} type="number" step="0.01" value={line.price} onChange={e=>setLine(idx,'price',e.target.value)} placeholder="10.50"/>
-                      <button onClick={()=>removeLine(idx)} style={{background:'#fee2e2',border:'none',borderRadius:6,color:'#dc2626',cursor:'pointer',fontSize:18,fontWeight:700}}>×</button>
-                    </div>
+                    <div key={idx} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}><input style={s.inp} value={line.desc} onChange={e=>setLine(idx,'desc',e.target.value)} placeholder="e.g. 24x T-Shirts"/><input style={s.inp} type="number" value={line.qty} onChange={e=>setLine(idx,'qty',e.target.value)} placeholder="24"/><input style={s.inp} type="number" step="0.01" value={line.price} onChange={e=>setLine(idx,'price',e.target.value)} placeholder="10.50"/><button onClick={()=>removeLine(idx)} style={{background:'rgba(248,113,113,0.14)',border:'none',borderRadius:0,color:'#dc2626',cursor:'pointer',fontSize:18,fontWeight:700}}>×</button></div>
                   ))}
-                  <button onClick={addLine} style={{padding:'6px 14px',background:'transparent',border:'1px dashed #d1d5db',borderRadius:6,fontSize:13,color:'#6b7280',cursor:'pointer',marginTop:4}}>+ Add Line Item</button>
+                  <button onClick={addLine} style={{padding:'6px 14px',background:'transparent',border:'1px dashed #34343a',borderRadius:0,fontSize:13,color:'#b3b3bc',cursor:'pointer',marginTop:4}}>+ Add Line Item</button>
                   {lineItems.some(l=>l.qty&&l.price)&&(()=>{
                     const sub=lineItems.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
                     const tax=sub*TAX_RATE;
                     return (
-                      <div style={{marginTop:14,padding:14,background:'#f9fafb',borderRadius:8,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,fontSize:13}}>
-                        <div style={{color:'#6b7280'}}>Subtotal: <strong>${sub.toFixed(2)}</strong></div>
-                        <div style={{color:'#6b7280'}}>Tax (7%): <strong>${tax.toFixed(2)}</strong></div>
-                        <div style={{fontSize:16,fontWeight:700,color:'#111827',borderTop:'1px solid #e5e7eb',paddingTop:6,marginTop:2}}>Total: ${(sub+tax).toFixed(2)}</div>
-                      </div>
+                      <div style={{marginTop:14,padding:14,background:'#141417',borderRadius:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,fontSize:13}}><div style={{color:'#b3b3bc'}}>Subtotal: <strong>${sub.toFixed(2)}</strong></div><div style={{color:'#b3b3bc'}}>Tax (7%): <strong>${tax.toFixed(2)}</strong></div><div style={{fontSize:16,fontWeight:700,color:'#f4f4f5',borderTop:'1px solid #222226',paddingTop:6,marginTop:2}}>Total: ${(sub+tax).toFixed(2)}</div></div>
                     );
                   })()}
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:12}}>
-                  <button onClick={createInvoice} style={s.saveBtn}>Create Invoice</button>
-                  {createMsg&&<span style={{fontSize:13,fontWeight:500,color:createMsg.startsWith('✓')?'#059669':'#dc2626'}}>{createMsg}</span>}
-                </div>
-              </div>
+                </div><div style={{display:'flex',alignItems:'center',gap:12}}><button onClick={createInvoice} style={s.saveBtn}>Create Invoice</button>
+                  {createMsg&&<span style={{fontSize:13,fontWeight:500,color:createMsg.startsWith('')?'#059669':'#dc2626'}}>{createMsg}</span>}
+                </div></div>
             )}
 
             {/* DISCOUNTS */}
             {billingTab==='discount' && (
-              <div style={{maxWidth:600}}>
-                <div style={s.card}>
-                  <h3 style={s.cardTitle}>Apply Discount</h3>
-                  <div style={{display:'flex',gap:8,marginBottom:16}}>
+              <div style={{maxWidth:600}}><div style={s.card}><h3 style={s.cardTitle}>Apply Discount</h3><div style={{display:'flex',gap:8,marginBottom:16}}>
                     {[['client','By Client'],['order','By Order']].map(([id,label])=>(
                       <button key={id} onClick={()=>setDiscountTarget(id)}
                         style={{...s.tab,...(discountTarget===id?s.tabActive:{})}}>
                         {label}
                       </button>
                     ))}
-                  </div>
-
-                  <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  </div><div style={{display:'flex',flexDirection:'column',gap:14}}>
                     {discountTarget==='client' ? (
-                      <div>
-                        <label style={s.label}>Client</label>
-                        <select style={s.inp} value={discountClient} onChange={e=>setDiscountClient(e.target.value)}>
-                          <option value="">Select client…</option>
+                      <div><label style={s.label}>Client</label><select style={s.inp} value={discountClient} onChange={e=>setDiscountClient(e.target.value)}><option value="">Select client…</option>
                           {clients.map(c=><option key={c.id}>{c.name}</option>)}
-                        </select>
-                      </div>
+                        </select></div>
                     ) : (
-                      <div>
-                        <label style={s.label}>Order</label>
-                        <select style={s.inp} value={discountOrder} onChange={e=>setDiscountOrder(e.target.value)}>
-                          <option value="">Select order…</option>
+                      <div><label style={s.label}>Order</label><select style={s.inp} value={discountOrder} onChange={e=>setDiscountOrder(e.target.value)}><option value="">Select order…</option>
                           {orders.map(o=><option key={o.id} value={o.id}>{o.id} — {o.client} (${o.total.toFixed(2)})</option>)}
-                        </select>
-                      </div>
+                        </select></div>
                     )}
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:12}}>
-                      <div>
-                        <label style={s.label}>Discount Amount</label>
-                        <input type="number" style={s.inp} value={discountAmt} onChange={e=>setDiscountAmt(e.target.value)} placeholder="10"/>
-                      </div>
-                      <div>
-                        <label style={s.label}>Type</label>
-                        <select style={s.inp} value={discountType} onChange={e=>setDiscountType(e.target.value)}>
-                          <option value="percent">Percent (%)</option>
-                          <option value="dollar">Dollar ($)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div style={{display:'flex',alignItems:'center',gap:12}}>
-                      <button onClick={applyDiscount} style={s.saveBtn}>Apply Discount</button>
-                      {discountMsg&&<span style={{fontSize:13,fontWeight:500,color:discountMsg.startsWith('✓')?'#059669':'#dc2626'}}>{discountMsg}</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:12}}><div><label style={s.label}>Discount Amount</label><input type="number" style={s.inp} value={discountAmt} onChange={e=>setDiscountAmt(e.target.value)} placeholder="10"/></div><div><label style={s.label}>Type</label><select style={s.inp} value={discountType} onChange={e=>setDiscountType(e.target.value)}><option value="percent">Percent (%)</option><option value="dollar">Dollar ($)</option></select></div></div><div style={{display:'flex',alignItems:'center',gap:12}}><button onClick={applyDiscount} style={s.saveBtn}>Apply Discount</button>
+                      {discountMsg&&<span style={{fontSize:13,fontWeight:500,color:discountMsg.startsWith('')?'#059669':'#dc2626'}}>{discountMsg}</span>}
+                    </div></div></div></div>
             )}
 
             {/* TAX REPORTS */}
             {billingTab==='reports' && (
-              <div>
-                <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}>
-                  <div style={{display:'flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:8}}>
+              <div><div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}><div style={{display:'flex',gap:4,background:'#141417',padding:4,borderRadius:0}}>
                     {[['monthly','Monthly'],['quarterly','Quarterly'],['yearly','Yearly']].map(([id,label])=>(
                       <button key={id} onClick={()=>setReportType(id)} style={{...s.tab,...(reportType===id?s.tabActive:{})}}>{label}</button>
                     ))}
@@ -1551,234 +1092,112 @@ export default function AdminPage() {
                       {['2026','2025','2024'].map(y=><option key={y}>{y}</option>)}
                     </select>
                   )}
-                  <button onClick={()=>window.print()} style={{padding:'7px 14px',background:'#f3f4f6',border:'1px solid #e5e7eb',borderRadius:6,fontSize:12,cursor:'pointer'}}>🖨 Print Report</button>
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+                  <button onClick={()=>window.print()} style={{padding:'7px 14px',background:'#141417',border:'1px solid #222226',borderRadius:0,fontSize:12,cursor:'pointer'}}> Print Report</button></div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
                   {[
-                    {label:'Total Revenue',    value:'$'+totalRev.toFixed(2),            color:'#059669'},
-                    {label:'Tax Collected 7%', value:'$'+totalTax.toFixed(2),            color:'#e8a020'},
-                    {label:'Net Revenue',      value:'$'+(totalRev-totalTax).toFixed(2), color:'#1a1a2e'},
+                    {label:'Total Revenue',    value:'$'+totalRev.toFixed(2),            color:'#34d399'},
+                    {label:'Tax Collected 7%', value:'$'+totalTax.toFixed(2),            color:'#ffc800'},
+                    {label:'Net Revenue',      value:'$'+(totalRev-totalTax).toFixed(2), color:'#000000'},
                   ].map(st=>(
-                    <div key={st.label} style={{...s.statCard,textAlign:'center'}}>
-                      <div style={{fontSize:11,color:'#6b7280',marginBottom:6,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div>
-                      <div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div>
-                    </div>
+                    <div key={st.label} style={{...s.statCard,textAlign:'center'}}><div style={{fontSize:11,color:'#b3b3bc',marginBottom:6,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div><div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div></div>
                   ))}
-                </div>
-                <div style={{background:'#fff',borderRadius:8,border:'1px solid #e5e7eb',overflow:'hidden'}}>
-                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-                    <thead>
-                      <tr style={{background:'#1a1a2e'}}>
+                </div><div style={{background:'#0e0e10',borderRadius:0,border:'1px solid #222226',overflow:'hidden'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr style={{background:'#050506'}}>
                         {['Period','Invoices','Revenue','Tax (7%)','Net'].map(h=>(
-                          <th key={h} style={{padding:'10px 16px',textAlign:h==='Period'?'left':'right',color:'#e8a020',fontWeight:700,fontSize:12}}>{h}</th>
+                          <th key={h} style={{padding:'10px 16px',textAlign:h==='Period'?'left':'right',color:'#ffc800',fontWeight:700,fontSize:12}}>{h}</th>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
+                      </tr></thead><tbody>
                       {reportData.map((row,i)=>(
-                        <tr key={i} style={{borderBottom:'1px solid #f3f4f6',background:i%2===0?'#fff':'#fafafa'}}>
-                          <td style={{padding:'10px 16px',fontWeight:600,color:'#111827'}}>{row.label}</td>
-                          <td style={{padding:'10px 16px',textAlign:'right',color:'#6b7280'}}>{row.count}</td>
-                          <td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#059669'}}>${row.revenue.toFixed(2)}</td>
-                          <td style={{padding:'10px 16px',textAlign:'right',color:'#e8a020'}}>${row.tax.toFixed(2)}</td>
-                          <td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#111827'}}>${(row.revenue-row.tax).toFixed(2)}</td>
-                        </tr>
+                        <tr key={i} style={{borderBottom:'1px solid #1c1c20',background:i%2===0?'#0e0e10':'#fafafa'}}><td style={{padding:'10px 16px',fontWeight:600,color:'#f4f4f5'}}>{row.label}</td><td style={{padding:'10px 16px',textAlign:'right',color:'#b3b3bc'}}>{row.count}</td><td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#34d399'}}>${row.revenue.toFixed(2)}</td><td style={{padding:'10px 16px',textAlign:'right',color:'#ffc800'}}>${row.tax.toFixed(2)}</td><td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#f4f4f5'}}>${(row.revenue-row.tax).toFixed(2)}</td></tr>
                       ))}
-                    </tbody>
-                    <tfoot>
-                      <tr style={{background:'#1a1a2e'}}>
-                        <td style={{padding:'12px 16px',fontWeight:700,color:'#e8a020'}}>TOTAL</td>
-                        <td style={{padding:'12px 16px',textAlign:'right',color:'#e8a020'}}>{reportData.reduce((s,r)=>s+r.count,0)}</td>
-                        <td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#e8a020'}}>${totalRev.toFixed(2)}</td>
-                        <td style={{padding:'12px 16px',textAlign:'right',color:'#e8a020'}}>${totalTax.toFixed(2)}</td>
-                        <td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#e8a020'}}>${(totalRev-totalTax).toFixed(2)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-                <p style={{fontSize:12,color:'#9ca3af',marginTop:10}}>* Based on paid invoices only. Consult your accountant for official filing.</p>
-              </div>
+                    </tbody><tfoot><tr style={{background:'#050506'}}><td style={{padding:'12px 16px',fontWeight:700,color:'#ffc800'}}>TOTAL</td><td style={{padding:'12px 16px',textAlign:'right',color:'#ffc800'}}>{reportData.reduce((s,r)=>s+r.count,0)}</td><td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#ffc800'}}>${totalRev.toFixed(2)}</td><td style={{padding:'12px 16px',textAlign:'right',color:'#ffc800'}}>${totalTax.toFixed(2)}</td><td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#ffc800'}}>${(totalRev-totalTax).toFixed(2)}</td></tr></tfoot></table></div><p style={{fontSize:12,color:'#a0a0a9',marginTop:10}}>* Based on paid invoices only. Consult your accountant for official filing.</p></div>
             )}
           </div>
         )}
 
         {/* INVENTORY */}
         {section==='inventory' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Inventory</h1>
-            <p style={s.sub}>{inventory.filter(i=>i.status!=='ok').length} items need attention</p>
+          <div style={s.sec}><h1 style={s.h1}>Inventory</h1><p style={s.sub}>{inventory.filter(i=>i.status!=='ok').length} items need attention</p>
             {inventory.map(item=>(
-              <div key={item.id} style={{...s.card,...(item.status==='critical'?{borderLeft:'3px solid #dc2626'}:item.status==='low'?{borderLeft:'3px solid #f59e0b'}:{}),marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
-                  <div>
-                    <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
-                      <span style={{fontSize:14,fontWeight:600}}>{item.name}</span>
-                      <Badge status={item.status}/>
-                    </div>
-                    <div style={{fontSize:13,color:'#6b7280'}}>SKU: {item.sku} · Min: {item.min} units</div>
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:26,fontWeight:700,color:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669'}}>{item.qty}</div>
-                    <div style={{fontSize:11,color:'#6b7280'}}>in stock</div>
-                  </div>
-                </div>
-                <div style={{marginTop:10,background:'#f3f4f6',borderRadius:6,height:6,overflow:'hidden'}}>
-                  <div style={{height:'100%',width:`${Math.min(100,(item.qty/Math.max(item.min*2,item.qty))*100)}%`,background:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669',borderRadius:6}}/>
-                </div>
-              </div>
+              <div key={item.id} style={{...s.card,...(item.status==='critical'?{borderLeft:'3px solid #dc2626'}:item.status==='low'?{borderLeft:'3px solid #f59e0b'}:{}),marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}><span style={{fontSize:14,fontWeight:600}}>{item.name}</span><Badge status={item.status}/></div><div style={{fontSize:13,color:'#b3b3bc'}}>SKU: {item.sku} · Min: {item.min} units</div></div><div style={{textAlign:'right'}}><div style={{fontSize:26,fontWeight:700,color:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669'}}>{item.qty}</div><div style={{fontSize:11,color:'#b3b3bc'}}>in stock</div></div></div><div style={{marginTop:10,background:'#141417',borderRadius:0,height:6,overflow:'hidden'}}><div style={{height:'100%',width:`${Math.min(100,(item.qty/Math.max(item.min*2,item.qty))*100)}%`,background:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669',borderRadius:0}}/></div></div>
             ))}
           </div>
         )}
 
         {/* ORDER DESK */}
         {section==='orderdesk' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Order Desk</h1>
-            <p style={s.sub}>Webhook connection & order feed</p>
-            <div style={{...s.card,marginBottom:16}}>
-              <h3 style={s.cardTitle}>Webhook Status</h3>
-              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-                <div style={{width:10,height:10,background:'#10b981',borderRadius:'50%',animation:'pulse 2s infinite'}}/>
-                <span style={{fontSize:14,fontWeight:600,color:'#059669'}}>Connected — Order Desk sync active</span>
-                <span style={{fontSize:12,color:'#6b7280'}}>Last ping: 4 minutes ago</span>
-              </div>
-              <div style={{background:'#f9fafb',borderRadius:8,padding:14}}>
-                <div style={{fontSize:12,fontWeight:600,color:'#6b7280',marginBottom:6}}>Webhook URL</div>
-                <div style={{fontFamily:'monospace',fontSize:12,color:'#374151',background:'#fff',padding:'8px 12px',borderRadius:6,border:'1px solid #e5e7eb',wordBreak:'break-all'}}>
+          <div style={s.sec}><h1 style={s.h1}>Order Desk</h1><p style={s.sub}>Webhook connection & order feed</p><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Webhook Status</h3><div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}><div style={{width:10,height:10,background:'#10b981',borderRadius:0,animation:'pulse 2s infinite'}}/><span style={{fontSize:14,fontWeight:600,color:'#34d399'}}>Connected — Order Desk sync active</span><span style={{fontSize:12,color:'#b3b3bc'}}>Last ping: 4 minutes ago</span></div><div style={{background:'#141417',borderRadius:0,padding:14}}><div style={{fontSize:12,fontWeight:600,color:'#b3b3bc',marginBottom:6}}>Webhook URL</div><div style={{fontFamily:'monospace',fontSize:12,color:'#e4e4e7',background:'#0e0e10',padding:'8px 12px',borderRadius:0,border:'1px solid #222226',wordBreak:'break-all'}}>
                   https://sanda-portal.vercel.app/api/webhooks/orderdesk
-                </div>
-              </div>
-              <div style={{display:'flex',gap:8,marginTop:12}}>
-                <button style={s.smBtn}>Test Webhook</button>
-                <button style={s.smBtn}>View Logs</button>
-                <button style={s.smBtn}>Reconnect</button>
-              </div>
-            </div>
-            <div style={s.card}>
-              <h3 style={s.cardTitle}>Recent Incoming Orders</h3>
+                </div></div><div style={{display:'flex',gap:8,marginTop:12}}><button style={s.smBtn}>Test Webhook</button><button style={s.smBtn}>View Logs</button><button style={s.smBtn}>Reconnect</button></div></div><div style={s.card}><h3 style={s.cardTitle}>Recent Incoming Orders</h3>
               {orders.map(o=>(
-                <div key={o.id} style={s.row}>
-                  <div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#6b7280'}}>{o.items}</div></div>
-                  <div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#6b7280',marginTop:3}}>{o.date}</div></div>
-                </div>
+                <div key={o.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{o.items}</div></div><div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#b3b3bc',marginTop:3}}>{o.date}</div></div></div>
               ))}
-            </div>
-          </div>
+            </div></div>
         )}
 
         {/* SETTINGS */}
         {section==='settings' && (
-          <div style={s.sec}>
-            <h1 style={s.h1}>Settings</h1>
-            <p style={s.sub}>Portal configuration</p>
-            <div style={{...s.card,marginBottom:16}}>
-              <h3 style={s.cardTitle}>Admin Access</h3>
-              <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                <div><label style={s.label}>Admin Password</label><div style={{display:'flex',gap:8}}><input type="password" placeholder="New password" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Update</button></div></div>
-                <div><label style={s.label}>Admin Email</label><div style={{display:'flex',gap:8}}><input type="email" placeholder="admin@sascreenprinting.com" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Save</button></div></div>
-              </div>
-            </div>
-            <div style={{...s.card,marginBottom:16}}>
-              <h3 style={s.cardTitle}>Notifications</h3>
+          <div style={s.sec}><h1 style={s.h1}>Settings</h1><p style={s.sub}>Portal configuration</p><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Admin Access</h3><div style={{display:'flex',flexDirection:'column',gap:14}}><div><label style={s.label}>Admin Password</label><div style={{display:'flex',gap:8}}><input type="password" placeholder="New password" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Update</button></div></div><div><label style={s.label}>Admin Email</label><div style={{display:'flex',gap:8}}><input type="email" placeholder="admin@sascreenprinting.com" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Save</button></div></div></div></div><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Notifications</h3>
               {['Email me on new orders','Email me on new messages','Email me when artwork is uploaded','Email me when inventory is low','Email me when invoices are overdue'].map(pref=>(
-                <label key={pref} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid #f3f4f6',cursor:'pointer',fontSize:14,color:'#374151'}}>
-                  <input type="checkbox" defaultChecked style={{width:16,height:16}}/>{pref}
+                <label key={pref} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid #1c1c20',cursor:'pointer',fontSize:14,color:'#e4e4e7'}}><input type="checkbox" defaultChecked style={{width:16,height:16}}/>{pref}
                 </label>
               ))}
-            </div>
-            <div style={s.card}>
-              <h3 style={s.cardTitle}>Business Info</h3>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+            </div><div style={s.card}><h3 style={s.cardTitle}>Business Info</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
                 {[['Business Name','S&A Screen Printing'],['Phone','(973) 555-0100'],['Email','info@sascreenprinting.com'],['Address','123 Print Ave, Newark NJ'],['Tax Rate (%)','7'],['Default Net Terms','30']].map(([label,val])=>(
                   <div key={label}><label style={s.label}>{label}</label><input style={s.inp} defaultValue={val}/></div>
                 ))}
-              </div>
-              <button style={{...s.saveBtn,marginTop:16}}>Save Business Info</button>
-            </div>
-          </div>
+              </div><button style={{...s.saveBtn,marginTop:16}}>Save Business Info</button></div></div>
         )}
       </main>
 
       {/* Invoice Preview Modal */}
       {previewInv && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20}}>
-          <div style={{background:'#fff',borderRadius:12,padding:28,maxWidth:700,width:'100%',maxHeight:'92vh',overflowY:'auto'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}} className="no-print">
-              <h3 style={{margin:0,fontSize:16,fontWeight:700}}>Invoice Preview — {previewInv.id}</h3>
-              <div style={{display:'flex',gap:8}}>
-                <button onClick={()=>window.print()} style={{padding:'6px 14px',background:'#1a1a2e',color:'#e8a020',border:'none',borderRadius:6,fontSize:12,fontWeight:600,cursor:'pointer'}}>🖨 Print</button>
-                <button onClick={()=>setPreviewInv(null)} style={{padding:'6px 14px',background:'#f3f4f6',border:'1px solid #e5e7eb',borderRadius:6,fontSize:12,cursor:'pointer'}}>✕ Close</button>
-              </div>
-            </div>
-            <div style={{fontFamily:"'Inter',sans-serif"}}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:24}}>
-                <div>
-                  <div style={{fontSize:20,fontWeight:800,color:'#1a1a2e'}}>S&A Screen Printing</div>
-                  <div style={{fontSize:13,color:'#6b7280',lineHeight:1.7,marginTop:4}}>123 Print Ave, Newark NJ<br/>(973) 555-0100 · info@sascreenprinting.com</div>
-                </div>
-                <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:24,fontWeight:800,color:'#1a1a2e'}}>INVOICE</div>
-                  <div style={{fontSize:18,fontWeight:700,color:'#e8a020'}}>{previewInv.id}</div>
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20,padding:14,background:'#f9fafb',borderRadius:8}}>
-                <div><div style={{fontSize:11,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Bill To</div><div style={{fontSize:14,fontWeight:600}}>{previewInv.client}</div></div>
-                <div><div style={{fontSize:11,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Details</div><div style={{fontSize:13,color:'#374151',lineHeight:1.7}}><div>Issued: {previewInv.issued}</div><div>Due: {previewInv.due}</div>{previewInv.note&&<div>Note: {previewInv.note}</div>}</div></div>
-              </div>
-              <table style={{width:'100%',borderCollapse:'collapse',marginBottom:16}}>
-                <thead><tr style={{background:'#1a1a2e'}}>{['Description','Qty','Unit Price','Total'].map(h=><th key={h} style={{padding:'9px 12px',textAlign:h==='Description'?'left':'right',color:'#e8a020',fontSize:12,fontWeight:700}}>{h}</th>)}</tr></thead>
-                <tbody>{previewInv.items.map((item,i)=><tr key={i} style={{borderBottom:'1px solid #f3f4f6'}}><td style={{padding:'10px 12px',fontSize:13}}>{item.desc}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>{item.qty}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>${item.price.toFixed(2)}</td><td style={{padding:'10px 12px',fontSize:13,fontWeight:600,textAlign:'right'}}>${(item.qty*item.price).toFixed(2)}</td></tr>)}</tbody>
-              </table>
-              {(()=>{const sub=previewInv.items.reduce((s,i)=>s+i.qty*i.price,0);const tax=sub*TAX_RATE;return(<div style={{display:'flex',justifyContent:'flex-end'}}><div style={{width:200}}>{[['Subtotal',sub],['Tax (7%)',tax]].map(([label,val])=><div key={label} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',fontSize:13,color:'#6b7280',borderBottom:'1px solid #f3f4f6'}}><span>{label}</span><span>${val.toFixed(2)}</span></div>)}<div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:16,fontWeight:700,color:'#111827'}}><span>Total</span><span>${(sub+tax).toFixed(2)}</span></div></div></div>);})()}
-              <div style={{marginTop:20,padding:14,background:'#f9fafb',borderRadius:8,fontSize:13,color:'#6b7280',lineHeight:1.7}}><strong style={{color:'#111827'}}>Payment:</strong> Venmo · Zelle · Check · Bank Transfer<br/><strong style={{color:'#111827'}}>Questions?</strong> info@sascreenprinting.com · (973) 555-0100</div>
-            </div>
-          </div>
-        </div>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20}}><div style={{background:'#0e0e10',borderRadius:0,padding:28,maxWidth:700,width:'100%',maxHeight:'92vh',overflowY:'auto'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}} className="no-print"><h3 style={{margin:0,fontSize:16,fontWeight:700}}>Invoice Preview — {previewInv.id}</h3><div style={{display:'flex',gap:8}}><button onClick={()=>window.print()} style={{padding:'6px 14px',background:'#050506',color:'#ffc800',border:'none',borderRadius:0,fontSize:12,fontWeight:600,cursor:'pointer'}}> Print</button><button onClick={()=>setPreviewInv(null)} style={{padding:'6px 14px',background:'#141417',border:'1px solid #222226',borderRadius:0,fontSize:12,cursor:'pointer'}}> Close</button></div></div><div style={{fontFamily:"var(--font-dm),'DM Sans',sans-serif"}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:24}}><div><div style={{fontSize:20,fontWeight:800,color:'#000000'}}>S&A Screen Printing</div><div style={{fontSize:13,color:'#b3b3bc',lineHeight:1.7,marginTop:4}}>123 Print Ave, Newark NJ<br/>(973) 555-0100 · info@sascreenprinting.com</div></div><div style={{textAlign:'right'}}><div style={{fontSize:24,fontWeight:800,color:'#000000'}}>INVOICE</div><div style={{fontSize:18,fontWeight:700,color:'#ffc800'}}>{previewInv.id}</div></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20,padding:14,background:'#141417',borderRadius:0}}><div><div style={{fontSize:11,fontWeight:700,color:'#a0a0a9',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Bill To</div><div style={{fontSize:14,fontWeight:600}}>{previewInv.client}</div></div><div><div style={{fontSize:11,fontWeight:700,color:'#a0a0a9',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Details</div><div style={{fontSize:13,color:'#e4e4e7',lineHeight:1.7}}><div>Issued: {previewInv.issued}</div><div>Due: {previewInv.due}</div>{previewInv.note&&<div>Note: {previewInv.note}</div>}</div></div></div><table style={{width:'100%',borderCollapse:'collapse',marginBottom:16}}><thead><tr style={{background:'#050506'}}>{['Description','Qty','Unit Price','Total'].map(h=><th key={h} style={{padding:'9px 12px',textAlign:h==='Description'?'left':'right',color:'#ffc800',fontSize:12,fontWeight:700}}>{h}</th>)}</tr></thead><tbody>{previewInv.items.map((item,i)=><tr key={i} style={{borderBottom:'1px solid #1c1c20'}}><td style={{padding:'10px 12px',fontSize:13}}>{item.desc}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>{item.qty}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>${item.price.toFixed(2)}</td><td style={{padding:'10px 12px',fontSize:13,fontWeight:600,textAlign:'right'}}>${(item.qty*item.price).toFixed(2)}</td></tr>)}</tbody></table>
+              {(()=>{const sub=previewInv.items.reduce((s,i)=>s+i.qty*i.price,0);const tax=sub*TAX_RATE;return(<div style={{display:'flex',justifyContent:'flex-end'}}><div style={{width:200}}>{[['Subtotal',sub],['Tax (7%)',tax]].map(([label,val])=><div key={label} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',fontSize:13,color:'#b3b3bc',borderBottom:'1px solid #1c1c20'}}><span>{label}</span><span>${val.toFixed(2)}</span></div>)}<div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:16,fontWeight:700,color:'#f4f4f5'}}><span>Total</span><span>${(sub+tax).toFixed(2)}</span></div></div></div>);})()}
+              <div style={{marginTop:20,padding:14,background:'#141417',borderRadius:0,fontSize:13,color:'#b3b3bc',lineHeight:1.7}}><strong style={{color:'#f4f4f5'}}>Payment:</strong> Venmo · Zelle · Check · Bank Transfer<br/><strong style={{color:'#f4f4f5'}}>Questions?</strong> info@sascreenprinting.com · (973) 555-0100</div></div></div></div>
       )}
     </div>
   );
 }
 
 const s = {
-  loginBg:    {minHeight:'100vh',background:'#0f0f1a',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'Inter',sans-serif"},
-  loginCard:  {background:'#1a1a2e',border:'1px solid rgba(232,160,32,0.2)',borderRadius:16,padding:'44px 40px',width:320,textAlign:'center'},
+  loginBg:    {minHeight:'100vh',background:'#070708',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"var(--font-dm),'DM Sans',sans-serif"},
+  loginCard:  {background:'#040405',border:'1px solid #222226',borderTop:'3px solid #ffc800',borderRadius:0,padding:'44px 40px',width:320,textAlign:'center'},
   loginTitle: {color:'#fff',fontSize:22,fontWeight:700,margin:'0 0 4px'},
-  loginSub:   {color:'#6b7280',fontSize:13,marginBottom:28},
-  loginInput: {width:'100%',padding:'11px 14px',background:'#0f0f1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,color:'#fff',fontSize:14,textAlign:'center',outline:'none',fontFamily:'inherit',boxSizing:'border-box'},
-  loginBtn:   {width:'100%',padding:'12px 0',background:'#e8a020',color:'#1a1a2e',border:'none',borderRadius:8,fontSize:15,fontWeight:700,cursor:'pointer'},
-  shell:      {display:'flex',minHeight:'100vh',fontFamily:"'Inter',sans-serif",background:'#f3f4f6'},
-  sidebar:    {width:220,background:'#1a1a2e',display:'flex',flexDirection:'column',position:'fixed',top:0,left:0,bottom:0,zIndex:50,overflowY:'auto'},
+  loginSub:   {color:'#b3b3bc',fontSize:13,marginBottom:28},
+  loginInput: {width:'100%',padding:'11px 14px',background:'#070708',border:'1px solid rgba(255,255,255,0.1)',borderRadius:0,color:'#fff',fontSize:14,textAlign:'center',outline:'none',fontFamily:'inherit',boxSizing:'border-box'},
+  loginBtn:   {width:'100%',padding:'12px 0',background:'#ffc800',color:'#000000',border:'none',borderRadius:0,fontSize:15,fontWeight:700,cursor:'pointer'},
+  shell:      {display:'flex',minHeight:'100vh',fontFamily:"var(--font-dm),'DM Sans',sans-serif",background:'#070708',color:'#f4f4f5'},
+  sidebar:    {width:236,background:'#040405',borderRight:'1px solid #222226',display:'flex',flexDirection:'column',position:'fixed',top:0,left:0,bottom:0,zIndex:50,overflowY:'auto'},
   logo:       {display:'flex',alignItems:'center',gap:8,padding:'8px 8px 16px',borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:8},
-  urgentBanner:{background:'rgba(220,38,38,0.15)',border:'1px solid rgba(220,38,38,0.3)',borderRadius:6,padding:'6px 10px',fontSize:11,color:'#fca5a5',lineHeight:1.4,marginTop:8},
+  urgentBanner:{background:'rgba(220,38,38,0.15)',border:'1px solid rgba(220,38,38,0.3)',borderRadius:0,padding:'6px 10px',fontSize:11,color:'#fca5a5',lineHeight:1.4,marginTop:8},
   nav:        {flex:1,padding:'4px 8px',display:'flex',flexDirection:'column',gap:2},
-  navBtn:     {display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,background:'transparent',border:'none',color:'#9ca3af',fontSize:13,cursor:'pointer',width:'100%',transition:'all 0.15s'},
-  navActive:  {background:'rgba(232,160,32,0.15)',color:'#e8a020'},
-  navBadge:   {background:'#374151',color:'#fff',fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:10,minWidth:18,textAlign:'center'},
+  navBtn:     {display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:0,background:'transparent',border:'none',color:'#a0a0a9',fontSize:13,cursor:'pointer',width:'100%',transition:'all 0.15s'},
+  navActive:  {background:'rgba(232,160,32,0.15)',color:'#ffc800'},
+  navBadge:   {background:'#2a2a30',color:'#fff',fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:0,minWidth:18,textAlign:'center'},
   sideBottom: {padding:'12px',borderTop:'1px solid rgba(255,255,255,0.08)',display:'flex',flexDirection:'column',gap:8},
-  main:       {flex:1,marginLeft:220,overflowY:'auto',minHeight:'100vh'},
+  main:       {flex:1,marginLeft:236,overflowY:'auto',minHeight:'100vh'},
   sec:        {padding:'28px',maxWidth:1100},
-  h1:         {fontSize:24,fontWeight:700,color:'#111827',margin:'0 0 4px'},
-  sub:        {fontSize:14,color:'#6b7280',marginBottom:24},
-  alertBanner:{display:'flex',alignItems:'center',gap:12,background:'#fee2e2',border:'1px solid #fca5a5',borderRadius:8,padding:'12px 16px',marginBottom:20,fontSize:14,color:'#991b1b'},
-  alertBannerBtn:{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:6,padding:'4px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
+  h1:         {fontSize:30,fontWeight:700,color:'#f4f4f5',margin:'0 0 4px',fontFamily:"var(--font-sora),'Sora',sans-serif",letterSpacing:'-0.02em'},
+  sub:        {fontSize:14,color:'#b3b3bc',marginBottom:24},
+  alertBanner:{display:'flex',alignItems:'center',gap:12,background:'rgba(248,113,113,0.14)',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,padding:'12px 16px',marginBottom:20,fontSize:14,color:'#fca5a5'},
+  alertBannerBtn:{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:0,padding:'4px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
   statsGrid:  {display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:24},
-  statCard:   {background:'#fff',borderRadius:10,border:'1px solid #e5e7eb',padding:16,textAlign:'center'},
-  card:       {background:'#fff',borderRadius:10,border:'1px solid #e5e7eb',padding:20},
-  cardTitle:  {fontSize:15,fontWeight:600,color:'#111827',marginBottom:14,marginTop:0},
-  row:        {display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #f3f4f6',gap:12},
-  viewAll:    {background:'none',border:'none',color:'#e8a020',fontSize:13,cursor:'pointer',padding:'8px 0',fontWeight:500},
-  alertRow:   {background:'#fff',borderRadius:8,border:'1px solid #e5e7eb',padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',gap:16},
-  goBtn:      {background:'#1a1a2e',color:'#e8a020',border:'none',borderRadius:6,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
-  dimBtn:     {background:'transparent',border:'1px solid #d1d5db',color:'#6b7280',borderRadius:6,padding:'5px 10px',fontSize:12,cursor:'pointer'},
-  clientCard: {background:'#fff',borderRadius:10,border:'1px solid #e5e7eb',padding:20,marginBottom:14},
-  smBtn:      {background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:6,padding:'5px 12px',fontSize:12,fontWeight:500,cursor:'pointer',color:'#374151'},
-  msgBtn:     {background:'#fff',border:'1px solid #e5e7eb',borderRadius:8,padding:'12px',textAlign:'left',cursor:'pointer',transition:'all 0.15s',width:'100%'},
-  inp:        {padding:'7px 9px',border:'1px solid #d1d5db',borderRadius:6,fontSize:13,color:'#111827',background:'#fff',fontFamily:'inherit',boxSizing:'border-box',width:'100%'},
-  label:      {display:'block',fontSize:11,fontWeight:600,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.4,marginBottom:5},
-  saveBtn:    {padding:'7px 16px',background:'#1a1a2e',color:'#e8a020',border:'none',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'},
-  cancelBtn:  {padding:'7px 14px',background:'transparent',border:'1px solid #d1d5db',color:'#6b7280',borderRadius:6,fontSize:13,cursor:'pointer'},
-  tabs:       {display:'flex',gap:4,marginBottom:20,background:'#f3f4f6',padding:4,borderRadius:8,width:'fit-content'},
-  tab:        {padding:'7px 16px',background:'transparent',border:'none',borderRadius:6,fontSize:13,fontWeight:500,color:'#6b7280',cursor:'pointer'},
-  tabActive:  {background:'#fff',color:'#111827',fontWeight:600,boxShadow:'0 1px 3px rgba(0,0,0,0.08)'},
-  empty:      {textAlign:'center',padding:'40px',color:'#9ca3af',fontSize:14},
+  statCard:   {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:16,textAlign:'center'},
+  card:       {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:20},
+  cardTitle:  {fontSize:15,fontWeight:600,color:'#f4f4f5',marginBottom:14,marginTop:0},
+  row:        {display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #1c1c20',gap:12},
+  viewAll:    {background:'none',border:'none',color:'#ffc800',fontSize:13,cursor:'pointer',padding:'8px 0',fontWeight:500},
+  alertRow:   {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',gap:16},
+  goBtn:      {background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
+  dimBtn:     {background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:0,padding:'5px 10px',fontSize:12,cursor:'pointer'},
+  clientCard: {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:20,marginBottom:14},
+  smBtn:      {background:'#141417',border:'1px solid #222226',borderRadius:0,padding:'5px 12px',fontSize:12,fontWeight:500,cursor:'pointer',color:'#e4e4e7'},
+  msgBtn:     {background:'#0e0e10',border:'1px solid #222226',borderRadius:0,padding:'12px',textAlign:'left',cursor:'pointer',transition:'all 0.15s',width:'100%'},
+  inp:        {padding:'7px 9px',border:'1px solid #34343a',borderRadius:0,fontSize:13,color:'#f4f4f5',background:'#0e0e10',fontFamily:'inherit',boxSizing:'border-box',width:'100%'},
+  label:      {display:'block',fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:0.4,marginBottom:5},
+  saveBtn:    {padding:'8px 18px',background:'#ffc800',color:'#000',border:'none',borderRadius:0,fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'},
+  cancelBtn:  {padding:'7px 14px',background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:0,fontSize:13,cursor:'pointer'},
+  tabs:       {display:'flex',gap:4,marginBottom:20,background:'#141417',padding:4,borderRadius:0,width:'fit-content'},
+  tab:        {padding:'7px 16px',background:'transparent',border:'none',borderRadius:0,fontSize:13,fontWeight:500,color:'#b3b3bc',cursor:'pointer'},
+  tabActive:  {background:'#0e0e10',color:'#f4f4f5',fontWeight:600,boxShadow:'0 1px 3px rgba(0,0,0,0.08)'},
+  empty:      {textAlign:'center',padding:'40px',color:'#a0a0a9',fontSize:14},
 };

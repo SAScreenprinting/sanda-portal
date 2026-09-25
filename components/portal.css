@@ -1,7 +1,7 @@
 /* S&A portal design system: black, sharp corners, Lamborghini yellow. Everything is prefixed sp- */
 .sp {
   --bg: #070708; --panel: #0e0e10; --panel2: #141417; --line: #222226; --line2: #34343a;
-  --text: #f4f4f5; --muted: #8d8d96; --dim: #5b5b63; --y: #ffc800; --y2: #ffd84d;
+  --text: #f4f4f5; --muted: #b3b3bc; --dim: #85858e; --y: #ffc800; --y2: #ffd84d;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   min-height: 100vh; background: var(--bg); color: var(--text);
   font-family: var(--font-dm), 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased;

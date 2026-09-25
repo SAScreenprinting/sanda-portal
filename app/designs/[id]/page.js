@@ -4,9 +4,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import PortalShell from '@/components/PortalShell';
 
-const COLORS = { Submitted: '#ffc800', 'In Setup': '#60a5fa', Live: '#34d399' };
+const COLORS = { Submitted: '#ffc800', Approved: '#a3e635', Denied: '#f87171', 'In Setup': '#60a5fa', Live: '#34d399' };
 const STEPS = [
   { key: 'Submitted', title: 'Submitted', note: 'Your design and print files are saved to your POD profile.' },
+  { key: 'Approved', title: 'Approved', note: 'S&A reviewed your design and approved it.' },
   { key: 'In Setup', title: 'In setup', note: 'S&A is setting this item up with your profile and your online stores.' },
   { key: 'Live', title: 'Live', note: 'The item is ready to sell from your connected stores.' },
 ];
@@ -35,6 +36,8 @@ export default function DesignDetailPage() {
   const p = design?.product || {};
   const status = p.status || 'Submitted';
   const stepIdx = Math.max(0, STEPS.findIndex((s) => s.key === status));
+  const [viewer, setViewer] = useState(null);
+  const [bg, setBg] = useState('checker');
   const previews = Object.entries(design?.decorations?.previews || {});
   const files = design?.decorations?.printFiles || [];
 
@@ -66,6 +69,13 @@ export default function DesignDetailPage() {
             </div>
             <span className="sp-chip live sp-in" style={{ '--c': COLORS[status] || '#9ca3af', '--i': 1 }}><i />{status}</span>
           </header>
+
+          {status === 'Denied' && (
+            <div className="sp-msg err" style={{ marginBottom: 14 }}>
+              <b>This design was sent back.</b> {p.reviewNote || 'Please review it and submit a new version.'}
+              <div style={{ marginTop: 10 }}><a href="/studio" className="sp-link">Create a revised design</a></div>
+            </div>
+          )}
 
           <div className="sp-detail">
             <div className="sp-card sp-in" style={{ '--i': 2 }}>
@@ -105,16 +115,32 @@ export default function DesignDetailPage() {
                 <div className="sp-card sp-in" style={{ '--i': 5 }}>
                   <div className="sp-panel-head"><h2>Print files</h2></div>
                   {files.map((f) => (
-                    <a key={f.url} href={f.url} target="_blank" rel="noopener noreferrer" className="sp-file">
+                    <button key={f.url} onClick={() => setViewer({ url: f.url, label: `${f.viewName} · ${f.printAreaLabel}` })} className="sp-file" style={{ width: '100%', background: 'none', border: 0, borderTop: '1px solid var(--line)', color: 'inherit', font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
                       <span>{f.viewName} · {f.printAreaLabel}</span>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M12 3v12M6 11l6 6 6-6M4 21h16" /></svg>
-                    </a>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    </button>
                   ))}
                 </div>
               )}
             </div>
           </div>
         </>
+      )}
+      {viewer && (
+        <div className="sp-modal" onClick={(e) => e.target === e.currentTarget && setViewer(null)}>
+          <div className="sp-dialog" style={{ maxWidth: 820 }}>
+            <button className="sp-x" onClick={() => setViewer(null)} aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+            <h2 style={{ fontSize: 18 }}>{viewer.label}</h2>
+            <div className="sp-tabs" style={{ margin: '12px 0' }}>
+              {[['checker', 'Checker'], ['white', 'White'], ['black', 'Black']].map(([k, l]) => <button key={k} className={`sp-tab${bg === k ? ' on' : ''}`} onClick={() => setBg(k)}>{l}</button>)}
+            </div>
+            <div style={{ display: 'grid', placeItems: 'center', minHeight: 360, padding: 12, border: '1px solid var(--line2)',
+              ...(bg === 'checker' ? { backgroundColor: '#fff', backgroundImage: 'linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%),linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0,10px 10px' } : { background: bg === 'black' ? '#000' : '#fff' }) }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={viewer.url} alt="" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
+            </div>
+          </div>
+        </div>
       )}
     </PortalShell>
   );

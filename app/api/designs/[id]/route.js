@@ -21,12 +21,12 @@ export async function PATCH(request, { params }) {
   if (!auth.user) return Response.json({ error: 'Not signed in' }, { status: 401 });
   if (!auth.isAdmin) return forbidden();
   const { id } = await params;
-  const { status } = await request.json();
-  if (!['Submitted', 'In Setup', 'Live'].includes(status)) return Response.json({ error: 'Invalid status' }, { status: 400 });
+  const { status, note } = await request.json();
+  if (!['Submitted', 'Approved', 'Denied', 'In Setup', 'Live'].includes(status)) return Response.json({ error: 'Invalid status' }, { status: 400 });
   const db = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const { data: row } = await db.from('saved_designs').select('product').eq('id', id).maybeSingle();
   if (!row) return Response.json({ error: 'Not found' }, { status: 404 });
-  const { error } = await db.from('saved_designs').update({ product: { ...(row.product || {}), status }, updated_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await db.from('saved_designs').update({ product: { ...(row.product || {}), status, reviewNote: status === 'Denied' ? (note || '') : (row.product?.reviewNote && status !== 'Approved' ? row.product.reviewNote : ''), reviewedAt: new Date().toISOString() }, updated_at: new Date().toISOString() }).eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }

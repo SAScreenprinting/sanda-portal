@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import PortalShell from '@/components/PortalShell';
 
-const STATUS_COLORS = { Submitted: '#ffc800', 'In Setup': '#60a5fa', Live: '#34d399' };
+const STATUS_COLORS = { Submitted: '#ffc800', Approved: '#a3e635', Denied: '#f87171', 'In Setup': '#60a5fa', Live: '#34d399' };
 
 export default function DesignsPage() {
   const router = useRouter();

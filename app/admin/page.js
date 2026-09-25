@@ -120,6 +120,12 @@ export default function AdminPage() {
   const [invoices, setInvoices]   = useState(INIT_INVOICES);
   const [inventory]               = useState(INIT_INVENTORY);
   const [designs, setDesigns]     = useState([]);
+  const [designFilter, setDesignFilter] = useState('Submitted');
+  const [reviewing, setReviewing]   = useState(null);
+  const [denying, setDenying]       = useState(false);
+  const [denyNote, setDenyNote]     = useState('');
+  const [viewerBg, setViewerBg]     = useState('checker');
+  const [viewerFile, setViewerFile] = useState(null);
   const [designsLoading, setDesignsLoading] = useState(false);
   const [artwork, setArtwork]     = useState([]);
   const [artworkLoading, setArtworkLoading] = useState(false);
@@ -194,9 +200,9 @@ export default function AdminPage() {
       .catch(() => setDesignsLoading(false));
   };
 
-  async function setDesignStatus(id, status) {
-    setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product || {}), status } } : d));
-    await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status }) });
+  async function setDesignStatus(id, status, note) {
+    setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product || {}), status, reviewNote: status === 'Denied' ? (note || '') : '' } } : d));
+    await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status, note }) });
   }
 
   useEffect(() => { loadDesigns(); }, []);
@@ -1089,44 +1095,123 @@ export default function AdminPage() {
         {section==='designs' && (
           <div style={s.sec}>
             <h1 style={s.h1}>Designs</h1>
-            <p style={s.sub}>Designs POD clients created in the Design Studio. Set each one up with the client's profile and stores, then move it along.</p>
-            {designsLoading && designs.length===0 && <div style={{color:'#9ca3af',padding:20}}>Loading…</div>}
-            {!designsLoading && designs.length===0 && <div style={{...s.card,textAlign:'center',color:'#9ca3af'}}>No designs yet.</div>}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:14}}>
-              {designs.map(d=>{
+            <p style={{...s.sub,color:'#374151'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p>
+            <div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
+              {['All','Submitted','Approved','In Setup','Live','Denied'].map(f=>(
+                <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#111827':'#d1d5db'),background:designFilter===f?'#111827':'#fff',color:designFilter===f?'#fff':'#111827',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                  {f}{f!=='All' ? ` (${designs.filter(d=>(d.product?.status||'Submitted')===f).length})` : ''}
+                </button>
+              ))}
+            </div>
+            {designsLoading && designs.length===0 && <div style={{color:'#374151',padding:20}}>Loading…</div>}
+            {!designsLoading && designs.length===0 && <div style={{...s.card,textAlign:'center',color:'#374151'}}>No designs yet.</div>}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14}}>
+              {designs.filter(d=>designFilter==='All'||(d.product?.status||'Submitted')===designFilter).map(d=>{
                 const st = d.product?.status || 'Submitted';
-                const files = d.decorations?.printFiles || [];
-                const previews = Object.entries(d.decorations?.previews || {});
+                const stc = ({Submitted:['#fef3c7','#92400e'],Approved:['#dcfce7','#166534'],Denied:['#fee2e2','#991b1b'],'In Setup':['#dbeafe','#1e40af'],Live:['#d1fae5','#065f46']})[st] || ['#f3f4f6','#111827'];
                 const who = d.client?.business_name || d.client?.contact_name || 'Client';
+                const first = Object.values(d.decorations?.previews || {})[0] || d.thumbnail;
                 return (
-                  <div key={d.id} style={{...s.card,padding:0,overflow:'hidden',...(st==='Submitted'?{borderLeft:'3px solid #f59e0b'}:{})}}>
-                    <div style={{display:'flex',background:'#fff',borderBottom:'1px solid #e5e7eb'}}>
-                      {previews.length===0 && d.thumbnail && <img src={d.thumbnail} alt="" style={{width:'100%',height:170,objectFit:'contain'}}/>}
-                      {previews.map(([view,url])=>(
-                        <div key={view} style={{flex:1,position:'relative'}}>
-                          <img src={url} alt={view} style={{width:'100%',height:170,objectFit:'contain',display:'block'}}/>
-                          <span style={{position:'absolute',left:0,bottom:0,background:'#111',color:'#fff',fontSize:10,padding:'2px 7px'}}>{view}</span>
-                        </div>
-                      ))}
+                  <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
+                    <div style={{background:'#fff',borderBottom:'1px solid #e5e7eb',height:190,display:'grid',placeItems:'center'}}>
+                      {first && <img src={first} alt="" style={{maxWidth:'100%',maxHeight:190,objectFit:'contain'}}/>}
                     </div>
                     <div style={{padding:16}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8}}>
-                        <strong style={{fontSize:15}}>{d.name}</strong>
-                        <span style={{fontSize:12,color:'#9ca3af'}}>{new Date(d.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}>
+                        <strong style={{fontSize:16,color:'#111827'}}>{d.name}</strong>
+                        <span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:20,background:stc[0],color:stc[1]}}>{st}</span>
                       </div>
-                      <div style={{fontSize:13,color:'#374151',margin:'4px 0 2px'}}>{who}</div>
-                      <div style={{fontSize:12,color:'#6b7280',marginBottom:12}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
-                      <select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'8px 10px',border:'1px solid #d1d5db',borderRadius:8,fontSize:13,marginBottom:10}}>
-                        {['Submitted','In Setup','Live'].map(o=><option key={o}>{o}</option>)}
-                      </select>
-                      {files.map(f=>(
-                        <a key={f.url} href={f.url} target="_blank" rel="noopener noreferrer" style={{display:'block',fontSize:12,color:'#2563eb',textDecoration:'none',padding:'3px 0'}}>Print file: {f.viewName} · {f.printAreaLabel}</a>
-                      ))}
+                      <div style={{fontSize:14,color:'#111827',fontWeight:600}}>{who}</div>
+                      <div style={{fontSize:13,color:'#374151',margin:'3px 0 12px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
+                      {st==='Submitted' ? (
+                        <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}>
+                          <button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button>
+                          <button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#fff',color:'#b91c1c',border:'1px solid #fca5a5',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button>
+                        </div>
+                      ) : <div style={{fontSize:13,color:'#2563eb',fontWeight:600}}>Open to review</div>}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {reviewing && (() => {
+              const d = designs.find(x=>x.id===reviewing.id) || reviewing;
+              const st = d.product?.status || 'Submitted';
+              const files = d.decorations?.printFiles || [];
+              const previews = Object.entries(d.decorations?.previews || {});
+              const bgStyle = viewerBg==='checker'
+                ? {backgroundColor:'#fff',backgroundImage:'linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%),linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%)',backgroundSize:'20px 20px',backgroundPosition:'0 0,10px 10px'}
+                : {background: viewerBg==='black' ? '#000' : '#fff'};
+              const shown = viewerFile || (files[0] ? {url:files[0].url,label:`${files[0].viewName} · ${files[0].printAreaLabel} (print file)`} : (previews[0] ? {url:previews[0][1],label:`${previews[0][0]} preview`} : null));
+              return (
+                <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+                  <div style={{background:'#fff',borderRadius:14,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}>
+                    <div style={{padding:20,borderRight:'1px solid #e5e7eb'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}>
+                        <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>{shown?.label || 'No image'}</div>
+                        <div style={{display:'flex',gap:6}}>
+                          {[['checker','Checker'],['white','White'],['black','Black']].map(([k,l])=>(
+                            <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#111827':'#d1d5db'),background:viewerBg===k?'#111827':'#fff',color:viewerBg===k?'#fff':'#111827',borderRadius:6,cursor:'pointer'}}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{...bgStyle,borderRadius:10,border:'1px solid #d1d5db',minHeight:420,display:'grid',placeItems:'center',padding:12}}>
+                        {shown && <img src={shown.url} alt="" style={{maxWidth:'100%',maxHeight:'62vh',objectFit:'contain'}}/>}
+                      </div>
+                      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+                        {previews.map(([view,url])=>(
+                          <button key={'p'+view} onClick={()=>setViewerFile({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #d1d5db',background:'#fff',color:'#111827',borderRadius:6,cursor:'pointer'}}>{view} preview</button>
+                        ))}
+                        {files.map(f=>(
+                          <button key={f.url} onClick={()=>setViewerFile({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'#eff6ff',color:'#1d4ed8',borderRadius:6,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                        <div>
+                          <div style={{fontSize:20,fontWeight:800,color:'#111827'}}>{d.name}</div>
+                          <div style={{fontSize:14,color:'#374151',marginTop:2}}>{d.client?.business_name || d.client?.contact_name || 'Client'}{d.client?.email?` · ${d.client.email}`:''}</div>
+                        </div>
+                        <button onClick={()=>setReviewing(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#374151'}}>×</button>
+                      </div>
+                      <div style={{fontSize:14,color:'#111827',lineHeight:1.6}}>
+                        <div><strong>Product:</strong> {d.product?.productTitle}</div>
+                        {d.product?.variantTitle && <div><strong>Variant:</strong> {d.product.variantTitle}</div>}
+                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+                        <div><strong>Status:</strong> {st}</div>
+                        {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,color:'#991b1b'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
+                      </div>
+
+                      {denying ? (
+                        <div>
+                          <label style={{fontSize:13,fontWeight:700,color:'#111827',display:'block',marginBottom:6}}>Why is it being denied? The client sees this.</label>
+                          <textarea value={denyNote} onChange={e=>setDenyNote(e.target.value)} rows={4} placeholder="Low resolution logo, please upload a vector file" style={{width:'100%',padding:10,border:'1px solid #d1d5db',borderRadius:8,fontSize:14,color:'#111827',boxSizing:'border-box'}}/>
+                          <div style={{display:'flex',gap:8,marginTop:10}}>
+                            <button disabled={!denyNote.trim()} onClick={async()=>{await setDesignStatus(d.id,'Denied',denyNote.trim());setDenying(false);setReviewing(null);}} style={{flex:1,padding:'11px',background:denyNote.trim()?'#dc2626':'#fca5a5',color:'#fff',border:'none',borderRadius:8,fontWeight:700,cursor:denyNote.trim()?'pointer':'default'}}>Send denial</button>
+                            <button onClick={()=>setDenying(false)} style={{padding:'11px 16px',background:'#fff',border:'1px solid #d1d5db',color:'#111827',borderRadius:8,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                          {(st==='Submitted'||st==='Denied') && <button onClick={async()=>{await setDesignStatus(d.id,'Approved');setReviewing(null);}} style={{padding:'12px',background:'#16a34a',color:'#fff',border:'none',borderRadius:8,fontWeight:800,fontSize:15,cursor:'pointer'}}>Approve</button>}
+                          {st!=='Denied' && <button onClick={()=>{setDenying(true);setDenyNote('');}} style={{padding:'12px',background:'#fff',color:'#b91c1c',border:'1px solid #fca5a5',borderRadius:8,fontWeight:800,fontSize:15,cursor:'pointer'}}>Deny with a reason</button>}
+                          {(st==='Approved'||st==='In Setup'||st==='Live') && (
+                            <div>
+                              <label style={{fontSize:13,fontWeight:700,color:'#111827',display:'block',marginBottom:6}}>Setup stage</label>
+                              <select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'10px',border:'1px solid #d1d5db',borderRadius:8,fontSize:14,color:'#111827'}}>
+                                {['Approved','In Setup','Live'].map(o=><option key={o}>{o}</option>)}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

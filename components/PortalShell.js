@@ -26,7 +26,6 @@ export function Icon({ name, size = 18 }) {
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
   { id: 'orders', label: 'Orders', href: '/orders' },
-  { id: 'artwork', label: 'Artwork Library', href: '/artwork' },
   { id: 'designs', label: 'Designs', href: '/designs' },
   { id: 'studio', label: 'Design Studio', href: '/studio' },
   { id: 'billing', label: 'Billing', href: '/billing' },

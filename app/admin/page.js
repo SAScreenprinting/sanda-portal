@@ -77,6 +77,7 @@ const NAV = [
   { id:'messages',  icon:'💬', label:'Messages' },
   { id:'orders',    icon:'📦', label:'Orders' },
   { id:'products',  icon:'🏷️', label:'Products' },
+  { id:'designs',   icon:'✏️', label:'Designs' },
   { id:'artwork',   icon:'🎨', label:'Artwork' },
   { id:'billing',   icon:'💰', label:'Billing' },
   { id:'inventory', icon:'📋', label:'Inventory' },
@@ -118,6 +119,8 @@ export default function AdminPage() {
   const [orders, setOrders]       = useState(INIT_ORDERS);
   const [invoices, setInvoices]   = useState(INIT_INVOICES);
   const [inventory]               = useState(INIT_INVENTORY);
+  const [designs, setDesigns]     = useState([]);
+  const [designsLoading, setDesignsLoading] = useState(false);
   const [artwork, setArtwork]     = useState([]);
   const [artworkLoading, setArtworkLoading] = useState(false);
   const [artworkClientFilter, setArtworkClientFilter] = useState('all');
@@ -183,7 +186,23 @@ export default function AdminPage() {
       .catch(() => setArtworkLoading(false));
   };
 
+  const loadDesigns = () => {
+    setDesignsLoading(true);
+    fetch('/api/designs/list?admin=true', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { if (d.designs) setDesigns(d.designs); setDesignsLoading(false); })
+      .catch(() => setDesignsLoading(false));
+  };
+
+  async function setDesignStatus(id, status) {
+    setDesigns(list => list.map(d => d.id === id ? { ...d, product: { ...(d.product || {}), status } } : d));
+    await fetch(`/api/designs/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status }) });
+  }
+
+  useEffect(() => { loadDesigns(); }, []);
+
   useEffect(() => {
+    if (section === 'designs') loadDesigns();
     if (section === 'messages') loadInquiries();
     if (section === 'artwork')  loadArtwork();
   }, [section]);
@@ -465,6 +484,7 @@ export default function AdminPage() {
   const urgentCount = alerts.filter(a=>a.level==='urgent').length;
   const unreadCount = messages.filter(m=>!m.read).length;
   const pendingArt  = artwork.filter(a=>a.status==='pending').length;
+  const newDesigns  = designs.filter(d=>(d.product?.status || 'Submitted') === 'Submitted').length;
 
   // ── LOGIN ──────────────────────────────────────────────────────────────────
   if (!authed) return (
@@ -498,7 +518,7 @@ export default function AdminPage() {
         </div>
         <nav style={s.nav}>
           {NAV.map(item=>{
-            const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:0;
+            const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:item.id==='designs'?newDesigns:0;
             return (
               <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}>
                 <span style={{fontSize:16}}>{item.icon}</span>
@@ -527,6 +547,7 @@ export default function AdminPage() {
               {[
                 {label:'Active Clients',   value:clients.length,                                       icon:'👥'},
                 {label:'Open Orders',      value:orders.filter(o=>o.status!=='shipped').length,         icon:'📦'},
+                {label:'New Designs',      value:newDesigns,                                            icon:'✏️'},
                 {label:'Pending Artwork',  value:pendingArt,                                            icon:'🎨'},
                 {label:'Unpaid Invoices',  value:invoices.filter(i=>i.status==='pending'||i.status==='overdue').length, icon:'💰'},
                 {label:'Unread Messages',  value:unreadCount,                                           icon:'💬'},
@@ -1065,6 +1086,50 @@ export default function AdminPage() {
         )}
 
         {/* ARTWORK */}
+        {section==='designs' && (
+          <div style={s.sec}>
+            <h1 style={s.h1}>Designs</h1>
+            <p style={s.sub}>Designs POD clients created in the Design Studio. Set each one up with the client's profile and stores, then move it along.</p>
+            {designsLoading && designs.length===0 && <div style={{color:'#9ca3af',padding:20}}>Loading…</div>}
+            {!designsLoading && designs.length===0 && <div style={{...s.card,textAlign:'center',color:'#9ca3af'}}>No designs yet.</div>}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:14}}>
+              {designs.map(d=>{
+                const st = d.product?.status || 'Submitted';
+                const files = d.decorations?.printFiles || [];
+                const previews = Object.entries(d.decorations?.previews || {});
+                const who = d.client?.business_name || d.client?.contact_name || 'Client';
+                return (
+                  <div key={d.id} style={{...s.card,padding:0,overflow:'hidden',...(st==='Submitted'?{borderLeft:'3px solid #f59e0b'}:{})}}>
+                    <div style={{display:'flex',background:'#fff',borderBottom:'1px solid #e5e7eb'}}>
+                      {previews.length===0 && d.thumbnail && <img src={d.thumbnail} alt="" style={{width:'100%',height:170,objectFit:'contain'}}/>}
+                      {previews.map(([view,url])=>(
+                        <div key={view} style={{flex:1,position:'relative'}}>
+                          <img src={url} alt={view} style={{width:'100%',height:170,objectFit:'contain',display:'block'}}/>
+                          <span style={{position:'absolute',left:0,bottom:0,background:'#111',color:'#fff',fontSize:10,padding:'2px 7px'}}>{view}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{padding:16}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8}}>
+                        <strong style={{fontSize:15}}>{d.name}</strong>
+                        <span style={{fontSize:12,color:'#9ca3af'}}>{new Date(d.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                      </div>
+                      <div style={{fontSize:13,color:'#374151',margin:'4px 0 2px'}}>{who}</div>
+                      <div style={{fontSize:12,color:'#6b7280',marginBottom:12}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>
+                      <select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'8px 10px',border:'1px solid #d1d5db',borderRadius:8,fontSize:13,marginBottom:10}}>
+                        {['Submitted','In Setup','Live'].map(o=><option key={o}>{o}</option>)}
+                      </select>
+                      {files.map(f=>(
+                        <a key={f.url} href={f.url} target="_blank" rel="noopener noreferrer" style={{display:'block',fontSize:12,color:'#2563eb',textDecoration:'none',padding:'3px 0'}}>Print file: {f.viewName} · {f.printAreaLabel}</a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {section==='artwork' && (
           <div style={s.sec}>
             <h1 style={s.h1}>Design Vault</h1>

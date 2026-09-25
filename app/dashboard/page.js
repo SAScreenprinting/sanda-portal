@@ -24,7 +24,7 @@ const tierFor = (n) => LOYALTY_TIERS.find((t) => n >= t.min && n <= t.max) || LO
 const ONBOARDING_STEPS = [
   { title: 'Welcome to your portal', sub: 'Everything you need to manage your S&A print orders in one place.', icon: 'dashboard', tip: null },
   { title: 'Track your orders', sub: 'Watch every order move from Art Approved to Production to Shipped in real time.', icon: 'orders', tip: 'Head to Orders to see your current status.' },
-  { title: 'Upload your artwork', sub: 'Drop files directly into your orders. We support SVG, AI, PDF, PNG, and more.', icon: 'artwork', tip: 'Visit the Artwork Library to manage your files.' },
+  { title: 'Your designs and files', sub: 'Drop files directly into your orders. We support SVG, AI, PDF, PNG, and more.', icon: 'designs', tip: 'Your designs and their print files live under Designs.' },
   { title: 'Design in the Studio', sub: 'Preview your logo on real garments before ordering. It takes a couple of minutes.', icon: 'studio', tip: 'Open Design Studio to try it.' },
   { title: 'You are all set', sub: 'Your account rep will reach out if we need anything. Questions? Open Messages anytime.', icon: 'messages', tip: null },
 ];
@@ -158,7 +158,7 @@ export default function DashboardPage() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const actions = [
-    { label: 'Upload Artwork', sub: 'Add files to your orders', icon: 'artwork', href: '/artwork' },
+    { label: 'Billing', sub: 'Invoices and payments', icon: 'billing', href: '/billing' },
     { label: 'Design Studio', sub: 'Build a design on real garments', icon: 'studio', href: '/studio' },
     { label: 'Designs', sub: 'Everything you have created', icon: 'designs', href: '/designs' },
   ];

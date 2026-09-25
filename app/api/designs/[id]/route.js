@@ -1,5 +1,6 @@
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase-server';
+import { getAuth, forbidden } from '@/lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,4 +13,20 @@ export async function GET(request, { params }) {
   const { data } = await db.from('saved_designs').select('*').eq('id', id).eq('client_id', user.id).maybeSingle();
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 });
   return Response.json({ design: data });
+}
+
+// Admin only: move a design through Submitted, In Setup and Live
+export async function PATCH(request, { params }) {
+  const auth = await getAuth();
+  if (!auth.user) return Response.json({ error: 'Not signed in' }, { status: 401 });
+  if (!auth.isAdmin) return forbidden();
+  const { id } = await params;
+  const { status } = await request.json();
+  if (!['Submitted', 'In Setup', 'Live'].includes(status)) return Response.json({ error: 'Invalid status' }, { status: 400 });
+  const db = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const { data: row } = await db.from('saved_designs').select('product').eq('id', id).maybeSingle();
+  if (!row) return Response.json({ error: 'Not found' }, { status: 404 });
+  const { error } = await db.from('saved_designs').update({ product: { ...(row.product || {}), status }, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ ok: true });
 }

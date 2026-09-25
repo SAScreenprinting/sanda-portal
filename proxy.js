@@ -36,7 +36,7 @@ export async function proxy(request) {
   }
 
   // Public routes — anyone can access
-  const publicRoutes = ['/', '/auth/callback']
+  const publicRoutes = ['/', '/auth/callback', '/auth/confirm']
 
   // API routes that are called server-to-server (verified internally)
   if (pathname.startsWith('/api/')) {

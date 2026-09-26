@@ -2080,3 +2080,553 @@
   color: var(--sa-text-subdued, #6b6f76);
   line-height: 1.4;
 }
+
+/* =====================================================================
+   Studio polish: richer look, light/dark theme, and a phone layout that
+   gives the garment the room. Kept at the end so it wins over the base rules.
+   ===================================================================== */
+
+:root {
+  --sa-accent: #1c1c8c;
+  --sa-accent-2: #4b3fe0;
+  --sa-accent-grad: linear-gradient(135deg, #14146e 0%, #3a35d0 100%);
+  --sa-accent-soft: rgba(58, 53, 208, 0.09);
+  --sa-accent-soft-strong: rgba(58, 53, 208, 0.16);
+  --sa-border: #e6e6ea;
+  --sa-ink: #14141a;
+  --sa-ink-soft: #62626e;
+  --sa-surface: #ffffff;
+  --sa-bg: #f3f3f7;
+  --sa-dot: rgba(20, 20, 40, 0.08);
+  --sa-glow: rgba(255, 255, 255, 0.85);
+  --sa-radius-sm: 10px;
+  --sa-radius-md: 14px;
+  --sa-radius-lg: 22px;
+  --sa-shadow-sm: 0 1px 2px rgba(20, 20, 40, 0.05), 0 2px 6px rgba(20, 20, 40, 0.05);
+  --sa-shadow-md: 0 10px 28px rgba(20, 20, 40, 0.12);
+  --sa-shadow-lg: 0 20px 48px rgba(20, 20, 40, 0.18);
+}
+
+.sa-studio-overlay[data-sa-theme="dark"] {
+  color-scheme: dark;
+  --sa-accent: #8a86ff;
+  --sa-accent-2: #a9a5ff;
+  --sa-accent-grad: linear-gradient(135deg, #5b55f0 0%, #8a63ff 100%);
+  --sa-accent-soft: rgba(138, 134, 255, 0.14);
+  --sa-accent-soft-strong: rgba(138, 134, 255, 0.24);
+  --sa-border: #2b2c36;
+  --sa-ink: #f1f1f6;
+  --sa-ink-soft: #a1a2b0;
+  --sa-surface: #16171d;
+  --sa-bg: #0d0e12;
+  --sa-dot: rgba(255, 255, 255, 0.06);
+  --sa-glow: rgba(120, 110, 255, 0.10);
+  --sa-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sa-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --sa-shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Smooth theme switch */
+.sa-studio-overlay,
+.sa-studio-overlay .sa-studio-topbar,
+.sa-studio-overlay .sa-studio-rail,
+.sa-studio-overlay .sa-studio-panel,
+.sa-studio-overlay .sa-studio-bottombar,
+.sa-studio-overlay .sa-studio-view-row {
+  transition: background-color 0.25s var(--sa-ease), border-color 0.25s var(--sa-ease), color 0.25s var(--sa-ease);
+}
+
+/* Top bar: frosted, with a soft accent line */
+.sa-studio-topbar {
+  background: color-mix(in srgb, var(--sa-surface) 86%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  position: relative;
+  z-index: 3;
+}
+.sa-studio-topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--sa-accent-grad);
+  opacity: 0.85;
+}
+.sa-studio-icon-btn:hover:not(:disabled) {
+  background: var(--sa-accent-soft);
+  color: var(--sa-accent);
+}
+.sa-studio-icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.sa-theme-toggle {
+  margin-right: 4px;
+}
+
+/* Live total reads as a price chip */
+.sa-studio-live-total {
+  background: var(--sa-accent-soft);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.sa-studio-live-total:hover {
+  background: var(--sa-accent-soft-strong);
+}
+.sa-studio-live-total-amount {
+  color: var(--sa-accent);
+}
+
+/* Edit / Preview switch and view tabs share the accent gradient */
+.sa-studio-segmented {
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  box-shadow: inset 0 1px 2px rgba(20, 20, 40, 0.04);
+}
+.sa-studio-segmented button.active,
+.sa-designer-view-switcher button.active {
+  background: var(--sa-accent-grad);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 12px var(--sa-accent-soft-strong);
+}
+.sa-designer-view-switcher button {
+  background: var(--sa-surface);
+}
+.sa-designer-view-switcher button:hover:not(.active) {
+  background: var(--sa-accent-soft);
+}
+.sa-studio-view-row {
+  background: var(--sa-bg);
+  border-bottom: 0;
+  padding: 12px 20px 4px;
+}
+
+/* Tool rail: rounded active pill with a glow */
+.sa-studio-rail {
+  background: var(--sa-surface);
+}
+.sa-studio-rail-btn {
+  border-radius: 14px;
+}
+.sa-studio-rail-btn.active {
+  background: var(--sa-accent-soft-strong);
+  color: var(--sa-accent);
+  box-shadow: inset 0 0 0 1px var(--sa-accent-soft-strong);
+}
+.sa-studio-rail-btn svg {
+  transition: transform 0.2s var(--sa-ease);
+}
+.sa-studio-rail-btn:hover svg {
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* Side panels */
+.sa-studio-panel {
+  background: var(--sa-surface);
+}
+.sa-studio-panel-header {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.sa-designer-panel {
+  background: var(--sa-bg);
+  border-color: var(--sa-border);
+}
+
+/* Canvas stage: soft spotlight and a fine dot grid instead of a flat fill */
+.sa-studio-canvas-area {
+  background-color: var(--sa-bg);
+  background-image:
+    radial-gradient(ellipse 60% 55% at 50% 45%, var(--sa-glow), transparent 70%),
+    radial-gradient(circle, var(--sa-dot) 1px, transparent 1.4px);
+  background-size: auto, 22px 22px;
+}
+.sa-studio-canvas-scroll {
+  background: transparent;
+}
+
+/* Floating docks */
+.sa-layers-dock {
+  border-radius: var(--sa-radius-md);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--sa-surface) 92%, transparent);
+}
+
+/* Buttons */
+.sa-designer-btn-primary,
+.sa-studio-add-to-cart {
+  background: var(--sa-accent-grad);
+  border: 0;
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: 0 6px 18px var(--sa-accent-soft-strong);
+  transition: transform 0.15s var(--sa-ease), box-shadow 0.15s var(--sa-ease), filter 0.15s var(--sa-ease);
+}
+.sa-designer-btn-primary:hover:not(:disabled),
+.sa-studio-add-to-cart:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px var(--sa-accent-soft-strong);
+  filter: brightness(1.06);
+}
+.sa-designer-btn-primary:active:not(:disabled),
+.sa-studio-add-to-cart:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+.sa-designer-btn-secondary,
+.sa-studio-save-for-later,
+.sa-studio-preview-3d {
+  border-radius: 12px;
+  background: var(--sa-surface);
+  color: var(--sa-ink);
+  border: 1px solid var(--sa-border);
+}
+.sa-designer-btn-secondary:hover:not(:disabled),
+.sa-studio-save-for-later:hover:not(:disabled),
+.sa-studio-preview-3d:hover:not(:disabled) {
+  border-color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+}
+.sa-studio-bottombar {
+  background: var(--sa-surface);
+}
+
+/* Inputs follow the theme */
+.sa-studio-overlay input,
+.sa-studio-overlay select,
+.sa-studio-overlay textarea {
+  color: var(--sa-ink);
+  background-color: var(--sa-surface);
+  border-color: var(--sa-border);
+}
+.sa-studio-overlay input::placeholder,
+.sa-studio-overlay textarea::placeholder {
+  color: var(--sa-ink-soft);
+}
+.sa-studio-overlay :focus-visible {
+  outline: 2px solid var(--sa-accent-2);
+  outline-offset: 2px;
+}
+
+/* Dark-mode fixes for the few fixed-color pieces */
+.sa-studio-overlay[data-sa-theme="dark"] .sa-studio-toast.error,
+.sa-studio-overlay[data-sa-theme="dark"] .sa-designer-error {
+  background: #3a1a1c;
+  color: #ff9c94;
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-studio-toast.success,
+.sa-studio-overlay[data-sa-theme="dark"] .sa-designer-success {
+  background: #12301f;
+  color: #7fe3a8;
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-price-breakdown-negative {
+  color: #7fe3a8 !important;
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-knockout-warning {
+  background: #33290f;
+  border-color: #5a4a1a;
+  color: #f3dfa0;
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-designer-btn-danger {
+  background: #3a1a1c;
+  color: #ff9c94;
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-studio-3d-back {
+  background: rgba(22, 23, 29, 0.92);
+  color: var(--sa-ink);
+}
+.sa-studio-overlay[data-sa-theme="dark"] .sa-studio-live-total-amount {
+  color: var(--sa-accent-2);
+}
+
+@keyframes sa-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* ============ Phone layout ============
+   Tools become a bar along the bottom and panels open as sheets over the
+   garment, so the canvas keeps the full width instead of losing a third of
+   it to side columns. */
+@media (max-width: 860px) {
+  .sa-studio-topbar {
+    padding: 8px 10px;
+  }
+  .sa-studio-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .sa-studio-view-row {
+    padding: 8px 12px 2px;
+  }
+  .sa-designer-view-switcher button {
+    padding: 7px 16px;
+  }
+
+  .sa-studio-body {
+    flex-direction: column;
+  }
+  .sa-studio-canvas-area {
+    order: 1;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .sa-studio-rail {
+    order: 2;
+    flex: none;
+    width: auto;
+    height: 62px;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-around;
+    padding: 6px 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-top: 1px solid var(--sa-border);
+    box-shadow: 0 -6px 18px rgba(20, 20, 40, 0.05);
+    position: relative;
+    z-index: 5;
+  }
+  .sa-studio-rail-btn {
+    flex: 1 0 auto;
+    min-width: 58px;
+    min-height: 0;
+    margin: 0 2px;
+    padding: 6px 6px;
+    gap: 3px;
+    justify-content: center;
+  }
+  .sa-studio-rail-btn span {
+    display: block;
+    font-size: 10.5px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .sa-studio-rail-btn.active::before {
+    left: 50%;
+    top: auto;
+    bottom: -6px;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* Tool panels and Product Details open as a bottom sheet */
+  .sa-studio-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 62px;
+    width: auto;
+    max-height: 62%;
+    border: 1px solid var(--sa-border);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -14px 36px rgba(20, 20, 40, 0.22);
+    z-index: 6;
+    animation: sa-sheet-in 0.22s var(--sa-ease);
+  }
+  .sa-product-info-backdrop {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 62px;
+    z-index: 5;
+    background: rgba(10, 10, 20, 0.35);
+  }
+
+  /* Collapsed Product Details is a small pill on the canvas, not a column */
+  .sa-product-info.collapsed {
+    top: 10px;
+    left: 10px;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    max-height: none;
+    border: 1px solid var(--sa-border);
+    border-radius: 999px;
+    box-shadow: var(--sa-shadow-md);
+    z-index: 4;
+    animation: none;
+  }
+  .sa-product-info.collapsed .sa-product-info-header span {
+    display: inline;
+    font-size: 12.5px;
+  }
+  .sa-product-info.collapsed .sa-product-info-header {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 14px;
+    min-height: 0;
+  }
+
+  /* Layers: small chip in the corner, opens over the garment only when asked */
+  .sa-layers-dock {
+    right: 10px;
+    bottom: 10px;
+    width: min(240px, calc(100% - 20px));
+  }
+  .sa-layers-dock.collapsed {
+    width: auto;
+  }
+  .sa-layers-dock.collapsed .sa-product-info-header span {
+    display: inline;
+    font-size: 12.5px;
+  }
+  .sa-layers-dock.collapsed .sa-product-info-header {
+    gap: 8px;
+    padding: 8px 14px;
+    min-height: 0;
+  }
+
+  /* Bottom bar: two compact rows instead of three tall ones
+       row 1: quantity | Add to cart
+       row 2: zoom     | Save for later                                   */
+  .sa-studio-bottombar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .sa-studio-bottombar-right {
+    display: contents;
+  }
+  .sa-studio-bottombar .sa-studio-quantity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .sa-studio-bottombar .sa-studio-bottombar-right .sa-studio-add-to-cart {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    padding: 13px 16px;
+  }
+  .sa-studio-bottombar .sa-studio-zoom-controls {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+    flex: none;
+  }
+  .sa-studio-bottombar .sa-studio-bottombar-right .sa-studio-save-for-later {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    padding: 9px 14px;
+  }
+  .sa-studio-bottombar .sa-studio-bottombar-right .sa-studio-preview-3d {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+  }
+  .sa-studio-toast {
+    bottom: 64px;
+    max-width: calc(100% - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-studio-overlay *,
+  .sa-studio-overlay *::before {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Fit the top bar on a 375px phone and keep dock labels readable in both themes */
+.sa-product-info-header,
+.sa-layers-dock .sa-product-info-header {
+  color: var(--sa-ink);
+  white-space: nowrap;
+}
+.sa-studio-segmented button {
+  white-space: nowrap;
+}
+@media (max-width: 860px) {
+  .sa-studio-topbar {
+    padding: 8px 8px;
+    gap: 4px;
+  }
+  .sa-studio-topbar-cluster,
+  .sa-studio-topbar-right {
+    gap: 0;
+  }
+  .sa-studio-topbar-right {
+    gap: 4px;
+  }
+  .sa-studio-topbar .sa-studio-icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .sa-studio-topbar .sa-theme-toggle {
+    margin-right: 0;
+  }
+  .sa-studio-live-total {
+    padding: 5px 8px;
+  }
+  .sa-studio-live-total-chevron {
+    display: none;
+  }
+  .sa-studio-live-total-amount {
+    font-size: 13px;
+  }
+  .sa-studio-segmented button {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+}
+
+/* Buttons default to the browser's black text; inherit the theme ink instead (zero specificity so any specific rule still wins) */
+:where(.sa-studio-overlay) button,
+:where(.sa-studio-overlay) select,
+:where(.sa-studio-overlay) input,
+:where(.sa-studio-overlay) textarea {
+  color: inherit;
+}
+
+/* The store theme colors span/button/heading text directly; make them follow the studio theme.
+   Zero-weight scope plus one element keeps it below every class rule in this file. */
+:where(.sa-studio-overlay) :is(span, button, h1, h2, h3, h4, h5, h6, p, label, li, legend, small, strong, b) {
+  color: inherit;
+}
+
+/* "Customize" launcher on the product page: use the store's own button look, not the studio's */
+.sa-designer-root .sa-designer-btn-primary {
+  background: rgb(var(--color-button, 20, 20, 26));
+  color: rgb(var(--color-button-text, 255, 255, 255));
+  border: 0;
+  border-radius: var(--buttons-radius, 0);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+  min-height: 47px;
+  padding: 0 24px;
+  text-transform: none;
+  transition: opacity 0.15s ease;
+}
+.sa-designer-root .sa-designer-btn-primary:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+  opacity: 0.88;
+}
+.sa-designer-btn-skeleton {
+  border-radius: var(--buttons-radius, 0);
+  min-height: 47px;
+}

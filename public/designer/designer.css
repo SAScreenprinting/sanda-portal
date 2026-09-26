@@ -2630,3 +2630,57 @@
   border-radius: var(--buttons-radius, 0);
   min-height: 47px;
 }
+
+/* Notes tool */
+.sa-notes-panel {
+  display: grid;
+  gap: 8px;
+}
+.sa-notes-input {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 12px 14px;
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius-sm);
+  background: var(--sa-surface);
+  color: var(--sa-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+.sa-notes-input:focus {
+  outline: none;
+  border-color: var(--sa-accent);
+  box-shadow: 0 0 0 3px var(--sa-accent-soft-strong);
+}
+.sa-notes-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--sa-ink-soft);
+}
+
+/* Subscribe monthly */
+.sa-studio-bottombar-right .sa-studio-subscribe {
+  flex: none;
+  width: auto;
+  padding: 12px 18px;
+  white-space: nowrap;
+  border: 1px solid var(--sa-accent);
+  color: var(--sa-accent);
+  background: var(--sa-accent-soft);
+  font-weight: 650;
+  border-radius: 12px;
+}
+.sa-studio-bottombar-right .sa-studio-subscribe:hover:not(:disabled) {
+  background: var(--sa-accent-soft-strong);
+}
+@media (max-width: 860px) {
+  .sa-studio-bottombar .sa-studio-bottombar-right .sa-studio-subscribe {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+  }
+}

@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import PortalShell from '@/components/PortalShell';
 import { downloadFile } from '@/lib/downloadFile';
+import DesignTools from '@/components/DesignTools';
 
 const COLORS = { Submitted: '#ffc800', Approved: '#a3e635', Denied: '#f87171', 'In Setup': '#60a5fa', Live: '#34d399' };
 const STEPS = [
@@ -31,6 +32,27 @@ export default function DesignDetailPage() {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const [zipping, setZipping] = useState(false);
+  async function downloadZip() {
+    if (!design) return;
+    setZipping(true);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const safe = (t) => String(t).replace(/[^a-zA-Z0-9._-]+/g, '-');
+      const add = async (url, name) => { try { const r = await fetch(url, { mode: 'cors' }); if (r.ok) zip.file(name, await r.blob()); } catch {} };
+      await Promise.all([
+        ...Object.entries(design.decorations?.previews || {}).map(([v, u]) => add(u, `mockups/${safe(design.name)}-${safe(v)}-mockup.png`)),
+        ...(design.decorations?.printFiles || []).map((f) => add(f.url, `print-files/${safe(design.name)}-${safe(f.viewName)}-${safe(f.printAreaLabel)}.png`)),
+      ]);
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `${safe(design.name)}-mockups.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } finally { setZipping(false); }
+  }
 
   async function signOut() { await supabase.auth.signOut(); router.push('/'); router.refresh(); }
 
@@ -81,7 +103,7 @@ export default function DesignDetailPage() {
 
           <div className="sp-detail">
             <div className="sp-card sp-in" style={{ '--i': 2 }}>
-              <div className="sp-panel-head"><h2>Preview</h2></div>
+              <div className="sp-panel-head"><h2>Preview</h2><button className="sp-btn sp-btn--ghost" style={{ padding: '9px 14px' }} onClick={downloadZip} disabled={zipping}>{zipping ? 'Preparing…' : 'Download all (.zip)'}</button></div>
               <div className="sp-previews">
                 {previews.map(([view, url]) => (
                   <figure key={view}>
@@ -125,6 +147,7 @@ export default function DesignDetailPage() {
                   ))}
                 </div>
               )}
+              <DesignTools design={design} onChanged={(patch) => setDesign((x) => ({ ...x, product: { ...(x.product || {}), ...patch } }))} />
             </div>
           </div>
         </>

@@ -81,6 +81,8 @@ const NAV = [
   { id:'orders',    icon:'', label:'Orders' },
   { id:'products',  icon:'', label:'Products' },
   { id:'designs',   icon:'', label:'Designs' },
+  { id:'pricing',   icon:'', label:'Pricing' },
+  { id:'samples',   icon:'', label:'Samples' },
   { id:'artwork',   icon:'', label:'Artwork' },
   { id:'billing',   icon:'', label:'Billing' },
   { id:'inventory', icon:'', label:'Inventory' },
@@ -123,6 +125,24 @@ export default function AdminPage() {
   const [invoices, setInvoices]   = useState(INIT_INVOICES);
   const [inventory]               = useState(INIT_INVENTORY);
   const [designs, setDesigns]     = useState([]);
+  const [priceData, setPriceData]   = useState({ products: [], pricing: {} });
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceEdit, setPriceEdit]   = useState({});
+  const [priceSaved, setPriceSaved] = useState('');
+  const [sampleList, setSampleList] = useState([]);
+  const loadPricing = () => { setPriceLoading(true); fetch('/api/admin/pricing', { cache:'no-store' }).then(r=>r.json()).then(d=>{ setPriceData({ products:d.products||[], pricing:d.pricing||{} }); setPriceLoading(false); }).catch(()=>setPriceLoading(false)); };
+  const loadSamples = () => fetch('/api/samples?admin=true', { cache:'no-store' }).then(r=>r.json()).then(d=>setSampleList(d.samples||[])).catch(()=>{});
+  async function savePriceRow(p) {
+    const e = priceEdit[p.id] || {};
+    const cur = priceData.pricing[p.id] || {};
+    const body = { productId:p.id, title:p.title, base_cost: e.base_cost ?? cur.base_cost ?? 0, print_cost: e.print_cost ?? cur.print_cost ?? 0, shipping_cost: e.shipping_cost ?? cur.shipping_cost ?? 0, suggested_price: e.suggested_price ?? cur.suggested_price ?? '' };
+    const res = await fetch('/api/admin/pricing', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (res.ok) { setPriceSaved(p.id); setTimeout(()=>setPriceSaved(''),1800); loadPricing(); setPriceEdit(x=>{ const n={...x}; delete n[p.id]; return n; }); }
+  }
+  async function updateSample(id, patch) {
+    setSampleList(l => l.map(s => s.id===id ? { ...s, ...patch } : s));
+    await fetch('/api/samples', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, ...patch }) });
+  }
   const [designFilter, setDesignFilter] = useState('Submitted');
   const [reviewing, setReviewing]   = useState(null);
   const [denying, setDenying]       = useState(false);
@@ -223,6 +243,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (section === 'designs') loadDesigns();
+    if (section === 'pricing') loadPricing();
+    if (section === 'samples') loadSamples();
     if (section === 'messages') loadInquiries();
     if (section === 'artwork')  loadArtwork();
   }, [section]);
@@ -524,7 +546,7 @@ export default function AdminPage() {
           {NAV.map(item=>{
             const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:item.id==='designs'?newDesigns:0;
             return (
-              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
+              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='pricing'?'billing':item.id==='samples'?'orders':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
                 {badge>0 && <span style={{...s.navBadge,...(item.id==='alerts'&&urgentCount>0?{background:'#dc2626'}:{})}}>{badge}</span>}
               </button>
             );
@@ -904,6 +926,64 @@ export default function AdminPage() {
                     </div></div></div>
               );
             })()}
+          </div>
+        )}
+
+        {section==='pricing' && (
+          <div style={s.sec}>
+            <h1 style={s.h1}>Pricing</h1>
+            <p style={{...s.sub,color:'#e4e4e7'}}>Enter what each product costs you. Clients see one number, their total cost per item, and use it to work out their profit. Nothing is guessed: products with no numbers show clients that pricing is coming.</p>
+            {priceLoading && priceData.products.length===0 && <div style={{color:'#e4e4e7',padding:20}}>Loading…</div>}
+            <div style={{...s.card,padding:0,overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:13,minWidth:760}}>
+                <thead><tr>{['Product','Blank cost','Print cost','Shipping','Suggested price','Client pays',''].map(h=><th key={h} style={{textAlign:'left',padding:'12px 14px',fontSize:11,letterSpacing:1.5,textTransform:'uppercase',color:'#b3b3bc',borderBottom:'1px solid #222226'}}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {priceData.products.map(p=>{
+                    const cur = priceData.pricing[p.id] || {};
+                    const e = priceEdit[p.id] || {};
+                    const val = (k) => e[k] ?? (cur[k] ?? '');
+                    const total = ['base_cost','print_cost','shipping_cost'].reduce((t,k)=>t+(parseFloat(val(k))||0),0);
+                    const inp = (k) => <input type="number" min="0" step="0.01" value={val(k)} onChange={ev=>setPriceEdit(x=>({...x,[p.id]:{...(x[p.id]||{}),[k]:ev.target.value}}))} placeholder="0.00" style={{width:88,padding:'7px 8px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0}}/>;
+                    return (
+                      <tr key={p.id} style={{borderBottom:'1px solid #1c1c20'}}>
+                        <td style={{padding:'10px 14px',color:'#f4f4f5',maxWidth:280}}>{p.title}</td>
+                        <td style={{padding:'10px 14px'}}>{inp('base_cost')}</td>
+                        <td style={{padding:'10px 14px'}}>{inp('print_cost')}</td>
+                        <td style={{padding:'10px 14px'}}>{inp('shipping_cost')}</td>
+                        <td style={{padding:'10px 14px'}}>{inp('suggested_price')}</td>
+                        <td style={{padding:'10px 14px',color:'#ffc800',fontWeight:700}}>${total.toFixed(2)}</td>
+                        <td style={{padding:'10px 14px'}}><button onClick={()=>savePriceRow(p)} disabled={!priceEdit[p.id]} style={{padding:'7px 14px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:12,cursor:'pointer',opacity:priceEdit[p.id]?1:0.35}}>{priceSaved===p.id?'Saved':'Save'}</button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {section==='samples' && (
+          <div style={s.sec}>
+            <h1 style={s.h1}>Samples</h1>
+            <p style={{...s.sub,color:'#e4e4e7'}}>Sample requests from clients for approved designs.</p>
+            {sampleList.length===0 && <div style={{...s.card,textAlign:'center',color:'#e4e4e7'}}>No sample requests yet.</div>}
+            <div style={{display:'grid',gap:12}}>
+              {sampleList.map(sm=>(
+                <div key={sm.id} style={{...s.card,display:'flex',gap:16,alignItems:'center',flexWrap:'wrap',justifyContent:'space-between'}}>
+                  <div style={{minWidth:240}}>
+                    <div style={{fontWeight:700,color:'#f4f4f5'}}>{sm.design?.name || 'Design'} <span style={{color:'#ffc800',fontWeight:700}}>{sm.design?.product?.sku ? '· '+sm.design.product.sku : ''}</span></div>
+                    <div style={{fontSize:13,color:'#e4e4e7',marginTop:3}}>{sm.client?.business_name || sm.client?.contact_name || 'Client'} · {sm.quantity} sample{sm.quantity>1?'s':''}{sm.size_note?` · ${sm.size_note}`:''}</div>
+                    <div style={{fontSize:12,color:'#b3b3bc',marginTop:2}}>{new Date(sm.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+                  </div>
+                  <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                    <select value={sm.status} onChange={e=>updateSample(sm.id,{status:e.target.value})} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0}}>
+                      <option value="requested">Requested</option><option value="in_production">In production</option><option value="shipped">Shipped</option>
+                    </select>
+                    <input defaultValue={sm.tracking_number||''} placeholder="Tracking number" onBlur={e=>{ if ((e.target.value||'')!==(sm.tracking_number||'')) updateSample(sm.id,{tracking_number:e.target.value}); }} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0,width:180}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

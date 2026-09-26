@@ -13,6 +13,8 @@ export default function StoresPage() {
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [code, setCode] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const load = () => fetch('/api/stores', { cache: 'no-store' }).then((r) => r.json()).then((d) => setStores(d.stores || [])).catch(() => setStores([]));
 
@@ -23,6 +25,7 @@ export default function StoresPage() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile(prof);
       load();
+      fetch('/api/pod/link-code', { cache: 'no-store' }).then((r) => r.json()).then((d) => setCode(d.code || '')).catch(() => {});
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -53,6 +56,17 @@ export default function StoresPage() {
           <p>Connect your online store so approved designs can be published to it.</p>
         </div>
       </header>
+
+      <div className="sp-card sp-in" style={{ '--i': 1, marginBottom: 14 }}>
+        <div className="sp-panel-head"><h2>Connect with S&amp;A Studios (Shopify app)</h2></div>
+        <div className="sp-pad">
+          <p style={{ color: '#dcdce2', fontSize: 14.5, lineHeight: 1.7, margin: '0 0 14px' }}>The easiest way to connect. Install the free <b>S&amp;A Studios</b> app from the Shopify App Store, open <b>S&amp;A POD</b> inside it, and paste this code. When a customer buys one of your POD products, S&amp;A sees the order and prints and ships it.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input readOnly value={code || 'Loading…'} onFocus={(e) => e.target.select()} style={{ flex: 1, minWidth: 260, padding: '13px 14px', background: '#050506', border: '1px solid var(--line2)', color: 'var(--y)', fontWeight: 700, fontSize: 14, letterSpacing: 0.5, font: 'inherit' }} />
+            <button className="sp-btn sp-btn--ghost" type="button" disabled={!code} onClick={() => { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1800); }}>{copied ? 'Copied' : 'Copy code'}</button>
+          </div>
+        </div>
+      </div>
 
       <div className="sp-cols">
         <div className="sp-card sp-in" style={{ '--i': 1 }}>

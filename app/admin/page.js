@@ -86,7 +86,7 @@ const NAV = [
   { id:'artwork',   icon:'', label:'Artwork' },
   { id:'billing',   icon:'', label:'Billing' },
   { id:'inventory', icon:'', label:'Inventory' },
-  { id:'orderdesk', icon:'', label:'Order Desk' },
+  { id:'poddesk',   icon:'', label:'Order Desk' },
   { id:'settings',  icon:'', label:'Settings' },
 ];
 
@@ -130,6 +130,24 @@ export default function AdminPage() {
   const [priceEdit, setPriceEdit]   = useState({});
   const [priceSaved, setPriceSaved] = useState('');
   const [sampleList, setSampleList] = useState([]);
+  const [podOrders, setPodOrders]   = useState(null);
+  const [podFilter, setPodFilter]   = useState('open');
+  const [podOpen, setPodOpen]       = useState(null);
+  const [podTrack, setPodTrack]     = useState({ carrier:'USPS', number:'' });
+  const [podMsg, setPodMsg]         = useState('');
+  const [podBusy, setPodBusy]       = useState(false);
+  const [podView, setPodView]       = useState(null);
+  const [podBg, setPodBg]           = useState('checker');
+  const [podZoom, setPodZoom]       = useState(1);
+  const loadPodOrders = () => fetch('/api/pod-orders?all=true', { cache:'no-store' }).then(r=>r.json()).then(d=>setPodOrders(d.orders||[])).catch(()=>setPodOrders([]));
+  async function podAct(id, body) {
+    setPodBusy(true); setPodMsg('');
+    const res = await fetch(`/api/pod-orders/${id}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const out = await res.json().catch(()=>({}));
+    setPodMsg((res.ok ? 'ok:' : 'err:') + (out.ok || out.error || 'Done.'));
+    setPodBusy(false);
+    await loadPodOrders();
+  }
   const loadPricing = () => { setPriceLoading(true); fetch('/api/admin/pricing', { cache:'no-store' }).then(r=>r.json()).then(d=>{ setPriceData({ products:d.products||[], pricing:d.pricing||{} }); setPriceLoading(false); }).catch(()=>setPriceLoading(false)); };
   const loadSamples = () => fetch('/api/samples?admin=true', { cache:'no-store' }).then(r=>r.json()).then(d=>setSampleList(d.samples||[])).catch(()=>{});
   async function savePriceRow(p) {
@@ -245,6 +263,7 @@ export default function AdminPage() {
     if (section === 'designs') loadDesigns();
     if (section === 'pricing') loadPricing();
     if (section === 'samples') loadSamples();
+    if (section === 'poddesk') loadPodOrders();
     if (section === 'messages') loadInquiries();
     if (section === 'artwork')  loadArtwork();
   }, [section]);
@@ -546,7 +565,7 @@ export default function AdminPage() {
           {NAV.map(item=>{
             const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:item.id==='designs'?newDesigns:0;
             return (
-              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='pricing'?'billing':item.id==='samples'?'orders':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
+              <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='poddesk'?'orderdesk':item.id==='pricing'?'billing':item.id==='samples'?'orders':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
                 {badge>0 && <span style={{...s.navBadge,...(item.id==='alerts'&&urgentCount>0?{background:'#dc2626'}:{})}}>{badge}</span>}
               </button>
             );
@@ -986,6 +1005,109 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {section==='poddesk' && (() => {
+          const LBL = { new:'New', in_production:'In production', shipped:'Shipped', cancelled:'Cancelled' };
+          const TONE = { new:['rgba(255,200,0,0.14)','#ffc800'], in_production:['rgba(96,165,250,0.14)','#93c5fd'], shipped:['rgba(52,211,153,0.14)','#34d399'], cancelled:['rgba(248,113,113,0.14)','#fca5a5'] };
+          const list = (podOrders||[]).filter(o => podFilter==='all' ? true : podFilter==='open' ? (o.status==='new'||o.status==='in_production') : o.status===podFilter);
+          const open = podOrders && podOpen ? podOrders.find(o=>o.id===podOpen) : null;
+          const bgStyle = podBg==='checker'
+            ? {backgroundColor:'#fff',backgroundImage:'linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%),linear-gradient(45deg,#d1d5db 25%,transparent 25%,transparent 75%,#d1d5db 75%)',backgroundSize:'20px 20px',backgroundPosition:'0 0,10px 10px'}
+            : {background: podBg==='black' ? '#000' : '#fff'};
+          return (
+          <div style={s.sec}>
+            <h1 style={s.h1}>Order Desk</h1>
+            <p style={{...s.sub,color:'#e4e4e7'}}>Sales of POD client designs. Print each order, then ship it with a tracking number. The tracking number goes straight to the client's store and emails their customer.</p>
+            <div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
+              {[['open','Open'],['new','New'],['in_production','In production'],['shipped','Shipped'],['cancelled','Cancelled'],['all','All']].map(([k,l])=>(
+                <button key={k} onClick={()=>setPodFilter(k)} style={{padding:'8px 14px',border:'1px solid '+(podFilter===k?'#ffc800':'#34343a'),background:podFilter===k?'#ffc800':'transparent',color:podFilter===k?'#000':'#f4f4f5',fontSize:13,fontWeight:700,cursor:'pointer'}}>{l}{podOrders?` (${podOrders.filter(o=>k==='all'?true:k==='open'?(o.status==='new'||o.status==='in_production'):o.status===k).length})`:''}</button>
+              ))}
+            </div>
+            {podOrders===null && <div style={{color:'#e4e4e7',padding:20}}>Loading…</div>}
+            {podOrders && list.length===0 && <div style={{...s.card,textAlign:'center',color:'#e4e4e7'}}>No orders here yet. When a customer buys a client's POD product, it appears here.</div>}
+            <div style={{display:'grid',gap:10}}>
+              {list.map(o=>(
+                <div key={o.id} onClick={()=>{setPodOpen(o.id);setPodMsg('');setPodView(null);setPodZoom(1);setPodTrack({carrier:o.trackingCarrier||'USPS',number:o.trackingNumber||''});}} style={{...s.card,cursor:'pointer',display:'flex',justifyContent:'space-between',gap:14,alignItems:'center',flexWrap:'wrap'}}>
+                  <div>
+                    <div style={{fontWeight:800,color:'#f4f4f5',fontSize:15}}>{o.name} <span style={{color:'#b3b3bc',fontWeight:500,fontSize:13}}>· {o.shop}</span></div>
+                    <div style={{fontSize:13,color:'#e4e4e7',marginTop:3}}>{o.items.map(i=>`${i.quantity}x ${i.design?.name||i.title}`).join(', ')||'Order'}</div>
+                    <div style={{fontSize:12,color:'#b3b3bc',marginTop:2}}>{o.customerName||'Customer'} · {new Date(o.placedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}{o.trackingNumber?` · ${o.trackingCarrier||''} ${o.trackingNumber}`:''}</div>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',background:(TONE[o.status]||TONE.new)[0],color:(TONE[o.status]||TONE.new)[1]}}>{LBL[o.status]||o.status}</span>
+                </div>
+              ))}
+            </div>
+
+            {open && (
+              <div onClick={e=>{if(e.target===e.currentTarget)setPodOpen(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+                <div style={{background:'#0e0e10',border:'1px solid #34343a',borderTop:'3px solid #ffc800',width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.4fr) minmax(300px,1fr)'}}>
+                  <div style={{padding:20,borderRight:'1px solid #222226'}}>
+                    <div style={{fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#b3b3bc',marginBottom:10}}>Print files</div>
+                    {open.items.length===0 && <div style={{color:'#e4e4e7'}}>No POD designs matched on this order.</div>}
+                    {open.items.map(it=>(
+                      <div key={it.id} style={{marginBottom:18}}>
+                        <div style={{fontWeight:700,color:'#f4f4f5'}}>{it.quantity}x {it.design?.name||it.title} <span style={{color:'#ffc800',fontWeight:700}}>{it.sku||''}</span></div>
+                        <div style={{fontSize:13,color:'#e4e4e7',margin:'2px 0 8px'}}>{it.title}{it.variantTitle?` · ${it.variantTitle}`:''}</div>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                          {(it.design?.printFiles||[]).map(f=>(
+                            <button key={f.url} onClick={()=>{setPodView({url:f.url,label:`${it.design.name} · ${f.viewName} · ${f.printAreaLabel}`,file:`${open.name.replace('#','')}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')});setPodZoom(1);}} style={{padding:'7px 12px',fontSize:12,fontWeight:700,border:'1px solid #ffc800',background:'rgba(255,200,0,0.1)',color:'#ffc800',cursor:'pointer'}}>{f.viewName} · {f.printAreaLabel}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {podView && (
+                      <div>
+                        <div style={{display:'flex',justifyContent:'space-between',gap:8,flexWrap:'wrap',alignItems:'center',margin:'6px 0 10px'}}>
+                          <div style={{fontSize:13,fontWeight:700,color:'#f4f4f5'}}>{podView.label}</div>
+                          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                            <button onClick={()=>setPodZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={podZoom<=1} style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'transparent',color:'#f4f4f5',cursor:'pointer',opacity:podZoom<=1?0.4:1}}>−</button>
+                            <button onClick={()=>setPodZoom(1)} style={{minWidth:56,height:30,fontSize:12,fontWeight:700,border:'1px solid #34343a',background:'transparent',color:'#f4f4f5',cursor:'pointer'}}>{podZoom===1?'Fit':Math.round(podZoom*100)+'%'}</button>
+                            <button onClick={()=>setPodZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'transparent',color:'#f4f4f5',cursor:'pointer'}}>+</button>
+                            {[['checker','Checker'],['white','White'],['black','Black']].map(([k,l])=>(<button key={k} onClick={()=>setPodBg(k)} style={{padding:'0 11px',height:30,fontSize:12,fontWeight:700,border:'1px solid '+(podBg===k?'#ffc800':'#34343a'),background:podBg===k?'#ffc800':'transparent',color:podBg===k?'#000':'#f4f4f5',cursor:'pointer'}}>{l}</button>))}
+                          </div>
+                        </div>
+                        <div style={{...bgStyle,height:'50vh',overflow:'auto',display:'flex',alignItems:podZoom>1?'flex-start':'center',justifyContent:podZoom>1?'flex-start':'center',padding:12,border:'1px solid #34343a'}}>
+                          <img src={podView.url} alt="" draggable={false} style={podZoom===1?{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}:{width:(podZoom*100)+'%',maxWidth:'none',height:'auto',flex:'none',imageRendering:podZoom>=4?'pixelated':'auto'}}/>
+                        </div>
+                        <button onClick={()=>downloadFile(podView.url,podView.file)} style={{marginTop:12,padding:'10px 16px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:13,cursor:'pointer'}}>Download this print file</button>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                      <div><div style={{fontSize:22,fontWeight:800,color:'#f4f4f5'}}>{open.name}</div><div style={{fontSize:13,color:'#b3b3bc'}}>{open.shop}</div></div>
+                      <button onClick={()=>setPodOpen(null)} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',color:'#e4e4e7'}}>×</button>
+                    </div>
+                    <span style={{alignSelf:'flex-start',fontSize:12,fontWeight:700,padding:'4px 12px',background:(TONE[open.status]||TONE.new)[0],color:(TONE[open.status]||TONE.new)[1]}}>{LBL[open.status]||open.status}</span>
+                    <div style={{fontSize:14,color:'#e4e4e7',lineHeight:1.7}}>
+                      <div style={{fontWeight:700,color:'#f4f4f5'}}>Ship to</div>
+                      <div>{open.customerName||'Customer'}</div>
+                      <div>{[open.shipTo?.address1,open.shipTo?.address2].filter(Boolean).join(', ')}</div>
+                      <div>{[open.shipTo?.city,open.shipTo?.province_code||open.shipTo?.province,open.shipTo?.zip].filter(Boolean).join(', ')}</div>
+                      <div>{open.shipTo?.country}</div>
+                      {open.customerEmail && <div style={{color:'#b3b3bc'}}>{open.customerEmail}</div>}
+                    </div>
+                    {podMsg && <div style={{padding:'10px 12px',border:'1px solid '+(podMsg.startsWith('ok:')?'rgba(52,211,153,0.5)':'rgba(248,113,113,0.5)'),color:podMsg.startsWith('ok:')?'#34d399':'#fca5a5',fontSize:13}}>{podMsg.slice(podMsg.indexOf(':')+1)}</div>}
+                    {open.status==='new' && <button disabled={podBusy} onClick={()=>podAct(open.id,{intent:'in_production'})} style={{padding:'12px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:14,cursor:'pointer'}}>Start production</button>}
+                    {open.status!=='cancelled' && (
+                      <div style={{display:'grid',gap:8}}>
+                        <div style={{fontWeight:700,color:'#f4f4f5',fontSize:14}}>Shipping</div>
+                        <select value={podTrack.carrier} onChange={e=>setPodTrack(t=>({...t,carrier:e.target.value}))} style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:0}}>
+                          {['USPS','UPS','FedEx','DHL','Other'].map(c=><option key={c}>{c}</option>)}
+                        </select>
+                        <input value={podTrack.number} onChange={e=>setPodTrack(t=>({...t,number:e.target.value}))} placeholder="Tracking number" style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:0}}/>
+                        <button disabled={podBusy||!podTrack.number.trim()} onClick={()=>podAct(open.id,{intent:'ship',tracking:podTrack.number,carrier:podTrack.carrier})} style={{padding:'12px',background:open.status==='in_production'?'#ffc800':'transparent',color:open.status==='in_production'?'#000':'#f4f4f5',border:open.status==='in_production'?'none':'1px solid #34343a',fontWeight:800,fontSize:14,cursor:'pointer',opacity:podTrack.number.trim()?1:0.5}}>{open.status==='shipped'?'Update tracking':'Mark shipped'}</button>
+                        <div style={{fontSize:12,color:'#b3b3bc'}}>Sends the tracking number to {open.shop} and emails the customer.</div>
+                      </div>
+                    )}
+                    {open.status==='shipped' && !open.trackingSent && <div style={{fontSize:13,color:'#ffc800'}}>Marked shipped, but the tracking number has not reached the store yet. Use Update tracking to retry.</div>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          );
+        })()}
 
         {section==='artwork' && (
           <div style={s.sec}><h1 style={s.h1}>Design Vault</h1><p style={s.sub}>Manage client artwork — approve, reject, and upload on behalf of clients</p>

@@ -25,6 +25,8 @@ export default function OrdersPage() {
   const supabase = createClient();
 
   const [filter, setFilter] = useState('All');
+  const [tab, setTab] = useState('store'); // store | requests
+  const [storeOrders, setStoreOrders] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
@@ -60,6 +62,7 @@ export default function OrdersPage() {
     } else {
       setOrders([]);
     }
+    fetch('/api/pod-orders', { cache: 'no-store' }).then((r) => r.json()).then((d) => setStoreOrders(d.orders || [])).catch(() => setStoreOrders([]));
     setLoading(false);
   }, [supabase, router]);
 
@@ -94,6 +97,34 @@ export default function OrdersPage() {
         <button className="sp-btn sp-in" style={{ '--i': 1 }} onClick={() => setShowNew(true)}>New order <Arrow /></button>
       </header>
 
+      <div className="sp-tabs sp-in" style={{ '--i': 1 }}>
+        <button className={`sp-tab${tab === 'store' ? ' on' : ''}`} onClick={() => setTab('store')}>Store orders{storeOrders ? ` (${storeOrders.length})` : ''}</button>
+        <button className={`sp-tab${tab === 'requests' ? ' on' : ''}`} onClick={() => setTab('requests')}>Print requests</button>
+      </div>
+
+      {tab === 'store' && (
+        <div className="sp-card sp-in" style={{ '--i': 2 }}>
+          {storeOrders === null ? <div className="sp-empty">Loading…</div>
+            : storeOrders.length === 0 ? (
+              <div className="sp-empty"><b>No store orders yet</b>When a customer buys one of your POD products, the order shows up here with its tracking.<div><a href="/stores" className="sp-btn">Connect your store</a></div></div>
+            ) : storeOrders.map((so) => {
+              const st = STATUS[so.status === 'in_production' ? 'In Production' : so.status === 'shipped' ? 'Shipped' : so.status === 'cancelled' ? 'Delivered' : 'Awaiting Artwork'] || { color: '#9ca3af', step: 1, live: false };
+              const label = { new: 'New', in_production: 'In production', shipped: 'Shipped', cancelled: 'Cancelled' }[so.status] || so.status;
+              return (
+                <div key={so.id} className="sp-order" style={{ gridTemplateColumns: '110px 1fr auto', cursor: 'default' }}>
+                  <span className="sp-order-no">{so.name}</span>
+                  <div>
+                    <div className="sp-order-desc">{so.items.map((i) => `${i.quantity}x ${i.design?.name || i.title}`).join(', ') || 'Order'}</div>
+                    <div className="sp-order-date">{new Date(so.placedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{so.customerName ? ` · ${so.customerName}` : ''}{so.trackingNumber ? ` · ${so.trackingCarrier || 'Tracking'} ${so.trackingNumber}` : ''}</div>
+                  </div>
+                  <span className={`sp-chip${so.status === 'in_production' ? ' live' : ''}`} style={{ '--c': so.status === 'cancelled' ? '#f87171' : st.color }}><i />{label}</span>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {tab === 'requests' && (<>
       <div className="sp-tabs sp-in" style={{ '--i': 2 }}>
         {FILTERS.map((f) => <button key={f} className={`sp-tab${filter === f ? ' on' : ''}`} onClick={() => setFilter(f)}>{f}</button>)}
       </div>
@@ -122,6 +153,8 @@ export default function OrdersPage() {
             );
           })}
       </div>
+
+      </>)}
 
       {showNew && (
         <div className="sp-modal" onClick={(e) => e.target === e.currentTarget && setShowNew(false)}>

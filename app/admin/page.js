@@ -64,7 +64,6 @@ const INIT_ALERTS = [
   { id:4, level:'action', title:'Low inventory',              detail:'PC54 White — only 12 units left',               section:'inventory' },
   { id:5, level:'action', title:'New client message',         detail:'East Side Brewing: "When will our order ship?"', section:'messages' },
   { id:6, level:'info',   title:'New order received',         detail:'Order #1051 from Northside Academy — $342.00',  section:'orders' },
-  { id:7, level:'info',   title:'Webhook connected',          detail:'Order Desk sync active — last ping 4 min ago',  section:'orderdesk' },
 ];
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -86,7 +85,7 @@ const NAV = [
   { id:'artwork',   icon:'', label:'Artwork' },
   { id:'billing',   icon:'', label:'Billing' },
   { id:'inventory', icon:'', label:'Inventory' },
-  { id:'poddesk',   icon:'', label:'Order Desk' },
+  { id:'poddesk',   icon:'', label:'S&A POD' },
   { id:'settings',  icon:'', label:'Settings' },
 ];
 
@@ -1016,7 +1015,7 @@ export default function AdminPage() {
             : {background: podBg==='black' ? '#000' : '#fff'};
           return (
           <div style={s.sec}>
-            <h1 style={s.h1}>Order Desk</h1>
+            <h1 style={s.h1}>S&A POD</h1>
             <p style={{...s.sub,color:'#e4e4e7'}}>Sales of POD client designs. Print each order, then ship it with a tracking number. The tracking number goes straight to the client's store and emails their customer.</p>
             <div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
               {[['open','Open'],['new','New'],['in_production','In production'],['shipped','Shipped'],['cancelled','Cancelled'],['all','All']].map(([k,l])=>(
@@ -1331,17 +1330,6 @@ export default function AdminPage() {
               <div key={item.id} style={{...s.card,...(item.status==='critical'?{borderLeft:'3px solid #dc2626'}:item.status==='low'?{borderLeft:'3px solid #f59e0b'}:{}),marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}><span style={{fontSize:14,fontWeight:600}}>{item.name}</span><Badge status={item.status}/></div><div style={{fontSize:13,color:'#b3b3bc'}}>SKU: {item.sku} · Min: {item.min} units</div></div><div style={{textAlign:'right'}}><div style={{fontSize:26,fontWeight:700,color:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669'}}>{item.qty}</div><div style={{fontSize:11,color:'#b3b3bc'}}>in stock</div></div></div><div style={{marginTop:10,background:'#141417',borderRadius:0,height:6,overflow:'hidden'}}><div style={{height:'100%',width:`${Math.min(100,(item.qty/Math.max(item.min*2,item.qty))*100)}%`,background:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669',borderRadius:0}}/></div></div>
             ))}
           </div>
-        )}
-
-        {/* ORDER DESK */}
-        {section==='orderdesk' && (
-          <div style={s.sec}><h1 style={s.h1}>Order Desk</h1><p style={s.sub}>Webhook connection & order feed</p><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Webhook Status</h3><div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}><div style={{width:10,height:10,background:'#10b981',borderRadius:0,animation:'pulse 2s infinite'}}/><span style={{fontSize:14,fontWeight:600,color:'#34d399'}}>Connected — Order Desk sync active</span><span style={{fontSize:12,color:'#b3b3bc'}}>Last ping: 4 minutes ago</span></div><div style={{background:'#141417',borderRadius:0,padding:14}}><div style={{fontSize:12,fontWeight:600,color:'#b3b3bc',marginBottom:6}}>Webhook URL</div><div style={{fontFamily:'monospace',fontSize:12,color:'#e4e4e7',background:'#0e0e10',padding:'8px 12px',borderRadius:0,border:'1px solid #222226',wordBreak:'break-all'}}>
-                  https://sanda-portal.vercel.app/api/webhooks/orderdesk
-                </div></div><div style={{display:'flex',gap:8,marginTop:12}}><button style={s.smBtn}>Test Webhook</button><button style={s.smBtn}>View Logs</button><button style={s.smBtn}>Reconnect</button></div></div><div style={s.card}><h3 style={s.cardTitle}>Recent Incoming Orders</h3>
-              {orders.map(o=>(
-                <div key={o.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{o.items}</div></div><div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#b3b3bc',marginTop:3}}>{o.date}</div></div></div>
-              ))}
-            </div></div>
         )}
 
         {/* SETTINGS */}

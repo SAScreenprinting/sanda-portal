@@ -32,7 +32,10 @@ export default function Home() {
       return
     }
 
-    router.push('/dashboard')
+    // Go where the visitor was headed (e.g. /admin) if the proxy sent them here from a protected page.
+    const wanted = new URLSearchParams(window.location.search).get('next')
+    const safe = wanted && wanted.startsWith('/') && !wanted.startsWith('//') && !wanted.includes('\\')
+    router.push(safe ? wanted : '/dashboard')
     router.refresh()
   }
 

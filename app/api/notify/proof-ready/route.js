@@ -37,7 +37,7 @@ export async function POST(req) {
     if (!profile?.email) return NextResponse.json({ skipped: true, reason: 'No email on profile' });
 
     const firstName = profile.contact_name?.split(' ')[0] || profile.business_name || 'there';
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sascreenprinting.com'}/orders/${orderId}`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sandascreenprinting.com'}/orders/${orderId}`;
 
     const html = `
 <!DOCTYPE html>

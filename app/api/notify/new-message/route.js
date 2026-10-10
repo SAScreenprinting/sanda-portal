@@ -29,7 +29,7 @@ export async function POST(req) {
 
     const firstName = profile.contact_name?.split(' ')[0] || profile.business_name || 'there';
     const from = isAdminToClient ? 'S&A Screen Printing' : senderName || 'Your client';
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sascreenprinting.com'}/messages`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sandascreenprinting.com'}/messages`;
 
     const html = `
 <!DOCTYPE html>

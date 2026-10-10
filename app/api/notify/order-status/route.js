@@ -49,7 +49,7 @@ export async function POST(req) {
 
     const info = STATUS_LABELS[newStatus] || { emoji: '📋', title: `Order status updated to ${newStatus}`, body: `Your order ${order.order_number} has been updated.` };
     const firstName = profile.contact_name?.split(' ')[0] || profile.business_name || 'there';
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sascreenprinting.com'}/orders/${orderId}`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.sandascreenprinting.com'}/orders/${orderId}`;
 
     const trackingLine = trackingNumber
       ? `<p style="margin:0 0 16px;"><strong>Tracking:</strong> ${trackingNumber}</p>`

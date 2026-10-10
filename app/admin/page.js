@@ -48,7 +48,7 @@ const SC = {
 
 function Badge({ status, label }) {
   const c = SC[status] || {bg:'#141417',color:'#b3b3bc'};
-  return <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:0,background:c.bg,color:c.color,whiteSpace:'nowrap'}}>{label||status}</span>;
+  return <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:10,background:c.bg,color:c.color,whiteSpace:'nowrap'}}>{label||status}</span>;
 }
 
 export default function AdminPage() {
@@ -320,7 +320,7 @@ export default function AdminPage() {
               </button>
             );
           })}
-        </nav><div style={s.sideBottom}><a href="/dashboard" style={{color:'#b3b3bc',fontSize:12,textDecoration:'none',textAlign:'center'}}>← Client Portal</a><button onClick={()=>setAuthed(false)} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#b3b3bc',padding:'6px',borderRadius:0,fontSize:12,cursor:'pointer'}}>Sign Out</button></div></aside>
+        </nav><div style={s.sideBottom}><a href="/dashboard" style={{color:'#b3b3bc',fontSize:12,textDecoration:'none',textAlign:'center'}}>← Client Portal</a><button onClick={()=>setAuthed(false)} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#b3b3bc',padding:'6px',borderRadius:10,fontSize:12,cursor:'pointer'}}>Sign Out</button></div></aside>
 
       {/* Main */}
       <main style={s.main}>
@@ -330,7 +330,7 @@ export default function AdminPage() {
 
         {/* INQUIRIES */}
         {section==='messages' && (
-          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}><div><h1 style={s.h1}>Client Inquiries</h1><p style={s.sub}>{inquiries.filter(i=>i.status==='open').length} open · {inquiries.filter(i=>i.status==='in_progress').length} in progress</p></div><button onClick={loadInquiries} style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}><div><h1 style={s.h1}>Client Inquiries</h1><p style={s.sub}>{inquiries.filter(i=>i.status==='open').length} open · {inquiries.filter(i=>i.status==='in_progress').length} in progress</p></div><button onClick={loadInquiries} style={{background:'#ffc800',color:'#000',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                 ↻ Refresh
               </button></div>
 
@@ -338,7 +338,7 @@ export default function AdminPage() {
             <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
               {[['all','All'],['open','Open'],['in_progress','In Progress'],['resolved','Resolved']].map(([val,label])=>(
                 <button key={val} onClick={()=>setInqFilter(val)}
-                  style={{padding:'5px 14px',borderRadius:0,border:'none',background:inqFilter===val?'#ffc800':'#141417',color:inqFilter===val?'#fff':'#b3b3bc',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                  style={{padding:'5px 14px',borderRadius:10,border:'none',background:inqFilter===val?'#ffc800':'#141417',color:inqFilter===val?'#fff':'#b3b3bc',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                   {label}
                 </button>
               ))}
@@ -356,7 +356,7 @@ export default function AdminPage() {
                   const isActive = activeInquiry?.id===inq.id;
                   return (
                     <button key={inq.id} onClick={()=>openInquiry(inq)}
-                      style={{...s.msgBtn,...(isActive?{background:'rgba(255,200,0,0.1)',color:'#fff',borderColor:'#ffc800'}:{}),textAlign:'left',padding:'12px 14px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4,gap:6}}><span style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:isActive?'#ffc800':'#a0a0a9',flexShrink:0}}>{inq.inquiry_number}</span><span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:0,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span></div><div style={{fontSize:13,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:isActive?'#fff':'#f4f4f5'}}>{inq.title}</div><div style={{fontSize:12,color:isActive?'#d1d5db':'#b3b3bc',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{clientName}</div>
+                      style={{...s.msgBtn,...(isActive?{background:'rgba(255,200,0,0.1)',color:'#fff',borderColor:'#ffc800'}:{}),textAlign:'left',padding:'12px 14px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4,gap:6}}><span style={{fontSize:11,fontWeight:700,fontFamily:'monospace',color:isActive?'#ffc800':'#a0a0a9',flexShrink:0}}>{inq.inquiry_number}</span><span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:10,background:st.bg,color:st.color,flexShrink:0}}>{st.label}</span></div><div style={{fontSize:13,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:isActive?'#fff':'#f4f4f5'}}>{inq.title}</div><div style={{fontSize:12,color:isActive?'#d1d5db':'#b3b3bc',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{clientName}</div>
                       {inq.last_message && (
                         <div style={{fontSize:11,color:isActive?'#a0a0a9':'#a0a0a9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2}}>
                           {inq.last_message.is_admin?'You: ':'Client: '}{inq.last_message.body}
@@ -377,7 +377,7 @@ export default function AdminPage() {
                         </div></div><div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
                         {/* Status changer */}
                         <select value={activeInquiry.status} onChange={e=>updateInqStatus(activeInquiry.id,e.target.value)}
-                          style={{padding:'5px 10px',border:'1px solid #222226',borderRadius:0,fontSize:12,fontWeight:600,cursor:'pointer',color:'#e4e4e7',background:'#0e0e10'}}><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
+                          style={{padding:'5px 10px',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer',color:'#e4e4e7',background:'#121214'}}><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select></div></div>
 
                     {/* Messages */}
                     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16,minHeight:220,maxHeight:380,overflowY:'auto',padding:'4px'}}>
@@ -387,7 +387,7 @@ export default function AdminPage() {
                       {inqThread.map((msg,i)=>(
                         <div key={msg.id||i} style={{display:'flex',flexDirection:'column',alignItems:msg.is_admin?'flex-end':'flex-start',gap:2}}><span style={{fontSize:11,color:'#a0a0a9',paddingLeft:msg.is_admin?0:4,paddingRight:msg.is_admin?4:0}}>
                             {msg.is_admin?'You (S&A)':'Client'} · {new Date(msg.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
-                          </span><div style={{maxWidth:'78%',padding:'9px 13px',borderRadius:0,fontSize:13,lineHeight:'1.55',background:msg.is_admin?'#ffc800':'#141417',color:msg.is_admin?'#fff':'#f4f4f5',borderBottomRightRadius:msg.is_admin?3:12,borderBottomLeftRadius:msg.is_admin?12:3}}>
+                          </span><div style={{maxWidth:'78%',padding:'9px 13px',borderRadius:10,fontSize:13,lineHeight:'1.55',background:msg.is_admin?'#ffc800':'#141417',color:msg.is_admin?'#fff':'#f4f4f5',borderBottomRightRadius:msg.is_admin?3:12,borderBottomLeftRadius:msg.is_admin?12:3}}>
                             {msg.body}
                           </div></div>
                       ))}
@@ -405,7 +405,7 @@ export default function AdminPage() {
                           {inqSending?'Sending…':'Send'}
                         </button></div>
                     ) : (
-                      <div style={{padding:'10px 14px',background:'rgba(52,211,153,0.14)',borderRadius:0,fontSize:12,color:'#34d399',fontWeight:600,textAlign:'center'}}>
+                      <div style={{padding:'10px 14px',background:'rgba(52,211,153,0.14)',borderRadius:10,fontSize:12,color:'#34d399',fontWeight:600,textAlign:'center'}}>
                          Inquiry resolved. Change status above to reopen.
                       </div>
                     )}
@@ -430,7 +430,7 @@ export default function AdminPage() {
                   const clientName = r.profiles?.business_name || r.profiles?.contact_name || r.profiles?.email || 'Unknown client';
                   const statusStyle = r.status==='pending' ? {bg:'rgba(255,200,0,0.14)',color:'#ffc800'} : r.status==='sourced' ? {bg:'rgba(52,211,153,0.14)',color:'#34d399'} : r.status==='declined' ? {bg:'rgba(248,113,113,0.14)',color:'#fca5a5'} : {bg:'rgba(96,165,250,0.14)',color:'#93c5fd'};
                   return (
-                    <div key={r.id} style={{...s.card,...(r.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{})}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}><span style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{r.garment_name}</span><span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:0,background:statusStyle.bg,color:statusStyle.color}}>{r.status}</span></div><div style={{fontSize:13,color:'#b3b3bc',marginBottom:4}}>
+                    <div key={r.id} style={{...s.card,...(r.status==='pending'?{borderLeft:'3px solid #f59e0b'}:{})}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}><span style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{r.garment_name}</span><span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:10,background:statusStyle.bg,color:statusStyle.color}}>{r.status}</span></div><div style={{fontSize:13,color:'#b3b3bc',marginBottom:4}}>
                              {clientName}
                             {r.brand && <> · Brand: <strong>{r.brand}</strong></>}
                             {r.sku && <> · SKU: <strong>{r.sku}</strong></>}
@@ -451,7 +451,7 @@ export default function AdminPage() {
         {section==='designs' && (
           <div style={s.sec}><h1 style={s.h1}>Designs</h1><p style={{...s.sub,color:'#e4e4e7'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p><div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
               {['All','Submitted','Approved','In Setup','Live','Denied'].map(f=>(
-                <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#ffc800':'#34343a'),background:designFilter===f?'#ffc800':'#0e0e10',color:designFilter===f?'#fff':'#f4f4f5',borderRadius:0,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#ffc800':'#34343a'),background:designFilter===f?'#ffc800':'#121214',color:designFilter===f?'#fff':'#f4f4f5',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
                   {f}{f!=='All' ? ` (${designs.filter(d=>(d.product?.status||'Submitted')===f).length})` : ''}
                 </button>
               ))}
@@ -468,9 +468,9 @@ export default function AdminPage() {
                   <div key={d.id} onClick={()=>{setReviewing(d);setDenyNote('');setDenying(false);setViewerBg('checker');setViewerFile(null);setViewerZoom(1);}} style={{...s.card,padding:0,overflow:'hidden',cursor:'pointer',...(st==='Submitted'?{borderLeft:'4px solid #f59e0b'}:{})}}>
                     <div style={{background:'#fff',borderBottom:'1px solid #e5e7eb',height:190,display:'grid',placeItems:'center'}}>
                       {first && <img src={first} alt="" style={{maxWidth:'100%',maxHeight:190,objectFit:'contain'}}/>}
-                    </div><div style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}><strong style={{fontSize:16,color:'#f4f4f5'}}>{d.name}</strong><span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:0,background:stc[0],color:stc[1]}}>{st}</span></div><div style={{fontSize:14,color:'#f4f4f5',fontWeight:600}}>{who}</div><div style={{fontSize:13,color:'#e4e4e7',margin:'3px 0 6px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>{d.product?.sku && <div style={{fontSize:12,color:'#ffc800',fontWeight:700,letterSpacing:0.5,margin:'0 0 10px'}}>SKU {d.product.sku}</div>}
+                    </div><div style={{padding:16}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:6}}><strong style={{fontSize:16,color:'#f4f4f5'}}>{d.name}</strong><span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:10,background:stc[0],color:stc[1]}}>{st}</span></div><div style={{fontSize:14,color:'#f4f4f5',fontWeight:600}}>{who}</div><div style={{fontSize:13,color:'#e4e4e7',margin:'3px 0 6px'}}>{d.product?.productTitle}{d.product?.variantTitle?` · ${d.product.variantTitle}`:''}</div>{d.product?.sku && <div style={{fontSize:12,color:'#ffc800',fontWeight:700,letterSpacing:0.5,margin:'0 0 10px'}}>SKU {d.product.sku}</div>}
                       {st==='Submitted' ? (
-                        <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}><button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button><button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#0e0e10',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button></div>
+                        <div style={{display:'flex',gap:8}} onClick={e=>e.stopPropagation()}><button onClick={()=>setDesignStatus(d.id,'Approved')} style={{flex:1,padding:'9px',background:'#16a34a',color:'#fff',border:'none',borderRadius:10,fontWeight:700,fontSize:13,cursor:'pointer'}}>Approve</button><button onClick={()=>{setReviewing(d);setDenyNote('');setDenying(true);setViewerFile(null);}} style={{flex:1,padding:'9px',background:'#121214',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:10,fontWeight:700,fontSize:13,cursor:'pointer'}}>Deny</button></div>
                       ) : <div style={{fontSize:13,color:'#93c5fd',fontWeight:600}}>Open to review</div>}
                     </div></div>
                 );
@@ -487,37 +487,37 @@ export default function AdminPage() {
                 : {background: viewerBg==='black' ? '#000' : '#fff'};
               const shown = viewerFile || (files[0] ? {url:files[0].url,label:`${files[0].viewName} · ${files[0].printAreaLabel} (print file)`,file:`${d.name}-${files[0].viewName}-${files[0].printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')} : (previews[0] ? {url:previews[0][1],label:`${previews[0][0]} preview`} : null));
               return (
-                <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}><div style={{background:'#0e0e10',borderRadius:0,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}><div style={{padding:20,borderRight:'1px solid #222226'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}><div style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{shown?.label || 'No image'}</div><div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}><button onClick={()=>setViewerZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={viewerZoom<=1} title="Zoom out" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:viewerZoom<=1?'default':'pointer',opacity:viewerZoom<=1?0.4:1}}>−</button><button onClick={()=>setViewerZoom(1)} title="Fit to window" style={{minWidth:58,height:30,fontSize:12,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{viewerZoom===1?'Fit':Math.round(viewerZoom*100)+'%'}</button><button onClick={()=>setViewerZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} title="Zoom in" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>+</button><span style={{width:8}}/>
+                <div onClick={e=>{if(e.target===e.currentTarget)setReviewing(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}><div style={{background:'#121214',borderRadius:10,width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.5fr) minmax(300px,1fr)'}}><div style={{padding:20,borderRight:'1px solid rgba(255,255,255,0.08)'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:8,flexWrap:'wrap'}}><div style={{fontSize:14,fontWeight:700,color:'#f4f4f5'}}>{shown?.label || 'No image'}</div><div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}><button onClick={()=>setViewerZoom(z=>Math.max(1,+(z/1.5).toFixed(2)))} disabled={viewerZoom<=1} title="Zoom out" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#121214',color:'#f4f4f5',borderRadius:10,cursor:viewerZoom<=1?'default':'pointer',opacity:viewerZoom<=1?0.4:1}}>−</button><button onClick={()=>setViewerZoom(1)} title="Fit to window" style={{minWidth:58,height:30,fontSize:12,fontWeight:700,border:'1px solid #34343a',background:'#121214',color:'#f4f4f5',borderRadius:10,cursor:'pointer'}}>{viewerZoom===1?'Fit':Math.round(viewerZoom*100)+'%'}</button><button onClick={()=>setViewerZoom(z=>Math.min(12,+(z*1.5).toFixed(2)))} title="Zoom in" style={{width:32,height:30,fontSize:18,fontWeight:700,border:'1px solid #34343a',background:'#121214',color:'#f4f4f5',borderRadius:10,cursor:'pointer'}}>+</button><span style={{width:8}}/>
                           {[['checker','Checker'],['white','White'],['black','Black']].map(([k,l])=>(
-                            <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#ffc800':'#34343a'),background:viewerBg===k?'#ffc800':'#0e0e10',color:viewerBg===k?'#fff':'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{l}</button>
+                            <button key={k} onClick={()=>setViewerBg(k)} style={{padding:'5px 11px',fontSize:12,fontWeight:600,border:'1px solid '+(viewerBg===k?'#ffc800':'#34343a'),background:viewerBg===k?'#ffc800':'#121214',color:viewerBg===k?'#fff':'#f4f4f5',borderRadius:10,cursor:'pointer'}}>{l}</button>
                           ))}
-                        </div></div><div style={{...bgStyle,borderRadius:0,border:'1px solid #34343a',height:'62vh',minHeight:380,overflow:'auto',display:'flex',alignItems:viewerZoom>1?'flex-start':'center',justifyContent:viewerZoom>1?'flex-start':'center',padding:12}}>
+                        </div></div><div style={{...bgStyle,borderRadius:10,border:'1px solid #34343a',height:'62vh',minHeight:380,overflow:'auto',display:'flex',alignItems:viewerZoom>1?'flex-start':'center',justifyContent:viewerZoom>1?'flex-start':'center',padding:12}}>
                         {shown && <img src={shown.url} alt="" draggable={false} style={viewerZoom===1?{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}:{width:(viewerZoom*100)+'%',maxWidth:'none',height:'auto',flex:'none',imageRendering:viewerZoom>=4?'pixelated':'auto'}}/>}
                       </div>
                       {shown && shown.file && (
-                        <button onClick={()=>downloadFile(shown.url, shown.file)} style={{marginTop:12,padding:'10px 16px',background:'#ffc800',color:'#000',border:'none',borderRadius:0,fontSize:13,fontWeight:700,cursor:'pointer'}}>Download this print file</button>
+                        <button onClick={()=>downloadFile(shown.url, shown.file)} style={{marginTop:12,padding:'10px 16px',background:'#ffc800',color:'#000',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>Download this print file</button>
                       )}
                       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
                         {previews.map(([view,url])=>(
-                          <button key={'p'+view} onClick={()=>pickViewer({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #34343a',background:'#0e0e10',color:'#f4f4f5',borderRadius:0,cursor:'pointer'}}>{view} preview</button>
+                          <button key={'p'+view} onClick={()=>pickViewer({url,label:`${view} preview`})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #34343a',background:'#121214',color:'#f4f4f5',borderRadius:10,cursor:'pointer'}}>{view} preview</button>
                         ))}
                         {files.map(f=>(
-                          <button key={f.url} onClick={()=>pickViewer({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`,file:`${d.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'rgba(96,165,250,0.12)',color:'#93c5fd',borderRadius:0,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
+                          <button key={f.url} onClick={()=>pickViewer({url:f.url,label:`${f.viewName} · ${f.printAreaLabel} (print file)`,file:`${d.name}-${f.viewName}-${f.printAreaLabel}.png`.replace(/[^a-zA-Z0-9._-]+/g,'-')})} style={{padding:'6px 12px',fontSize:12,fontWeight:600,border:'1px solid #2563eb',background:'rgba(96,165,250,0.12)',color:'#93c5fd',borderRadius:10,cursor:'pointer'}}>Print file: {f.viewName} · {f.printAreaLabel}</button>
                         ))}
                       </div></div><div style={{padding:22,display:'flex',flexDirection:'column',gap:14}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}><div><div style={{fontSize:20,fontWeight:800,color:'#f4f4f5'}}>{d.name}</div><div style={{fontSize:14,color:'#e4e4e7',marginTop:2}}>{d.client?.business_name || d.client?.contact_name || 'Client'}{d.client?.email?` · ${d.client.email}`:''}</div></div><button onClick={()=>setReviewing(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#e4e4e7'}}>×</button></div><div style={{fontSize:14,color:'#f4f4f5',lineHeight:1.6}}><div><strong>Product:</strong> {d.product?.productTitle}</div>
                         {d.product?.variantTitle && <div><strong>Variant:</strong> {d.product.variantTitle}</div>}
-                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div><div><strong>Status:</strong> {st}</div>{d.product?.sku && (<div style={{marginTop:10}}><label style={{fontSize:12,fontWeight:700,color:'#b3b3bc',letterSpacing:1,textTransform:'uppercase',display:'block',marginBottom:5}}>SKU</label><div style={{display:'flex',gap:6}}><input value={skuDraft[d.id] ?? d.product.sku} onChange={e=>setSkuDraft(x=>({...x,[d.id]:e.target.value}))} style={{flex:1,minWidth:0,padding:'9px 10px',border:'1px solid #34343a',background:'#070708',color:'#ffc800',fontWeight:700,fontSize:14,borderRadius:0,letterSpacing:0.5}}/><button onClick={()=>saveSku(d.id)} disabled={skuDraft[d.id]===undefined || skuDraft[d.id]===d.product.sku} style={{padding:'9px 14px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:13,cursor:'pointer',opacity:(skuDraft[d.id]===undefined||skuDraft[d.id]===d.product.sku)?0.4:1}}>Save</button><button onClick={()=>navigator.clipboard?.writeText(d.product.sku)} style={{padding:'9px 12px',background:'transparent',color:'#f4f4f5',border:'1px solid #34343a',fontWeight:700,fontSize:13,cursor:'pointer'}}>Copy</button></div></div>)}
-                        {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'rgba(248,113,113,0.12)',border:'1px solid rgba(248,113,113,0.35)',borderRadius:0,color:'#fca5a5'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
+                        <div><strong>Submitted:</strong> {new Date(d.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</div><div><strong>Status:</strong> {st}</div>{d.product?.sku && (<div style={{marginTop:10}}><label style={{fontSize:12,fontWeight:700,color:'#b3b3bc',letterSpacing:1,textTransform:'uppercase',display:'block',marginBottom:5}}>SKU</label><div style={{display:'flex',gap:6}}><input value={skuDraft[d.id] ?? d.product.sku} onChange={e=>setSkuDraft(x=>({...x,[d.id]:e.target.value}))} style={{flex:1,minWidth:0,padding:'9px 10px',border:'1px solid #34343a',background:'#070708',color:'#ffc800',fontWeight:700,fontSize:14,borderRadius:10,letterSpacing:0.5}}/><button onClick={()=>saveSku(d.id)} disabled={skuDraft[d.id]===undefined || skuDraft[d.id]===d.product.sku} style={{padding:'9px 14px',background:'#ffc800',color:'#000',border:'none',fontWeight:800,fontSize:13,cursor:'pointer',opacity:(skuDraft[d.id]===undefined||skuDraft[d.id]===d.product.sku)?0.4:1}}>Save</button><button onClick={()=>navigator.clipboard?.writeText(d.product.sku)} style={{padding:'9px 12px',background:'transparent',color:'#f4f4f5',border:'1px solid #34343a',fontWeight:700,fontSize:13,cursor:'pointer'}}>Copy</button></div></div>)}
+                        {d.product?.reviewNote && <div style={{marginTop:6,padding:'8px 10px',background:'rgba(248,113,113,0.12)',border:'1px solid rgba(248,113,113,0.35)',borderRadius:10,color:'#fca5a5'}}><strong>Reason sent to client:</strong> {d.product.reviewNote}</div>}
                       </div>
 
                       {denying ? (
-                        <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Why is it being denied? The client sees this.</label><textarea value={denyNote} onChange={e=>setDenyNote(e.target.value)} rows={4} placeholder="Low resolution logo, please upload a vector file" style={{width:'100%',padding:10,border:'1px solid #34343a',borderRadius:0,fontSize:14,color:'#f4f4f5',boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginTop:10}}><button disabled={!denyNote.trim()} onClick={async()=>{await setDesignStatus(d.id,'Denied',denyNote.trim());setDenying(false);setReviewing(null);}} style={{flex:1,padding:'11px',background:denyNote.trim()?'#dc2626':'#fca5a5',color:'#fff',border:'none',borderRadius:0,fontWeight:700,cursor:denyNote.trim()?'pointer':'default'}}>Send denial</button><button onClick={()=>setDenying(false)} style={{padding:'11px 16px',background:'#0e0e10',border:'1px solid #34343a',color:'#f4f4f5',borderRadius:0,fontWeight:600,cursor:'pointer'}}>Cancel</button></div></div>
+                        <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Why is it being denied? The client sees this.</label><textarea value={denyNote} onChange={e=>setDenyNote(e.target.value)} rows={4} placeholder="Low resolution logo, please upload a vector file" style={{width:'100%',padding:10,border:'1px solid #34343a',borderRadius:10,fontSize:14,color:'#f4f4f5',boxSizing:'border-box'}}/><div style={{display:'flex',gap:8,marginTop:10}}><button disabled={!denyNote.trim()} onClick={async()=>{await setDesignStatus(d.id,'Denied',denyNote.trim());setDenying(false);setReviewing(null);}} style={{flex:1,padding:'11px',background:denyNote.trim()?'#dc2626':'#fca5a5',color:'#fff',border:'none',borderRadius:10,fontWeight:700,cursor:denyNote.trim()?'pointer':'default'}}>Send denial</button><button onClick={()=>setDenying(false)} style={{padding:'11px 16px',background:'#121214',border:'1px solid #34343a',color:'#f4f4f5',borderRadius:10,fontWeight:600,cursor:'pointer'}}>Cancel</button></div></div>
                       ) : (
                         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                          {(st==='Submitted'||st==='Denied') && <button onClick={async()=>{await setDesignStatus(d.id,'Approved');setReviewing(null);}} style={{padding:'12px',background:'#16a34a',color:'#fff',border:'none',borderRadius:0,fontWeight:800,fontSize:15,cursor:'pointer'}}>Approve</button>}
-                          {st!=='Denied' && <button onClick={()=>{setDenying(true);setDenyNote('');}} style={{padding:'12px',background:'#0e0e10',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,fontWeight:800,fontSize:15,cursor:'pointer'}}>Deny with a reason</button>}
+                          {(st==='Submitted'||st==='Denied') && <button onClick={async()=>{await setDesignStatus(d.id,'Approved');setReviewing(null);}} style={{padding:'12px',background:'#16a34a',color:'#fff',border:'none',borderRadius:10,fontWeight:800,fontSize:15,cursor:'pointer'}}>Approve</button>}
+                          {st!=='Denied' && <button onClick={()=>{setDenying(true);setDenyNote('');}} style={{padding:'12px',background:'#121214',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.4)',borderRadius:10,fontWeight:800,fontSize:15,cursor:'pointer'}}>Deny with a reason</button>}
                           {(st==='Approved'||st==='In Setup'||st==='Live') && (
-                            <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Setup stage</label><select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'10px',border:'1px solid #34343a',borderRadius:0,fontSize:14,color:'#f4f4f5'}}>
+                            <div><label style={{fontSize:13,fontWeight:700,color:'#f4f4f5',display:'block',marginBottom:6}}>Setup stage</label><select value={st} onChange={e=>setDesignStatus(d.id,e.target.value)} style={{width:'100%',padding:'10px',border:'1px solid #34343a',borderRadius:10,fontSize:14,color:'#f4f4f5'}}>
                                 {['Approved','In Setup','Live'].map(o=><option key={o}>{o}</option>)}
                               </select></div>
                           )}
@@ -543,7 +543,7 @@ export default function AdminPage() {
                     const e = priceEdit[p.id] || {};
                     const val = (k) => e[k] ?? (cur[k] ?? '');
                     const total = ['base_cost','print_cost','shipping_cost'].reduce((t,k)=>t+(parseFloat(val(k))||0),0);
-                    const inp = (k) => <input type="number" min="0" step="0.01" value={val(k)} onChange={ev=>setPriceEdit(x=>({...x,[p.id]:{...(x[p.id]||{}),[k]:ev.target.value}}))} placeholder="0.00" style={{width:88,padding:'7px 8px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0}}/>;
+                    const inp = (k) => <input type="number" min="0" step="0.01" value={val(k)} onChange={ev=>setPriceEdit(x=>({...x,[p.id]:{...(x[p.id]||{}),[k]:ev.target.value}}))} placeholder="0.00" style={{width:88,padding:'7px 8px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:10}}/>;
                     return (
                       <tr key={p.id} style={{borderBottom:'1px solid #1c1c20'}}>
                         <td style={{padding:'10px 14px',color:'#f4f4f5',maxWidth:280}}>{p.title}</td>
@@ -576,10 +576,10 @@ export default function AdminPage() {
                     <div style={{fontSize:12,color:'#b3b3bc',marginTop:2}}>{new Date(sm.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
                   </div>
                   <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-                    <select value={sm.status} onChange={e=>updateSample(sm.id,{status:e.target.value})} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0}}>
+                    <select value={sm.status} onChange={e=>updateSample(sm.id,{status:e.target.value})} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:10}}>
                       <option value="requested">Requested</option><option value="in_production">In production</option><option value="shipped">Shipped</option>
                     </select>
-                    <input defaultValue={sm.tracking_number||''} placeholder="Tracking number" onBlur={e=>{ if ((e.target.value||'')!==(sm.tracking_number||'')) updateSample(sm.id,{tracking_number:e.target.value}); }} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:0,width:180}}/>
+                    <input defaultValue={sm.tracking_number||''} placeholder="Tracking number" onBlur={e=>{ if ((e.target.value||'')!==(sm.tracking_number||'')) updateSample(sm.id,{tracking_number:e.target.value}); }} style={{padding:'9px 10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:13,borderRadius:10,width:180}}/>
                   </div>
                 </div>
               ))}
@@ -621,8 +621,8 @@ export default function AdminPage() {
 
             {open && (
               <div onClick={e=>{if(e.target===e.currentTarget)setPodOpen(null);}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-                <div style={{background:'#0e0e10',border:'1px solid #34343a',borderTop:'3px solid #ffc800',width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.4fr) minmax(300px,1fr)'}}>
-                  <div style={{padding:20,borderRight:'1px solid #222226'}}>
+                <div style={{background:'#121214',border:'1px solid #34343a',borderTop:'3px solid #ffc800',width:'100%',maxWidth:1100,maxHeight:'92vh',overflow:'auto',display:'grid',gridTemplateColumns:'minmax(0,1.4fr) minmax(300px,1fr)'}}>
+                  <div style={{padding:20,borderRight:'1px solid rgba(255,255,255,0.08)'}}>
                     <div style={{fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:'uppercase',color:'#b3b3bc',marginBottom:10}}>Print files</div>
                     {open.items.length===0 && <div style={{color:'#e4e4e7'}}>No POD designs matched on this order.</div>}
                     {open.items.map(it=>(
@@ -673,10 +673,10 @@ export default function AdminPage() {
                     {open.status!=='cancelled' && (
                       <div style={{display:'grid',gap:8}}>
                         <div style={{fontWeight:700,color:'#f4f4f5',fontSize:14}}>Shipping</div>
-                        <select value={podTrack.carrier} onChange={e=>setPodTrack(t=>({...t,carrier:e.target.value}))} style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:0}}>
+                        <select value={podTrack.carrier} onChange={e=>setPodTrack(t=>({...t,carrier:e.target.value}))} style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:10}}>
                           {['USPS','UPS','FedEx','DHL','Other'].map(c=><option key={c}>{c}</option>)}
                         </select>
-                        <input value={podTrack.number} onChange={e=>setPodTrack(t=>({...t,number:e.target.value}))} placeholder="Tracking number" style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:0}}/>
+                        <input value={podTrack.number} onChange={e=>setPodTrack(t=>({...t,number:e.target.value}))} placeholder="Tracking number" style={{padding:'10px',background:'#070708',border:'1px solid #34343a',color:'#f4f4f5',fontSize:14,borderRadius:10}}/>
                         <button disabled={podBusy||!podTrack.number.trim()} onClick={()=>podAct(open.id,{intent:'ship',tracking:podTrack.number,carrier:podTrack.carrier})} style={{padding:'12px',background:open.status==='in_production'?'#ffc800':'transparent',color:open.status==='in_production'?'#000':'#f4f4f5',border:open.status==='in_production'?'none':'1px solid #34343a',fontWeight:800,fontSize:14,cursor:'pointer',opacity:podTrack.number.trim()?1:0.5}}>{open.status==='shipped'?'Update tracking':'Mark shipped'}</button>
                         <div style={{fontSize:12,color:'#b3b3bc'}}>Sends the tracking number to {open.shop} and emails the customer.</div>
                       </div>
@@ -714,14 +714,14 @@ export default function AdminPage() {
                 {artworkAdminUploading?'Uploading…':'Choose Files & Upload'}
               </button>
               {!artworkAdminUpClient&&<span style={{fontSize:12,color:'#a0a0a9',marginLeft:10}}>Select a client first</span>}
-              {artworkAdminUpMsg&&<div style={{marginTop:10,padding:'8px 12px',borderRadius:0,fontSize:13,background:artworkAdminUpMsg.startsWith('')?'rgba(52,211,153,0.14)':'rgba(248,113,113,0.14)',color:artworkAdminUpMsg.startsWith('')?'#34d399':'#fca5a5'}}>{artworkAdminUpMsg}</div>}
+              {artworkAdminUpMsg&&<div style={{marginTop:10,padding:'8px 12px',borderRadius:10,fontSize:13,background:artworkAdminUpMsg.startsWith('')?'rgba(52,211,153,0.14)':'rgba(248,113,113,0.14)',color:artworkAdminUpMsg.startsWith('')?'#34d399':'#fca5a5'}}>{artworkAdminUpMsg}</div>}
             </div>
 
             {/* Filters */}
             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
               {[['pending',' Pending'],['approved',' On File'],['rejected',' Rejected'],['all','All']].map(([val,label])=>(
                 <button key={val} onClick={()=>setArtworkStatusFilter(val)}
-                  style={{padding:'6px 14px',borderRadius:0,border:'none',background:artworkStatusFilter===val?'#ffc800':'#141417',color:artworkStatusFilter===val?'white':'#b3b3bc',fontSize:13,cursor:'pointer',fontWeight:artworkStatusFilter===val?'600':'400'}}>
+                  style={{padding:'6px 14px',borderRadius:10,border:'none',background:artworkStatusFilter===val?'#ffc800':'#141417',color:artworkStatusFilter===val?'white':'#b3b3bc',fontSize:13,cursor:'pointer',fontWeight:artworkStatusFilter===val?'600':'400'}}>
                   {label}
                 </button>
               ))}
@@ -798,44 +798,44 @@ export default function AdminPage() {
 
 const s = {
   loginBg:    {minHeight:'100vh',background:'#070708',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"var(--font-dm),'DM Sans',sans-serif"},
-  loginCard:  {background:'#040405',border:'1px solid #222226',borderTop:'3px solid #ffc800',borderRadius:0,padding:'44px 40px',width:320,textAlign:'center'},
+  loginCard:  {background:'#040405',border:'1px solid rgba(255,255,255,0.08)',borderRadius:16,padding:'44px 40px',width:320,textAlign:'center'},
   loginTitle: {color:'#fff',fontSize:22,fontWeight:700,margin:'0 0 4px'},
   loginSub:   {color:'#b3b3bc',fontSize:13,marginBottom:28},
-  loginInput: {width:'100%',padding:'11px 14px',background:'#070708',border:'1px solid rgba(255,255,255,0.1)',borderRadius:0,color:'#fff',fontSize:14,textAlign:'center',outline:'none',fontFamily:'inherit',boxSizing:'border-box'},
-  loginBtn:   {width:'100%',padding:'12px 0',background:'#ffc800',color:'#000000',border:'none',borderRadius:0,fontSize:15,fontWeight:700,cursor:'pointer'},
+  loginInput: {width:'100%',padding:'11px 14px',background:'#070708',border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,color:'#fff',fontSize:14,textAlign:'center',outline:'none',fontFamily:'inherit',boxSizing:'border-box'},
+  loginBtn:   {width:'100%',padding:'12px 0',background:'#ffc800',color:'#000000',border:'none',borderRadius:10,fontSize:15,fontWeight:700,cursor:'pointer'},
   shell:      {display:'flex',minHeight:'100vh',fontFamily:"var(--font-dm),'DM Sans',sans-serif",background:'#070708',color:'#f4f4f5'},
-  sidebar:    {width:236,background:'#040405',borderRight:'1px solid #222226',display:'flex',flexDirection:'column',position:'fixed',top:0,left:0,bottom:0,zIndex:50,overflowY:'auto'},
+  sidebar:    {width:236,background:'#040405',borderRight:'1px solid rgba(255,255,255,0.08)',display:'flex',flexDirection:'column',position:'fixed',top:0,left:0,bottom:0,zIndex:50,overflowY:'auto'},
   logo:       {display:'flex',alignItems:'center',gap:8,padding:'8px 8px 16px',borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:8},
-  urgentBanner:{background:'rgba(220,38,38,0.15)',border:'1px solid rgba(220,38,38,0.3)',borderRadius:0,padding:'6px 10px',fontSize:11,color:'#fca5a5',lineHeight:1.4,marginTop:8},
+  urgentBanner:{background:'rgba(220,38,38,0.15)',border:'1px solid rgba(220,38,38,0.3)',borderRadius:10,padding:'6px 10px',fontSize:11,color:'#fca5a5',lineHeight:1.4,marginTop:8},
   nav:        {flex:1,padding:'4px 8px',display:'flex',flexDirection:'column',gap:2},
-  navBtn:     {display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:0,background:'transparent',border:'none',color:'#a0a0a9',fontSize:13,cursor:'pointer',width:'100%',transition:'all 0.15s'},
-  navActive:  {background:'rgba(232,160,32,0.15)',color:'#ffc800'},
-  navBadge:   {background:'#2a2a30',color:'#fff',fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:0,minWidth:18,textAlign:'center'},
+  navBtn:     {display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,background:'transparent',border:'none',color:'#a0a0a9',fontSize:13,cursor:'pointer',width:'100%',transition:'all 0.15s'},
+  navActive:  {background:'rgba(255,200,0,0.12)',color:'#fff'},
+  navBadge:   {background:'#2a2a30',color:'#fff',fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:10,minWidth:18,textAlign:'center'},
   sideBottom: {padding:'12px',borderTop:'1px solid rgba(255,255,255,0.08)',display:'flex',flexDirection:'column',gap:8},
   main:       {flex:1,marginLeft:236,overflowY:'auto',minHeight:'100vh'},
-  sec:        {padding:'28px',maxWidth:1100},
+  sec:        {padding:'32px 36px',maxWidth:1200},
   h1:         {fontSize:30,fontWeight:700,color:'#f4f4f5',margin:'0 0 4px',fontFamily:"var(--font-sora),'Sora',sans-serif",letterSpacing:'-0.02em'},
   sub:        {fontSize:14,color:'#b3b3bc',marginBottom:24},
-  alertBanner:{display:'flex',alignItems:'center',gap:12,background:'rgba(248,113,113,0.14)',border:'1px solid rgba(248,113,113,0.4)',borderRadius:0,padding:'12px 16px',marginBottom:20,fontSize:14,color:'#fca5a5'},
-  alertBannerBtn:{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:0,padding:'4px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
+  alertBanner:{display:'flex',alignItems:'center',gap:12,background:'rgba(248,113,113,0.14)',border:'1px solid rgba(248,113,113,0.4)',borderRadius:10,padding:'12px 16px',marginBottom:20,fontSize:14,color:'#fca5a5'},
+  alertBannerBtn:{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:10,padding:'4px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
   statsGrid:  {display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:24},
-  statCard:   {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:16,textAlign:'center'},
-  card:       {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:20},
+  statCard:   {background:'#121214',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',padding:16,textAlign:'center'},
+  card:       {background:'#121214',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',padding:20},
   cardTitle:  {fontSize:15,fontWeight:600,color:'#f4f4f5',marginBottom:14,marginTop:0},
   row:        {display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid #1c1c20',gap:12},
   viewAll:    {background:'none',border:'none',color:'#ffc800',fontSize:13,cursor:'pointer',padding:'8px 0',fontWeight:500},
-  alertRow:   {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',gap:16},
-  goBtn:      {background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
-  dimBtn:     {background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:0,padding:'5px 10px',fontSize:12,cursor:'pointer'},
-  clientCard: {background:'#0e0e10',borderRadius:0,border:'1px solid #222226',padding:20,marginBottom:14},
-  smBtn:      {background:'#141417',border:'1px solid #222226',borderRadius:0,padding:'5px 12px',fontSize:12,fontWeight:500,cursor:'pointer',color:'#e4e4e7'},
-  msgBtn:     {background:'#0e0e10',border:'1px solid #222226',borderRadius:0,padding:'12px',textAlign:'left',cursor:'pointer',transition:'all 0.15s',width:'100%'},
-  inp:        {padding:'7px 9px',border:'1px solid #34343a',borderRadius:0,fontSize:13,color:'#f4f4f5',background:'#0e0e10',fontFamily:'inherit',boxSizing:'border-box',width:'100%'},
-  label:      {display:'block',fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:0.4,marginBottom:5},
-  saveBtn:    {padding:'8px 18px',background:'#ffc800',color:'#000',border:'none',borderRadius:0,fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'},
-  cancelBtn:  {padding:'7px 14px',background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:0,fontSize:13,cursor:'pointer'},
-  tabs:       {display:'flex',gap:4,marginBottom:20,background:'#141417',padding:4,borderRadius:0,width:'fit-content'},
-  tab:        {padding:'7px 16px',background:'transparent',border:'none',borderRadius:0,fontSize:13,fontWeight:500,color:'#b3b3bc',cursor:'pointer'},
-  tabActive:  {background:'#0e0e10',color:'#f4f4f5',fontWeight:600,boxShadow:'0 1px 3px rgba(0,0,0,0.08)'},
+  alertRow:   {background:'#121214',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',gap:16},
+  goBtn:      {background:'#ffc800',color:'#000',border:'none',borderRadius:10,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'},
+  dimBtn:     {background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:10,padding:'5px 10px',fontSize:12,cursor:'pointer'},
+  clientCard: {background:'#121214',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',padding:20,marginBottom:14},
+  smBtn:      {background:'#141417',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 12px',fontSize:12,fontWeight:500,cursor:'pointer',color:'#e4e4e7'},
+  msgBtn:     {background:'#121214',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px',textAlign:'left',cursor:'pointer',transition:'all 0.15s',width:'100%'},
+  inp:        {padding:'7px 9px',border:'1px solid #34343a',borderRadius:10,fontSize:13,color:'#f4f4f5',background:'#121214',fontFamily:'inherit',boxSizing:'border-box',width:'100%'},
+  label:      {display:'block',fontSize:12.5,fontWeight:600,color:'#b3b3bc',textTransform:'none',letterSpacing:0,marginBottom:5},
+  saveBtn:    {padding:'8px 18px',background:'#ffc800',color:'#000',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'},
+  cancelBtn:  {padding:'7px 14px',background:'transparent',border:'1px solid #34343a',color:'#b3b3bc',borderRadius:10,fontSize:13,cursor:'pointer'},
+  tabs:       {display:'flex',gap:4,marginBottom:20,background:'#141417',padding:4,borderRadius:10,width:'fit-content'},
+  tab:        {padding:'7px 16px',background:'transparent',border:'none',borderRadius:10,fontSize:13,fontWeight:500,color:'#b3b3bc',cursor:'pointer'},
+  tabActive:  {background:'#121214',color:'#f4f4f5',fontWeight:600,boxShadow:'0 1px 3px rgba(0,0,0,0.08)'},
   empty:      {textAlign:'center',padding:'40px',color:'#a0a0a9',fontSize:14},
 };

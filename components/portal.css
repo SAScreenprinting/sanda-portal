@@ -233,3 +233,90 @@
 .sp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .sp-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
 @media (max-width: 900px) { .sp-cols, .sp-two { grid-template-columns: 1fr; } .sp-track::before, .sp-track-fill { left: 30px; } .sp-track::before { right: 30px; } }
+
+/* =====================================================================
+   Modern refresh: rounder, quieter, simpler. Same black + yellow identity.
+   Kept as one block at the end so the earlier rules stay readable and this can be tuned in one place.
+   ===================================================================== */
+.sp { --line: rgba(255, 255, 255, 0.08); --line2: rgba(255, 255, 255, 0.14); --panel: #111113; --panel2: #17171a; --bg: #09090a; --r: 14px; --r-sm: 10px; }
+
+/* sidebar: soft pill navigation, no left bar */
+.sp-side { background: #0c0c0e; border-right: 1px solid var(--line); }
+.sp-logo { border-bottom-color: var(--line); }
+.sp-nav a { border-radius: var(--r-sm); padding: 11px 14px; font-size: 14.5px; }
+.sp-nav a::before { display: none; }
+.sp-nav a:hover { padding-left: 14px; background: rgba(255, 255, 255, 0.05); }
+.sp-nav a.is-active { background: rgba(255, 200, 0, 0.12); color: #fff; }
+.sp-avatar { border-radius: 50%; }
+.sp-main::before { display: none; }
+.sp-page { padding-top: 44px; }
+
+/* headings: plain and calm */
+.sp-eyebrow { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); margin-bottom: 8px; }
+.sp-eyebrow::before { display: none; }
+.sp-head h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 700; letter-spacing: -0.02em; }
+.sp-head p { font-size: 15px; }
+
+/* buttons: friendly, no shouting, no shimmer */
+.sp-btn { padding: 12px 20px; border-radius: var(--r-sm); font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; overflow: hidden; }
+.sp-btn::after { display: none; }
+.sp-btn:hover { transform: none; filter: brightness(1.06); }
+.sp-btn--ghost { border-color: var(--line2); }
+.sp-btn--ghost:hover { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.06); }
+
+/* cards: soft corners, quiet hover */
+.sp-card { border-radius: var(--r); background: var(--panel); }
+.sp-card::before { display: none; }
+.sp-lift:hover { border-color: rgba(255, 255, 255, 0.22); transform: translateY(-2px); }
+.sp-stat::after { display: none; }
+.sp-label { font-size: 12.5px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.sp-num { font-size: 38px; margin: 10px 0 8px; }
+.sp-panel-head { padding: 18px 22px; }
+.sp-panel-head h2 { font-size: 15.5px; }
+.sp-act-ic { border-radius: 12px; }
+
+/* orders + status */
+.sp-order { padding: 16px 22px; }
+.sp-order:hover { padding-left: 22px; background: rgba(255, 255, 255, 0.03); }
+.sp-order-no { color: #fff; }
+.sp-steps i, .sp-dots i { border-radius: 3px; }
+.sp-chip { border: 0; border-radius: 20px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; background: rgba(255, 255, 255, 0.07); }
+.sp-chip i { border-radius: 50%; }
+.sp-tdot { border-radius: 50%; }
+.sp-track-fill, .sp-track::before { border-radius: 2px; }
+.sp-empty b { font-size: 17px; }
+
+/* forms + modals */
+.sp-dialog { border-radius: 18px; border-top: 1px solid var(--line2); background: #0e0e10; }
+.sp-modal { background: rgba(0, 0, 0, 0.7); }
+.sp-x { border-radius: 8px; }
+.sp-field label { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.sp-field input, .sp-field textarea, .sp-select { border-radius: var(--r-sm); background: var(--panel2); border-color: var(--line2); }
+.sp-field input:focus, .sp-field textarea:focus, .sp-select:focus { box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.14); background: var(--panel2); }
+.sp-tip, .sp-msg { border-radius: var(--r-sm); border-left-width: 1px; border-color: var(--line2); background: var(--panel2); }
+.sp-msg.err { border-color: rgba(248, 113, 113, 0.5); }
+.sp-msg.ok { border-color: rgba(52, 211, 153, 0.5); }
+.sp-drop { border-radius: var(--r); }
+
+/* tabs + tables */
+.sp-tab { border-radius: 20px; padding: 8px 16px; }
+.sp-table th { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600; color: var(--dim); }
+.sp-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* designs */
+.sp-dcard { overflow: hidden; }
+.sp-dnum { color: #fff; }
+.sp-previews figcaption { border-radius: 0 8px 0 0; letter-spacing: 0.04em; }
+.sp-file:hover { background: rgba(255, 255, 255, 0.03); }
+.sp-tl i { border-radius: 50%; }
+
+@media (max-width: 860px) {
+  .sp-topbar button { border-radius: var(--r-sm); }
+  .sp-page { padding-top: 24px; }
+}
+
+@media (max-width: 520px) {
+  .sp-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sp-stat { padding: 16px; }
+  .sp-num { font-size: 30px; }
+}

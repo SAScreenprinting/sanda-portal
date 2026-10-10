@@ -63,7 +63,7 @@ export async function POST(req) {
           <a href="${portalUrl}" style="display:inline-block;background:#1a1a1a;color:white;padding:13px 28px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Review Proof →</a>
         </td></tr>
         <tr><td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
-          <p style="margin:0;font-size:12px;color:#9ca3af;">S&A Screen Printing · 123 Print Ave, Newark NJ · (973) 555-0100</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">S&A Screen Printing · 195 Crosby Ave, Paterson NJ 07502 · (201) 949-8343</p>
         </td></tr>
       </table>
     </td></tr>
@@ -78,7 +78,7 @@ export async function POST(req) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'S&A Screen Printing <noreply@sascreenprinting.com>',
+        from: process.env.EMAIL_FROM || 'S&A Screen Printing <onboarding@resend.dev>',
         to: [profile.email],
         subject: `🖼️ Proof ready for ${order.order_number} — action required`,
         html,

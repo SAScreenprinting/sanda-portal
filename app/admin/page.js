@@ -3,88 +3,26 @@ import { downloadFile } from '@/lib/downloadFile';
 import '@/components/portal.css';
 import { Icon } from '@/components/PortalShell';
 import { useState, useEffect, useRef } from 'react';
-import { DEFAULT_PRODUCTS, toAdminFormat } from '@/lib/products';
+import '@/components/admin.css';
+import AdminDashboard from './sections/Dashboard';
+import AdminClients from './sections/Clients';
+import AdminOrders from './sections/Orders';
+import AdminBilling from './sections/Billing';
+import AdminSettings from './sections/Settings';
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'sanda2024admin';
-const TAX_RATE = 0.07;
 
-const INIT_CLIENTS = [
-  { id:1, name:'Riverside Youth Sports', email:'coach@riversidefc.com', phone:'(201) 555-0182', orders:12, balance:245.00, status:'active', lastOrder:'2d ago', notes:'Prefers rush orders. Net 30.' },
-  { id:2, name:'East Side Brewing Co.',  email:'merch@eastsidebrew.com', phone:'(973) 555-0134', orders:8,  balance:0,      status:'active', lastOrder:'1w ago', notes:'Always pays on time.' },
-  { id:3, name:'Lakewood FC',            email:'admin@lakewoodfc.com',   phone:'(732) 555-0199', orders:5,  balance:180.00, status:'active', lastOrder:'3d ago', notes:'Youth league — discount applied.' },
-  { id:4, name:'Northside Academy',      email:'office@northside.edu',   phone:'(201) 555-0167', orders:3,  balance:342.00, status:'new',    lastOrder:'1h ago',  notes:'' },
-  { id:5, name:'Summit CrossFit',        email:'hello@summitcf.com',     phone:'(908) 555-0211', orders:15, balance:0,      status:'vip',    lastOrder:'4d ago',  notes:'VIP — 10% standing discount.' },
-];
-
-const INIT_ORDERS = [
-  { id:'#1051', client:'Northside Academy',      items:'24x T-Shirts, Front Print',  total:342.00, status:'new',      date:'1h ago',  urgent:false, discount:0 },
-  { id:'#1050', client:'Summit CrossFit',        items:'48x Hoodies, Full Back',      total:876.00, status:'printing', date:'2d ago',  urgent:false, discount:10 },
-  { id:'#1049', client:'Lakewood FC',            items:'36x Jerseys, Name+Number',   total:540.00, status:'review',   date:'3d ago',  urgent:false, discount:0 },
-  { id:'#1048', client:'East Side Brewing Co.',  items:'60x T-Shirts, 2-color',      total:480.00, status:'shipped',  date:'1w ago',  urgent:false, discount:0 },
-  { id:'#1042', client:'Riverside Youth Sports', items:'100x T-Shirts, 3-color',     total:950.00, status:'overdue',  date:'12d ago', urgent:true,  discount:0 },
-];
-
-const INIT_INVOICES = [
-  { id:'INV-093', client:'Northside Academy',      amount:342.00, issued:'2026-05-10', due:'2026-06-09', status:'pending', items:[{desc:'24x T-Shirts, Front Print',qty:24,price:10.50},{desc:'Setup fee',qty:1,price:90.00}], note:'' },
-  { id:'INV-091', client:'Lakewood FC',            amount:180.00, issued:'2026-04-10', due:'2026-05-10', status:'overdue', items:[{desc:'36x Jerseys',qty:36,price:5.00}], note:'' },
-  { id:'INV-089', client:'East Side Brewing Co.',  amount:480.00, issued:'2026-04-02', due:'2026-05-02', status:'paid',    items:[{desc:'60x T-Shirts',qty:60,price:8.00}], note:'' },
-  { id:'INV-090', client:'Summit CrossFit',        amount:876.00, issued:'2026-04-08', due:'2026-05-08', status:'paid',    items:[{desc:'48x Hoodies',qty:48,price:18.25}], note:'' },
-  { id:'INV-088', client:'Riverside Youth Sports', amount:245.00, issued:'2026-03-28', due:'2026-04-27', status:'overdue', items:[{desc:'100x T-Shirts',qty:100,price:2.45}], note:'' },
-  { id:'INV-085', client:'Summit CrossFit',        amount:320.00, issued:'2026-02-15', due:'2026-03-15', status:'paid',    items:[{desc:'24x Polos',qty:24,price:13.33}], note:'' },
-  { id:'INV-081', client:'East Side Brewing Co.',  amount:210.00, issued:'2026-01-20', due:'2026-02-19', status:'paid',    items:[{desc:'30x Tank Tops',qty:30,price:7.00}], note:'' },
-  { id:'INV-079', client:'Riverside Youth Sports', amount:540.00, issued:'2025-12-05', due:'2026-01-04', status:'paid',    items:[{desc:'60x Hoodies',qty:60,price:9.00}], note:'' },
-];
-
-const INIT_INVENTORY = [
-  { id:1, sku:'PC54-WHT', name:'Port & Company PC54 White', qty:12, min:24, status:'low' },
-  { id:2, sku:'PC54-BLK', name:'Port & Company PC54 Black', qty:88, min:24, status:'ok' },
-  { id:3, sku:'PC78H-NVY', name:'PC78H Navy Hoodie',        qty:34, min:12, status:'ok' },
-  { id:4, sku:'NF0A3LHB',  name:'New Era Snapback Black',   qty:5,  min:12, status:'critical' },
-  { id:5, sku:'ST850-GRY', name:'Sport-Tek ST850 Gray',     qty:60, min:24, status:'ok' },
-];
-
-const INIT_ARTWORK = [
-  { id:1, client:'Lakewood FC',       file:'lfc_jersey_front_v2.ai', uploaded:'3h ago', status:'pending',  notes:'' },
-  { id:2, client:'Lakewood FC',       file:'lfc_jersey_back_v2.ai',  uploaded:'3h ago', status:'pending',  notes:'' },
-  { id:3, client:'Lakewood FC',       file:'lfc_sleeve_patch.ai',    uploaded:'3h ago', status:'pending',  notes:'' },
-  { id:4, client:'Summit CrossFit',   file:'scf_logo_final.svg',     uploaded:'2d ago', status:'approved', notes:'Looks great' },
-  { id:5, client:'East Side Brewing', file:'esb_hop_design.pdf',     uploaded:'5d ago', status:'rejected', notes:'Need 300dpi' },
-];
-
-const INIT_MESSAGES = [
-  { id:1, client:'East Side Brewing Co.',  msg:'When will our order ship?',      time:'45m ago', read:false, thread:[{from:'client',text:'Just checking on order #1048 — when does it ship?',time:'45m ago'}] },
-  { id:2, client:'Riverside Youth Sports', msg:'Can we add 10 more shirts?',     time:'2h ago',  read:false, thread:[{from:'client',text:'Is it too late to add 10 more shirts to #1042?',time:'2h ago'}] },
-  { id:3, client:'Summit CrossFit',        msg:'Thanks for the fast turnaround!',time:'4d ago',  read:true,  thread:[{from:'client',text:'Just got the hoodies — they look amazing!',time:'4d ago'},{from:'admin',text:"So glad you love them! Let us know for the next batch.",time:'4d ago'}] },
-];
-
-const INIT_ALERTS = [
-  { id:1, level:'urgent', title:'Order #1042 overdue',        detail:'Print deadline passed 2 days ago',              section:'orders' },
-  { id:2, level:'urgent', title:'Payment past due',           detail:'Riverside Youth Sports — INV-088 overdue 5 days',section:'billing' },
-  { id:3, level:'action', title:'Artwork needs approval',     detail:'Lakewood FC uploaded 3 files',                  section:'artwork' },
-  { id:4, level:'action', title:'Low inventory',              detail:'PC54 White — only 12 units left',               section:'inventory' },
-  { id:5, level:'action', title:'New client message',         detail:'East Side Brewing: "When will our order ship?"', section:'messages' },
-  { id:6, level:'info',   title:'New order received',         detail:'Order #1051 from Northside Academy — $342.00',  section:'orders' },
-];
-
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const PRODUCT_KEY = 'sanda_products';
-const PRODUCT_CATEGORIES = ['T-Shirts','Hoodies','Sweatshirts','Polos','Jackets','Hats','Beanies','Bags','Other'];
-const DECORATION_OPTIONS = ['Screen Print','Embroidery','DTG','Sublimation','Heat Transfer','Vinyl'];
-const BLANK_PRODUCT = { name:'', brand:'', sku:'', category:'T-Shirts', price:'', colors:'', printAreas:'', decorations:[], frontImage:'', backImage:'' };
 const NAV = [
   { id:'dashboard', icon:'', label:'Dashboard' },
-  { id:'alerts',    icon:'', label:'Alerts' },
   { id:'clients',   icon:'', label:'Clients' },
   { id:'requests',  icon:'', label:'Requests' },
   { id:'messages',  icon:'', label:'Messages' },
   { id:'orders',    icon:'', label:'Orders' },
-  { id:'products',  icon:'', label:'Products' },
   { id:'designs',   icon:'', label:'Designs' },
   { id:'pricing',   icon:'', label:'Pricing' },
   { id:'samples',   icon:'', label:'Samples' },
   { id:'artwork',   icon:'', label:'Artwork' },
   { id:'billing',   icon:'', label:'Billing' },
-  { id:'inventory', icon:'', label:'Inventory' },
   { id:'poddesk',   icon:'', label:'S&A POD' },
   { id:'settings',  icon:'', label:'Settings' },
 ];
@@ -118,11 +56,6 @@ export default function AdminPage() {
   const [pw, setPw]               = useState('');
   const [pwErr, setPwErr]         = useState('');
   const [section, setSection]     = useState('dashboard');
-  const [alerts, setAlerts]       = useState(INIT_ALERTS);
-  const [clients, setClients]     = useState(INIT_CLIENTS);
-  const [orders, setOrders]       = useState(INIT_ORDERS);
-  const [invoices, setInvoices]   = useState(INIT_INVOICES);
-  const [inventory]               = useState(INIT_INVENTORY);
   const [designs, setDesigns]     = useState([]);
   const [priceData, setPriceData]   = useState({ products: [], pricing: {} });
   const [priceLoading, setPriceLoading] = useState(false);
@@ -188,20 +121,6 @@ export default function AdminPage() {
   const [artworkAdminUploading, setArtworkAdminUploading] = useState(false);
   const [artworkAdminUpMsg, setArtworkAdminUpMsg]       = useState('');
   const artworkFileRef = useRef();
-  const [messages, setMessages]   = useState(INIT_MESSAGES);
-  const [activeMsg, setActiveMsg] = useState(null);
-  const [replyText, setReplyText] = useState('');
-  const [editNote, setEditNote]   = useState(null);
-  const [noteText, setNoteText]   = useState('');
-
-  // Billing state
-  const [billingTab, setBillingTab]     = useState('invoices');
-  const [previewInv, setPreviewInv]     = useState(null);
-  const [newInv, setNewInv]             = useState({ client:'', due:'', note:'' });
-  const [lineItems, setLineItems]       = useState([{desc:'',qty:'',price:''}]);
-  const [createMsg, setCreateMsg]       = useState('');
-  const [reportType, setReportType]     = useState('monthly');
-  const [reportYear, setReportYear]     = useState('2026');
 
   // Requests state
   const [requests, setRequests] = useState([]);
@@ -312,155 +231,10 @@ export default function AdminPage() {
     setRequests(r => r.map(x => x.id === id ? { ...x, status } : x));
   }
 
-  // Products state
-  const [products, setProducts]             = useState([]);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null); // null = new
-  const [productForm, setProductForm]       = useState(BLANK_PRODUCT);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(PRODUCT_KEY);
-      if (stored === null) {
-        // First visit: seed with the default studio catalog
-        const seeded = DEFAULT_PRODUCTS.map(toAdminFormat);
-        localStorage.setItem(PRODUCT_KEY, JSON.stringify(seeded));
-        setProducts(seeded);
-      } else {
-        setProducts(JSON.parse(stored));
-      }
-    } catch {}
-  }, []);
-
-  function setPF(field, val) { setProductForm(f => ({ ...f, [field]: val })); }
-
-  function handleProductImage(field, file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => setPF(field, e.target.result);
-    reader.readAsDataURL(file);
-  }
-
-  function openAddProduct() {
-    setEditingProduct(null);
-    setProductForm(BLANK_PRODUCT);
-    setShowProductModal(true);
-  }
-
-  function openEditProduct(p) {
-    setEditingProduct(p.id);
-    setProductForm({ name:p.name, brand:p.brand, sku:p.sku, category:p.category, price:String(p.price), colors:p.colors, printAreas:p.printAreas, decorations:p.decorations||[], frontImage:p.frontImage||'', backImage:p.backImage||'' });
-    setShowProductModal(true);
-  }
-
-  function saveProduct() {
-    if (!productForm.name || !productForm.sku) return;
-    const entry = { ...productForm, price: parseFloat(productForm.price) || 0, id: editingProduct || Date.now() };
-    let updated;
-    if (editingProduct) {
-      updated = products.map(p => p.id === editingProduct ? entry : p);
-    } else {
-      updated = [entry, ...products];
-    }
-    setProducts(updated);
-    localStorage.setItem(PRODUCT_KEY, JSON.stringify(updated));
-    setShowProductModal(false);
-  }
-
-  function deleteProduct(id) {
-    const updated = products.filter(p => p.id !== id);
-    setProducts(updated);
-    localStorage.setItem(PRODUCT_KEY, JSON.stringify(updated));
-  }
-
-  function toggleDecoration(val) {
-    setPF('decorations', productForm.decorations.includes(val)
-      ? productForm.decorations.filter(d => d !== val)
-      : [...productForm.decorations, val]);
-  }
-
-  // Create client state
-  const [showCreateClient, setShowCreateClient] = useState(false);
-  const [showCreatePw, setShowCreatePw] = useState(false);
-  const [createClientForm, setCreateClientForm] = useState({ email:'', password:'', business_name:'', contact_name:'', phone:'' });
-  const [createClientMsg, setCreateClientMsg] = useState('');
-  const [createClientLoading, setCreateClientLoading] = useState(false);
-
-  async function handleCreateClient(e) {
-    e.preventDefault();
-    setCreateClientLoading(true);
-    setCreateClientMsg('');
-    try {
-      const res = await fetch('/api/admin/create-client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(createClientForm),
-      });
-      const data = await res.json();
-      if (!res.ok) { setCreateClientMsg(' ' + data.error); }
-      else {
-        setCreateClientMsg(' Account created! They can log in now.');
-        setCreateClientForm({ email:'', password:'', business_name:'', contact_name:'', phone:'' });
-        setTimeout(() => { setShowCreateClient(false); setCreateClientMsg(''); }, 2500);
-      }
-    } catch {
-      setCreateClientMsg(' Network error. Try again.');
-    }
-    setCreateClientLoading(false);
-  }
-
-  // Discount state
-  const [discountTarget, setDiscountTarget] = useState('client'); // 'client' | 'order'
-  const [discountClient, setDiscountClient] = useState('');
-  const [discountOrder, setDiscountOrder]   = useState('');
-  const [discountAmt, setDiscountAmt]       = useState('');
-  const [discountType, setDiscountType]     = useState('percent');
-  const [discountMsg, setDiscountMsg]       = useState('');
-
   function login(e) {
     e.preventDefault();
     if (pw === ADMIN_PASSWORD) setAuthed(true);
     else { setPwErr('Incorrect password.'); setPw(''); }
-  }
-
-  // Orders
-  function updateOrderStatus(id, status) { setOrders(o => o.map(x => x.id===id ? {...x,status,urgent:status==='overdue'} : x)); }
-
-  // Invoices
-  function waiveInv(id)    { setInvoices(i => i.map(x => x.id===id ? {...x,status:'waived'} : x)); }
-  function markPaid(id)    { setInvoices(i => i.map(x => x.id===id ? {...x,status:'paid'} : x)); }
-
-  // Create invoice
-  function setLine(idx,field,val) { setLineItems(l => l.map((x,i) => i===idx ? {...x,[field]:val} : x)); }
-  function addLine()    { setLineItems(l => [...l,{desc:'',qty:'',price:''}]); }
-  function removeLine(idx) { setLineItems(l => l.filter((_,i)=>i!==idx)); }
-  function createInvoice() {
-    if (!newInv.client||!newInv.due||lineItems.some(l=>!l.desc||!l.qty||!l.price)) { setCreateMsg(' Fill in all fields.'); return; }
-    const items = lineItems.map(l=>({desc:l.desc,qty:Number(l.qty),price:Number(l.price)}));
-    const sub = items.reduce((s,i)=>s+i.qty*i.price,0);
-    const total = parseFloat((sub*(1+TAX_RATE)).toFixed(2));
-    const id = `INV-${100+invoices.length+1}`;
-    const today = new Date().toISOString().split('T')[0];
-    setInvoices(inv=>[{id,client:newInv.client,amount:total,issued:today,due:newInv.due,status:'pending',items,note:newInv.note},...inv]);
-    setCreateMsg(` ${id} created!`);
-    setNewInv({client:'',due:'',note:''});
-    setLineItems([{desc:'',qty:'',price:''}]);
-    setTimeout(()=>setCreateMsg(''),4000);
-  }
-
-  // Discounts
-  function applyDiscount() {
-    if (discountTarget==='client' && !discountClient) { setDiscountMsg(' Select a client.'); return; }
-    if (discountTarget==='order' && !discountOrder)   { setDiscountMsg(' Select an order.'); return; }
-    if (!discountAmt) { setDiscountMsg(' Enter an amount.'); return; }
-    const target = discountTarget==='client' ? discountClient : discountOrder;
-    const suffix = discountType==='percent' ? '%' : '$';
-    if (discountTarget==='order') {
-      setOrders(o => o.map(x => x.id===discountOrder ? {...x, discount:Number(discountAmt)} : x));
-    }
-    setDiscountMsg(` ${discountAmt}${suffix} discount applied to ${target}`);
-    setDiscountClient(''); setDiscountOrder(''); setDiscountAmt('');
-    setTimeout(()=>setDiscountMsg(''),4000);
   }
 
   // Artwork
@@ -508,43 +282,20 @@ export default function AdminPage() {
     loadArtwork();
   }
 
-  // Messages
-  function sendReply() {
-    if (!replyText.trim()||activeMsg===null) return;
-    setMessages(m=>m.map((x,i)=>i===activeMsg?{...x,thread:[...x.thread,{from:'admin',text:replyText,time:'just now'}],read:true}:x));
-    setReplyText('');
-  }
-
-  // Tax reports
-  const paidInv = invoices.filter(i=>i.status==='paid');
-  const yr = parseInt(reportYear);
-  function monthlyData() {
-    return MONTHS.map((m,idx)=>{
-      const matched = paidInv.filter(i=>{ const d=new Date(i.issued); return d.getFullYear()===yr&&d.getMonth()===idx; });
-      const rev = matched.reduce((s,i)=>s+i.amount,0);
-      return { label:m, revenue:rev, tax:rev*TAX_RATE, count:matched.length };
-    });
-  }
-  function quarterlyData() {
-    return ['Q1 (Jan-Mar)','Q2 (Apr-Jun)','Q3 (Jul-Sep)','Q4 (Oct-Dec)'].map((label,q)=>{
-      const months=[0,1,2].map(m=>m+q*3);
-      const matched=paidInv.filter(i=>{ const d=new Date(i.issued); return d.getFullYear()===yr&&months.includes(d.getMonth()); });
-      const rev=matched.reduce((s,i)=>s+i.amount,0);
-      return { label, revenue:rev, tax:rev*TAX_RATE, count:matched.length };
-    });
-  }
-  function yearlyData() {
-    const years=[...new Set(paidInv.map(i=>new Date(i.issued).getFullYear()))].sort((a,b)=>b-a);
-    return years.map(y=>{ const m=paidInv.filter(i=>new Date(i.issued).getFullYear()===y); const rev=m.reduce((s,i)=>s+i.amount,0); return {label:String(y),revenue:rev,tax:rev*TAX_RATE,count:m.length}; });
-  }
-  const reportData = reportType==='monthly'?monthlyData():reportType==='quarterly'?quarterlyData():yearlyData();
-  const totalRev = reportData.reduce((s,r)=>s+r.revenue,0);
-  const totalTax = reportData.reduce((s,r)=>s+r.tax,0);
-
-  const urgentCount = alerts.filter(a=>a.level==='urgent').length;
-  const unreadCount = messages.filter(m=>!m.read).length;
-  const pendingArt  = artwork.filter(a=>a.status==='pending').length;
-  const newDesigns  = designs.filter(d=>(d.product?.status || 'Submitted') === 'Submitted').length;
+  // Sidebar badges, counted from the real tables (see /api/admin/overview).
+  const [badges, setBadges] = useState({});
+  useEffect(() => {
+    if (!authed) return;
+    fetch('/api/admin/overview', { cache: 'no-store' }).then((r) => r.json()).then((d) => {
+      if (!d.attention) return;
+      setBadges({
+        orders: d.orders?.awaitingArtwork, requests: d.attention.newRequests, messages: d.attention.openInquiries,
+        designs: d.attention.designsToReview, artwork: d.attention.artworkPending, samples: d.attention.sampleRequests,
+        billing: d.invoices?.overdueCount,
+      });
+    }).catch(() => {});
+  }, [authed, section]);
+  const urgentCount = badges.billing || 0;
 
   // ── LOGIN ──────────────────────────────────────────────────────────────────
   if (!authed) return (
@@ -559,13 +310,13 @@ export default function AdminPage() {
 
       {/* Sidebar */}
       <aside style={s.sidebar}><div style={{padding:'16px 12px 8px'}}><div style={s.logo}><img src="/logo.png" alt="" style={{height:34,display:'block'}}/><span style={{fontSize:12,fontWeight:700,color:'#fff',letterSpacing:3,textTransform:'uppercase',lineHeight:1.35,fontFamily:"var(--font-sora),sans-serif"}}>S&A<br/><span style={{color:'#ffc800'}}>Admin</span></span></div>
-          {urgentCount>0 && <div style={s.urgentBanner}> {urgentCount} urgent item{urgentCount>1?'s':''}</div>}
+          {urgentCount>0 && <div style={s.urgentBanner}> {urgentCount} overdue invoice{urgentCount>1?'s':''}</div>}
         </div><nav style={s.nav}>
           {NAV.map(item=>{
-            const badge = item.id==='alerts'?alerts.filter(a=>a.level!=='info').length:item.id==='messages'?unreadCount:item.id==='artwork'?pendingArt:item.id==='designs'?newDesigns:0;
+            const badge = badges[item.id] || 0;
             return (
               <button key={item.id} onClick={()=>setSection(item.id)} style={{...s.navBtn,...(section===item.id?s.navActive:{})}}><span style={{display:'grid',placeItems:'center',width:20}}><Icon name={item.id==='dashboard'?'dashboard':item.id==='messages'?'messages':item.id==='orders'?'orders':item.id==='designs'?'designs':item.id==='poddesk'?'orderdesk':item.id==='pricing'?'billing':item.id==='samples'?'orders':item.id==='artwork'?'artwork':item.id==='billing'?'billing':item.id==='settings'?'settings':item.id} size={17}/></span><span style={{flex:1,textAlign:'left'}}>{item.label}</span>
-                {badge>0 && <span style={{...s.navBadge,...(item.id==='alerts'&&urgentCount>0?{background:'#dc2626'}:{})}}>{badge}</span>}
+                {badge>0 && <span style={{...s.navBadge,...(item.id==='billing'?{background:'#dc2626'}:{})}}>{badge}</span>}
               </button>
             );
           })}
@@ -574,97 +325,8 @@ export default function AdminPage() {
       {/* Main */}
       <main style={s.main}>
 
-        {/* DASHBOARD */}
-        {section==='dashboard' && (
-          <div style={s.sec}><h1 style={s.h1}>Dashboard</h1><p style={s.sub}>Here's what needs your attention today.</p>
-            {urgentCount>0 && <div style={s.alertBanner}> <strong>{urgentCount} urgent alert{urgentCount>1?'s':''}</strong> need immediate attention. <button onClick={()=>setSection('alerts')} style={s.alertBannerBtn}>View →</button></div>}
-            <div style={s.statsGrid}>
-              {[
-                {label:'Active Clients',   value:clients.length,                                       icon:''},
-                {label:'Open Orders',      value:orders.filter(o=>o.status!=='shipped').length,         icon:''},
-                {label:'New Designs',      value:newDesigns,                                            icon:''},
-                {label:'Pending Artwork',  value:pendingArt,                                            icon:''},
-                {label:'Unpaid Invoices',  value:invoices.filter(i=>i.status==='pending'||i.status==='overdue').length, icon:''},
-                {label:'Unread Messages',  value:unreadCount,                                           icon:''},
-                {label:'Low Stock Items',  value:inventory.filter(i=>i.status!=='ok').length,           icon:''},
-              ].map(st=>(
-                <div key={st.label} style={s.statCard}><div style={{fontSize:30,fontWeight:700,color:'#f4f4f5'}}>{st.value}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{st.label}</div></div>
-              ))}
-            </div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}><div style={s.card}><h3 style={s.cardTitle}>Recent Orders</h3>
-                {orders.slice(0,4).map(o=>(
-                  <div key={o.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{o.id} · {o.client}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{o.items}</div></div><div style={{textAlign:'right'}}><Badge status={o.status}/><div style={{fontSize:12,color:'#b3b3bc',marginTop:3}}>${o.total.toFixed(2)}</div></div></div>
-                ))}
-                <button onClick={()=>setSection('orders')} style={s.viewAll}>View all orders →</button></div><div style={s.card}><h3 style={s.cardTitle}>Pending Actions</h3>
-                {alerts.filter(a=>a.level!=='info').slice(0,5).map(a=>(
-                  <div key={a.id} style={s.row}><div><div style={{fontSize:13,fontWeight:600}}>{a.level==='urgent'?'':''} {a.title}</div><div style={{fontSize:12,color:'#b3b3bc'}}>{a.detail}</div></div></div>
-                ))}
-                <button onClick={()=>setSection('alerts')} style={s.viewAll}>View all alerts →</button></div></div></div>
-        )}
-
-        {/* ALERTS */}
-        {section==='alerts' && (
-          <div style={s.sec}><h1 style={s.h1}>Alerts</h1><p style={s.sub}>{alerts.length} active alerts</p>
-            {['urgent','action','info'].map(level=>{
-              const items=alerts.filter(a=>a.level===level);
-              if(!items.length) return null;
-              return (
-                <div key={level} style={{marginBottom:24}}><h3 style={{fontSize:12,fontWeight:700,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>
-                    {level==='urgent'?' Urgent':level==='action'?' Action Needed':' Info'}
-                  </h3>
-                  {items.map(a=>(
-                    <div key={a.id} style={{...s.alertRow,...(level==='urgent'?{borderLeft:'3px solid #dc2626'}:level==='action'?{borderLeft:'3px solid #f59e0b'}:{borderLeft:'3px solid #10b981'})}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:'#f4f4f5'}}>{a.title}</div><div style={{fontSize:13,color:'#b3b3bc',marginTop:2}}>{a.detail}</div></div><div style={{display:'flex',gap:8}}><button onClick={()=>setSection(a.section)} style={s.goBtn}>Go →</button><button onClick={()=>setAlerts(al=>al.filter(x=>x.id!==a.id))} style={s.dimBtn}>Dismiss</button></div></div>
-                  ))}
-                </div>
-              );
-            })}
-            {!alerts.length && <div style={s.empty}> All clear — no alerts!</div>}
-          </div>
-        )}
-
-        {/* CLIENTS */}
-        {section==='clients' && (
-          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}><div><h1 style={s.h1}>Clients</h1><p style={s.sub}>{clients.length} clients</p></div><button onClick={()=>setShowCreateClient(true)}
-                style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                + Create Client Account
-              </button></div>
-
-            {/* Create Client Modal */}
-            {showCreateClient && (
-              <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center'}}
-                onClick={e=>e.target===e.currentTarget&&setShowCreateClient(false)}><div style={{background:'#0e0e10',borderRadius:0,padding:32,width:420,boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}><h2 style={{fontSize:18,fontWeight:700,color:'#f4f4f5',marginBottom:4}}>Create Client Account</h2><p style={{fontSize:13,color:'#b3b3bc',marginBottom:20}}>Client will be able to log in to the portal immediately.</p><form onSubmit={handleCreateClient} style={{display:'flex',flexDirection:'column',gap:12}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Business Name</label><input value={createClientForm.business_name} onChange={e=>setCreateClientForm(f=>({...f,business_name:e.target.value}))}
-                          placeholder="Riverside FC" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Contact Name</label><input value={createClientForm.contact_name} onChange={e=>setCreateClientForm(f=>({...f,contact_name:e.target.value}))}
-                          placeholder="John Smith" style={{...s.inp,width:'100%'}}/></div></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Email Address *</label><input type="email" required value={createClientForm.email} onChange={e=>setCreateClientForm(f=>({...f,email:e.target.value}))}
-                        placeholder="coach@riversidefc.com" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Phone</label><input value={createClientForm.phone} onChange={e=>setCreateClientForm(f=>({...f,phone:e.target.value}))}
-                        placeholder="(201) 555-0182" style={{...s.inp,width:'100%'}}/></div><div><label style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}}>Temporary Password *</label><div style={{position:'relative'}}><input type={showCreatePw?'text':'password'} required minLength={6} value={createClientForm.password} onChange={e=>setCreateClientForm(f=>({...f,password:e.target.value}))}
-                          placeholder="Min 6 characters" style={{...s.inp,width:'100%',paddingRight:36}}/><button type="button" onClick={()=>setShowCreatePw(p=>!p)}
-                          style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:15,opacity:0.5}}>
-                          {showCreatePw?'':''}
-                        </button></div></div>
-                    {createClientMsg && (
-                      <div style={{padding:'8px 12px',borderRadius:0,background:createClientMsg.startsWith('')?'rgba(52,211,153,0.14)':'rgba(248,113,113,0.14)',color:createClientMsg.startsWith('')?'#34d399':'#fca5a5',fontSize:13}}>
-                        {createClientMsg}
-                      </div>
-                    )}
-                    <div style={{display:'flex',gap:8,marginTop:4}}><button type="submit" disabled={createClientLoading}
-                        style={{flex:1,background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'10px',fontSize:14,fontWeight:700,cursor:'pointer',opacity:createClientLoading?0.7:1}}>
-                        {createClientLoading ? 'Creating…' : 'Create Account'}
-                      </button><button type="button" onClick={()=>{setShowCreateClient(false);setCreateClientMsg('');}}
-                        style={{padding:'10px 16px',background:'#141417',border:'none',borderRadius:0,fontSize:14,cursor:'pointer',color:'#e4e4e7'}}>
-                        Cancel
-                      </button></div></form></div></div>
-            )}
-
-            {clients.map(c=>(
-              <div key={c.id} style={s.clientCard}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><span style={{fontSize:15,fontWeight:700,color:'#f4f4f5'}}>{c.name}</span><Badge status={c.status==='new'?'new_c':c.status}/></div><div style={{fontSize:13,color:'#b3b3bc'}}>{c.email} · {c.phone}</div><div style={{fontSize:13,color:'#b3b3bc'}}>{c.orders} orders · Last order {c.lastOrder}</div>
-                    {c.notes && <div style={{fontSize:12,color:'#ffc800',background:'rgba(255,200,0,0.14)',padding:'3px 8px',borderRadius:0,marginTop:6,display:'inline-block'}}>{c.notes}</div>}
-                  </div><div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:700,color:c.balance>0?'#dc2626':'#059669'}}>${c.balance.toFixed(2)}</div><div style={{fontSize:11,color:'#b3b3bc'}}>{c.balance>0?'balance due':'paid up'}</div></div></div><div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}><button onClick={()=>{const i=messages.findIndex(m=>m.client===c.name);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}> Message</button><button onClick={()=>setSection('billing')} style={s.smBtn}> Billing</button><button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountClient(c.name);}} style={s.smBtn}> Discount</button><button onClick={()=>{setEditNote(c.id);setNoteText(c.notes);}} style={s.smBtn}> Note</button></div>
-                {editNote===c.id && (
-                  <div style={{marginTop:10,display:'flex',gap:8}}><input value={noteText} onChange={e=>setNoteText(e.target.value)} style={{...s.inp,flex:1}} placeholder="Add note…"/><button onClick={()=>{setClients(cl=>cl.map(x=>x.id===c.id?{...x,notes:noteText}:x));setEditNote(null);}} style={s.saveBtn}>Save</button><button onClick={()=>setEditNote(null)} style={s.cancelBtn}>Cancel</button></div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        {section==='dashboard' && <AdminDashboard go={setSection} />}
+        {section==='clients' && <AdminClients />}
 
         {/* INQUIRIES */}
         {section==='messages' && (
@@ -754,26 +416,7 @@ export default function AdminPage() {
               </div></div></div>
         )}
 
-        {/* ORDERS */}
-        {section==='orders' && (
-          <div style={s.sec}><h1 style={s.h1}>Orders</h1><p style={s.sub}>{orders.length} orders · {orders.filter(o=>o.urgent).length} urgent</p>
-            {orders.map(o=>(
-              <div key={o.id} style={{...s.card,...(o.urgent?{borderLeft:'3px solid #dc2626'}:{}),marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><span style={{fontSize:15,fontWeight:700}}>{o.id}</span><Badge status={o.status}/>
-                      {o.urgent&&<span style={{fontSize:11,background:'rgba(248,113,113,0.14)',color:'#fca5a5',padding:'2px 6px',borderRadius:0,fontWeight:600}}>URGENT</span>}
-                      {o.discount>0&&<span style={{fontSize:11,background:'rgba(255,200,0,0.14)',color:'#ffc800',padding:'2px 6px',borderRadius:0,fontWeight:600}}>{o.discount}% OFF</span>}
-                    </div><div style={{fontSize:13,fontWeight:500,color:'#e4e4e7'}}>{o.client}</div><div style={{fontSize:13,color:'#b3b3bc'}}>{o.items} · {o.date}</div></div><div style={{textAlign:'right'}}><div style={{fontSize:20,fontWeight:700}}>${o.discount>0?(o.total*(1-o.discount/100)).toFixed(2):o.total.toFixed(2)}</div>
-                    {o.discount>0&&<div style={{fontSize:12,color:'#b3b3bc',textDecoration:'line-through'}}>${o.total.toFixed(2)}</div>}
-                  </div></div><div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
-                  {['new','printing','review','shipped','overdue'].map(st=>(
-                    <button key={st} onClick={()=>updateOrderStatus(o.id,st)}
-                      style={{...s.smBtn,...(o.status===st?{background:'rgba(255,200,0,0.1)',color:'#fff',borderColor:'#ffc800'}:{})}}>
-                      {st.charAt(0).toUpperCase()+st.slice(1)}
-                    </button>
-                  ))}
-                  <button onClick={()=>{setSection('billing');setBillingTab('discount');setDiscountTarget('order');setDiscountOrder(o.id);}} style={{...s.smBtn,color:'#ffc800'}}> Discount</button><button onClick={()=>{const i=messages.findIndex(m=>m.client===o.client);setActiveMsg(i>=0?i:null);setSection('messages');}} style={s.smBtn}> Message</button></div></div>
-            ))}
-          </div>
-        )}
+        {section==='orders' && <AdminOrders />}
 
         {/* REQUESTS */}
         {section==='requests' && (
@@ -800,67 +443,6 @@ export default function AdminPage() {
                   );
                 })}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* PRODUCTS */}
-        {section==='products' && (
-          <div style={s.sec}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}><div><h1 style={s.h1}>Products</h1><p style={s.sub}>{products.length} product{products.length!==1?'s':''} in catalog</p></div><button onClick={openAddProduct} style={{background:'#ffc800',color:'#000',border:'none',borderRadius:0,padding:'9px 18px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                + Add Product
-              </button></div>
-
-            {products.length === 0 ? (
-              <div style={{...s.card,...s.empty}}><div style={{fontSize:40,marginBottom:12}}></div><div style={{fontWeight:600,color:'#e4e4e7',marginBottom:6}}>No products yet</div><div style={{fontSize:13}}>Click "+ Add Product" to build your catalog.</div></div>
-            ) : (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:16}}>
-                {products.map(p=>(
-                  <div key={p.id} style={{background:'#0e0e10',borderRadius:0,border:'1px solid #222226',overflow:'hidden'}}><div style={{height:160,background:'#141417',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
-                      {p.frontImage
-                        ? <img src={p.frontImage} alt={p.name} style={{width:'100%',height:'100%',objectFit:'contain'}}/>
-                        : <span style={{fontSize:40,opacity:0.3}}></span>
-                      }
-                      {p.category && (
-                        <span style={{position:'absolute',top:8,left:8,fontSize:10,fontWeight:700,background:'#050506',color:'#ffc800',padding:'2px 8px',borderRadius:0}}>
-                          {p.category}
-                        </span>
-                      )}
-                    </div><div style={{padding:'14px 16px'}}><div style={{fontSize:14,fontWeight:700,color:'#f4f4f5',marginBottom:2}}>{p.name}</div><div style={{fontSize:12,color:'#b3b3bc',marginBottom:6}}>{p.brand} · {p.sku}</div>
-                      {p.price>0 && <div style={{fontSize:13,fontWeight:600,color:'#34d399',marginBottom:8}}>${parseFloat(p.price).toFixed(2)}</div>}
-                      {p.colors && <div style={{fontSize:11,color:'#a0a0a9',marginBottom:10}} title={p.colors}> {p.colors.split(',').map(c=>c.trim()).filter(Boolean).join(' · ')}</div>}
-                      <div style={{display:'flex',gap:8}}><button onClick={()=>openEditProduct(p)} style={{...s.smBtn,flex:1}}> Edit</button><button onClick={()=>{ if(confirm('Delete this product?')) deleteProduct(p.id); }} style={{...s.smBtn,color:'#dc2626',borderColor:'rgba(248,113,113,0.4)'}}></button></div></div></div>
-                ))}
-              </div>
-            )}
-
-            {/* Add / Edit Product Modal */}
-            {showProductModal && (
-              <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:999,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'24px 16px',overflowY:'auto'}}
-                onClick={e=>e.target===e.currentTarget&&setShowProductModal(false)}><div style={{background:'#0e0e10',borderRadius:0,padding:28,width:'100%',maxWidth:560,marginTop:8,marginBottom:24}}><h2 style={{fontSize:18,fontWeight:700,color:'#f4f4f5',marginBottom:20}}>{editingProduct?'Edit Product':'Add Product'}</h2><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}><div><label style={s.label}>Product Name *</label><input value={productForm.name} onChange={e=>setPF('name',e.target.value)} placeholder="Port & Company PC54" style={s.inp}/></div><div><label style={s.label}>Brand</label><input value={productForm.brand} onChange={e=>setPF('brand',e.target.value)} placeholder="Port & Company" style={s.inp}/></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}><div><label style={s.label}>SKU *</label><input value={productForm.sku} onChange={e=>setPF('sku',e.target.value)} placeholder="PC54" style={s.inp}/></div><div><label style={s.label}>Category</label><select value={productForm.category} onChange={e=>setPF('category',e.target.value)} style={s.inp}>
-                        {PRODUCT_CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                      </select></div><div><label style={s.label}>Base Price ($)</label><input type="number" min="0" step="0.01" value={productForm.price} onChange={e=>setPF('price',e.target.value)} placeholder="8.50" style={s.inp}/></div></div><div style={{marginBottom:12}}><label style={s.label}>Available Colors <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label><input value={productForm.colors} onChange={e=>setPF('colors',e.target.value)} placeholder="White, Black, Navy, Red, Royal" style={s.inp}/></div><div style={{marginBottom:12}}><label style={s.label}>Print Areas <span style={{fontWeight:400,textTransform:'none'}}>(comma-separated)</span></label><input value={productForm.printAreas} onChange={e=>setPF('printAreas',e.target.value)} placeholder="Front, Back, Left Sleeve, Right Sleeve" style={s.inp}/></div><div style={{marginBottom:16}}><label style={s.label}>Decoration Methods</label><div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-                      {DECORATION_OPTIONS.map(d=>(
-                        <button key={d} type="button" onClick={()=>toggleDecoration(d)}
-                          style={{padding:'5px 12px',borderRadius:0,border:'1px solid',fontSize:12,cursor:'pointer',fontWeight:500,
-                            background:productForm.decorations.includes(d)?'#ffc800':'#141417',
-                            color:productForm.decorations.includes(d)?'#ffc800':'#b3b3bc',
-                            borderColor:productForm.decorations.includes(d)?'#ffc800':'#222226'}}>
-                          {d}
-                        </button>
-                      ))}
-                    </div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
-                    {[['frontImage','Front Image'],['backImage','Back Image']].map(([field,label])=>(
-                      <div key={field}><label style={s.label}>{label}</label>
-                        {productForm[field] && (
-                          <div style={{position:'relative',marginBottom:6}}><img src={productForm[field]} alt={label} style={{width:'100%',height:100,objectFit:'contain',borderRadius:0,border:'1px solid #222226',background:'#141417'}}/><button onClick={()=>setPF(field,'')} style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:0,background:'#dc2626',color:'#fff',border:'none',fontSize:12,cursor:'pointer',lineHeight:'20px'}}>×</button></div>
-                        )}
-                        <div style={{display:'flex',flexDirection:'column',gap:6}}><label style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px dashed #34343a',borderRadius:0,cursor:'pointer',fontSize:12,color:'#b3b3bc'}}><span> Upload file</span><input type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleProductImage(field,e.target.files[0])}/></label><input value={productForm[field].startsWith('data:') ? '' : productForm[field]} onChange={e=>setPF(field,e.target.value)}
-                            placeholder="or paste image URL…" style={{...s.inp,fontSize:12}}/></div></div>
-                    ))}
-                  </div><div style={{display:'flex',gap:10}}><button onClick={saveProduct} disabled={!productForm.name||!productForm.sku}
-                      style={{...s.saveBtn,flex:1,padding:'10px',fontSize:14,opacity:(!productForm.name||!productForm.sku)?0.5:1}}>
-                      {editingProduct ? 'Save Changes' : 'Add Product'}
-                    </button><button onClick={()=>setShowProductModal(false)} style={{...s.cancelBtn,padding:'10px 20px',fontSize:14}}>Cancel</button></div></div></div>
             )}
           </div>
         )}
@@ -1205,154 +787,11 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* BILLING */}
-        {section==='billing' && (
-          <div style={s.sec}><h1 style={s.h1}>Billing</h1><p style={s.sub}>Invoices, discounts, and tax reports</p>
+        {section==='billing' && <AdminBilling />}
 
-            {/* Tabs */}
-            <div style={s.tabs}>
-              {[['invoices',' Invoices'],['create',' Create Invoice'],['discount',' Discounts'],['reports',' Tax Reports']].map(([id,label])=>(
-                <button key={id} onClick={()=>setBillingTab(id)} style={{...s.tab,...(billingTab===id?s.tabActive:{})}}>{label}</button>
-              ))}
-            </div>
-
-            {/* INVOICES */}
-            {billingTab==='invoices' && (
-              <div><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
-                  {[
-                    {label:'Outstanding', value:'$'+invoices.filter(i=>i.status==='pending'||i.status==='overdue').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#dc2626'},
-                    {label:'Overdue',     value:'$'+invoices.filter(i=>i.status==='overdue').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#ffc800'},
-                    {label:'Paid',        value:'$'+invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#34d399'},
-                    {label:'Total Billed',value:'$'+invoices.reduce((s,i)=>s+i.amount,0).toFixed(2),color:'#f4f4f5'},
-                  ].map(st=>(
-                    <div key={st.label} style={s.statCard}><div style={{fontSize:11,color:'#b3b3bc',marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div><div style={{fontSize:20,fontWeight:700,color:st.color}}>{st.value}</div></div>
-                  ))}
-                </div><div style={s.card}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr style={{borderBottom:'2px solid #222226'}}>
-                        {['Invoice','Client','Amount','Issued','Due','Status','Actions'].map(h=>(
-                          <th key={h} style={{padding:'8px 10px',textAlign:'left',color:'#b3b3bc',fontWeight:600,fontSize:11,textTransform:'uppercase'}}>{h}</th>
-                        ))}
-                      </tr></thead><tbody>
-                      {invoices.map(inv=>{
-                        const sc=SC[inv.status]||SC.pending;
-                        return (
-                          <tr key={inv.id} style={{borderBottom:'1px solid #1c1c20'}}><td style={{padding:'10px',fontWeight:700,color:'#f4f4f5'}}>{inv.id}</td><td style={{padding:'10px',color:'#e4e4e7'}}>{inv.client}</td><td style={{padding:'10px',fontWeight:600}}>${inv.amount.toFixed(2)}</td><td style={{padding:'10px',color:'#b3b3bc'}}>{inv.issued}</td><td style={{padding:'10px',color:'#b3b3bc'}}>{inv.due}</td><td style={{padding:'10px'}}><Badge status={inv.status}/></td><td style={{padding:'10px'}}><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><button onClick={()=>setPreviewInv(inv)} style={s.smBtn}>Preview</button>
-                                {inv.status!=='paid'&&inv.status!=='waived'&&<><button onClick={()=>markPaid(inv.id)} style={{...s.smBtn,color:'#34d399'}}>Mark Paid</button><button onClick={()=>waiveInv(inv.id)} style={{...s.smBtn,color:'#dc2626'}}>Waive</button></>}
-                              </div></td></tr>
-                        );
-                      })}
-                    </tbody></table></div></div>
-            )}
-
-            {/* CREATE INVOICE */}
-            {billingTab==='create' && (
-              <div style={{maxWidth:700}}><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Invoice Details</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}><div><label style={s.label}>Client</label><select style={s.inp} value={newInv.client} onChange={e=>setNewInv(n=>({...n,client:e.target.value}))}><option value="">Select client…</option>
-                        {clients.map(c=><option key={c.id}>{c.name}</option>)}
-                      </select></div><div><label style={s.label}>Due Date</label><input type="date" style={s.inp} value={newInv.due} onChange={e=>setNewInv(n=>({...n,due:e.target.value}))}/></div><div style={{gridColumn:'span 2'}}><label style={s.label}>Note (optional)</label><input style={s.inp} value={newInv.note} onChange={e=>setNewInv(n=>({...n,note:e.target.value}))} placeholder="e.g. Net 30, rush order…"/></div></div></div><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Line Items</h3><div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}>
-                    {['Description','Qty','Unit Price',''].map(h=><div key={h} style={{fontSize:11,fontWeight:600,color:'#b3b3bc',textTransform:'uppercase'}}>{h}</div>)}
-                  </div>
-                  {lineItems.map((line,idx)=>(
-                    <div key={idx} style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 32px',gap:8,marginBottom:8}}><input style={s.inp} value={line.desc} onChange={e=>setLine(idx,'desc',e.target.value)} placeholder="e.g. 24x T-Shirts"/><input style={s.inp} type="number" value={line.qty} onChange={e=>setLine(idx,'qty',e.target.value)} placeholder="24"/><input style={s.inp} type="number" step="0.01" value={line.price} onChange={e=>setLine(idx,'price',e.target.value)} placeholder="10.50"/><button onClick={()=>removeLine(idx)} style={{background:'rgba(248,113,113,0.14)',border:'none',borderRadius:0,color:'#dc2626',cursor:'pointer',fontSize:18,fontWeight:700}}>×</button></div>
-                  ))}
-                  <button onClick={addLine} style={{padding:'6px 14px',background:'transparent',border:'1px dashed #34343a',borderRadius:0,fontSize:13,color:'#b3b3bc',cursor:'pointer',marginTop:4}}>+ Add Line Item</button>
-                  {lineItems.some(l=>l.qty&&l.price)&&(()=>{
-                    const sub=lineItems.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
-                    const tax=sub*TAX_RATE;
-                    return (
-                      <div style={{marginTop:14,padding:14,background:'#141417',borderRadius:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,fontSize:13}}><div style={{color:'#b3b3bc'}}>Subtotal: <strong>${sub.toFixed(2)}</strong></div><div style={{color:'#b3b3bc'}}>Tax (7%): <strong>${tax.toFixed(2)}</strong></div><div style={{fontSize:16,fontWeight:700,color:'#f4f4f5',borderTop:'1px solid #222226',paddingTop:6,marginTop:2}}>Total: ${(sub+tax).toFixed(2)}</div></div>
-                    );
-                  })()}
-                </div><div style={{display:'flex',alignItems:'center',gap:12}}><button onClick={createInvoice} style={s.saveBtn}>Create Invoice</button>
-                  {createMsg&&<span style={{fontSize:13,fontWeight:500,color:createMsg.startsWith('')?'#059669':'#dc2626'}}>{createMsg}</span>}
-                </div></div>
-            )}
-
-            {/* DISCOUNTS */}
-            {billingTab==='discount' && (
-              <div style={{maxWidth:600}}><div style={s.card}><h3 style={s.cardTitle}>Apply Discount</h3><div style={{display:'flex',gap:8,marginBottom:16}}>
-                    {[['client','By Client'],['order','By Order']].map(([id,label])=>(
-                      <button key={id} onClick={()=>setDiscountTarget(id)}
-                        style={{...s.tab,...(discountTarget===id?s.tabActive:{})}}>
-                        {label}
-                      </button>
-                    ))}
-                  </div><div style={{display:'flex',flexDirection:'column',gap:14}}>
-                    {discountTarget==='client' ? (
-                      <div><label style={s.label}>Client</label><select style={s.inp} value={discountClient} onChange={e=>setDiscountClient(e.target.value)}><option value="">Select client…</option>
-                          {clients.map(c=><option key={c.id}>{c.name}</option>)}
-                        </select></div>
-                    ) : (
-                      <div><label style={s.label}>Order</label><select style={s.inp} value={discountOrder} onChange={e=>setDiscountOrder(e.target.value)}><option value="">Select order…</option>
-                          {orders.map(o=><option key={o.id} value={o.id}>{o.id} — {o.client} (${o.total.toFixed(2)})</option>)}
-                        </select></div>
-                    )}
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:12}}><div><label style={s.label}>Discount Amount</label><input type="number" style={s.inp} value={discountAmt} onChange={e=>setDiscountAmt(e.target.value)} placeholder="10"/></div><div><label style={s.label}>Type</label><select style={s.inp} value={discountType} onChange={e=>setDiscountType(e.target.value)}><option value="percent">Percent (%)</option><option value="dollar">Dollar ($)</option></select></div></div><div style={{display:'flex',alignItems:'center',gap:12}}><button onClick={applyDiscount} style={s.saveBtn}>Apply Discount</button>
-                      {discountMsg&&<span style={{fontSize:13,fontWeight:500,color:discountMsg.startsWith('')?'#059669':'#dc2626'}}>{discountMsg}</span>}
-                    </div></div></div></div>
-            )}
-
-            {/* TAX REPORTS */}
-            {billingTab==='reports' && (
-              <div><div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}><div style={{display:'flex',gap:4,background:'#141417',padding:4,borderRadius:0}}>
-                    {[['monthly','Monthly'],['quarterly','Quarterly'],['yearly','Yearly']].map(([id,label])=>(
-                      <button key={id} onClick={()=>setReportType(id)} style={{...s.tab,...(reportType===id?s.tabActive:{})}}>{label}</button>
-                    ))}
-                  </div>
-                  {reportType!=='yearly'&&(
-                    <select style={s.inp} value={reportYear} onChange={e=>setReportYear(e.target.value)}>
-                      {['2026','2025','2024'].map(y=><option key={y}>{y}</option>)}
-                    </select>
-                  )}
-                  <button onClick={()=>window.print()} style={{padding:'7px 14px',background:'#141417',border:'1px solid #222226',borderRadius:0,fontSize:12,cursor:'pointer'}}> Print Report</button></div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
-                  {[
-                    {label:'Total Revenue',    value:'$'+totalRev.toFixed(2),            color:'#34d399'},
-                    {label:'Tax Collected 7%', value:'$'+totalTax.toFixed(2),            color:'#ffc800'},
-                    {label:'Net Revenue',      value:'$'+(totalRev-totalTax).toFixed(2), color:'#000000'},
-                  ].map(st=>(
-                    <div key={st.label} style={{...s.statCard,textAlign:'center'}}><div style={{fontSize:11,color:'#b3b3bc',marginBottom:6,textTransform:'uppercase',letterSpacing:0.5}}>{st.label}</div><div style={{fontSize:22,fontWeight:700,color:st.color}}>{st.value}</div></div>
-                  ))}
-                </div><div style={{background:'#0e0e10',borderRadius:0,border:'1px solid #222226',overflow:'hidden'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr style={{background:'#050506'}}>
-                        {['Period','Invoices','Revenue','Tax (7%)','Net'].map(h=>(
-                          <th key={h} style={{padding:'10px 16px',textAlign:h==='Period'?'left':'right',color:'#ffc800',fontWeight:700,fontSize:12}}>{h}</th>
-                        ))}
-                      </tr></thead><tbody>
-                      {reportData.map((row,i)=>(
-                        <tr key={i} style={{borderBottom:'1px solid #1c1c20',background:i%2===0?'#0e0e10':'#fafafa'}}><td style={{padding:'10px 16px',fontWeight:600,color:'#f4f4f5'}}>{row.label}</td><td style={{padding:'10px 16px',textAlign:'right',color:'#b3b3bc'}}>{row.count}</td><td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#34d399'}}>${row.revenue.toFixed(2)}</td><td style={{padding:'10px 16px',textAlign:'right',color:'#ffc800'}}>${row.tax.toFixed(2)}</td><td style={{padding:'10px 16px',textAlign:'right',fontWeight:600,color:'#f4f4f5'}}>${(row.revenue-row.tax).toFixed(2)}</td></tr>
-                      ))}
-                    </tbody><tfoot><tr style={{background:'#050506'}}><td style={{padding:'12px 16px',fontWeight:700,color:'#ffc800'}}>TOTAL</td><td style={{padding:'12px 16px',textAlign:'right',color:'#ffc800'}}>{reportData.reduce((s,r)=>s+r.count,0)}</td><td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#ffc800'}}>${totalRev.toFixed(2)}</td><td style={{padding:'12px 16px',textAlign:'right',color:'#ffc800'}}>${totalTax.toFixed(2)}</td><td style={{padding:'12px 16px',textAlign:'right',fontWeight:700,color:'#ffc800'}}>${(totalRev-totalTax).toFixed(2)}</td></tr></tfoot></table></div><p style={{fontSize:12,color:'#a0a0a9',marginTop:10}}>* Based on paid invoices only. Consult your accountant for official filing.</p></div>
-            )}
-          </div>
-        )}
-
-        {/* INVENTORY */}
-        {section==='inventory' && (
-          <div style={s.sec}><h1 style={s.h1}>Inventory</h1><p style={s.sub}>{inventory.filter(i=>i.status!=='ok').length} items need attention</p>
-            {inventory.map(item=>(
-              <div key={item.id} style={{...s.card,...(item.status==='critical'?{borderLeft:'3px solid #dc2626'}:item.status==='low'?{borderLeft:'3px solid #f59e0b'}:{}),marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12}}><div><div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}><span style={{fontSize:14,fontWeight:600}}>{item.name}</span><Badge status={item.status}/></div><div style={{fontSize:13,color:'#b3b3bc'}}>SKU: {item.sku} · Min: {item.min} units</div></div><div style={{textAlign:'right'}}><div style={{fontSize:26,fontWeight:700,color:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669'}}>{item.qty}</div><div style={{fontSize:11,color:'#b3b3bc'}}>in stock</div></div></div><div style={{marginTop:10,background:'#141417',borderRadius:0,height:6,overflow:'hidden'}}><div style={{height:'100%',width:`${Math.min(100,(item.qty/Math.max(item.min*2,item.qty))*100)}%`,background:item.status==='critical'?'#dc2626':item.status==='low'?'#f59e0b':'#059669',borderRadius:0}}/></div></div>
-            ))}
-          </div>
-        )}
-
-        {/* SETTINGS */}
-        {section==='settings' && (
-          <div style={s.sec}><h1 style={s.h1}>Settings</h1><p style={s.sub}>Portal configuration</p><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Admin Access</h3><div style={{display:'flex',flexDirection:'column',gap:14}}><div><label style={s.label}>Admin Password</label><div style={{display:'flex',gap:8}}><input type="password" placeholder="New password" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Update</button></div></div><div><label style={s.label}>Admin Email</label><div style={{display:'flex',gap:8}}><input type="email" placeholder="admin@sascreenprinting.com" style={{...s.inp,flex:1}}/><button style={s.saveBtn}>Save</button></div></div></div></div><div style={{...s.card,marginBottom:16}}><h3 style={s.cardTitle}>Notifications</h3>
-              {['Email me on new orders','Email me on new messages','Email me when artwork is uploaded','Email me when inventory is low','Email me when invoices are overdue'].map(pref=>(
-                <label key={pref} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid #1c1c20',cursor:'pointer',fontSize:14,color:'#e4e4e7'}}><input type="checkbox" defaultChecked style={{width:16,height:16}}/>{pref}
-                </label>
-              ))}
-            </div><div style={s.card}><h3 style={s.cardTitle}>Business Info</h3><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-                {[['Business Name','S&A Screen Printing'],['Phone','(973) 555-0100'],['Email','info@sascreenprinting.com'],['Address','123 Print Ave, Newark NJ'],['Tax Rate (%)','7'],['Default Net Terms','30']].map(([label,val])=>(
-                  <div key={label}><label style={s.label}>{label}</label><input style={s.inp} defaultValue={val}/></div>
-                ))}
-              </div><button style={{...s.saveBtn,marginTop:16}}>Save Business Info</button></div></div>
-        )}
+        {section==='settings' && <AdminSettings />}
       </main>
 
-      {/* Invoice Preview Modal */}
-      {previewInv && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20}}><div style={{background:'#0e0e10',borderRadius:0,padding:28,maxWidth:700,width:'100%',maxHeight:'92vh',overflowY:'auto'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}} className="no-print"><h3 style={{margin:0,fontSize:16,fontWeight:700}}>Invoice Preview — {previewInv.id}</h3><div style={{display:'flex',gap:8}}><button onClick={()=>window.print()} style={{padding:'6px 14px',background:'#050506',color:'#ffc800',border:'none',borderRadius:0,fontSize:12,fontWeight:600,cursor:'pointer'}}> Print</button><button onClick={()=>setPreviewInv(null)} style={{padding:'6px 14px',background:'#141417',border:'1px solid #222226',borderRadius:0,fontSize:12,cursor:'pointer'}}> Close</button></div></div><div style={{fontFamily:"var(--font-dm),'DM Sans',sans-serif"}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:24}}><div><div style={{fontSize:20,fontWeight:800,color:'#000000'}}>S&A Screen Printing</div><div style={{fontSize:13,color:'#b3b3bc',lineHeight:1.7,marginTop:4}}>123 Print Ave, Newark NJ<br/>(973) 555-0100 · info@sascreenprinting.com</div></div><div style={{textAlign:'right'}}><div style={{fontSize:24,fontWeight:800,color:'#000000'}}>INVOICE</div><div style={{fontSize:18,fontWeight:700,color:'#ffc800'}}>{previewInv.id}</div></div></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20,padding:14,background:'#141417',borderRadius:0}}><div><div style={{fontSize:11,fontWeight:700,color:'#a0a0a9',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Bill To</div><div style={{fontSize:14,fontWeight:600}}>{previewInv.client}</div></div><div><div style={{fontSize:11,fontWeight:700,color:'#a0a0a9',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Details</div><div style={{fontSize:13,color:'#e4e4e7',lineHeight:1.7}}><div>Issued: {previewInv.issued}</div><div>Due: {previewInv.due}</div>{previewInv.note&&<div>Note: {previewInv.note}</div>}</div></div></div><table style={{width:'100%',borderCollapse:'collapse',marginBottom:16}}><thead><tr style={{background:'#050506'}}>{['Description','Qty','Unit Price','Total'].map(h=><th key={h} style={{padding:'9px 12px',textAlign:h==='Description'?'left':'right',color:'#ffc800',fontSize:12,fontWeight:700}}>{h}</th>)}</tr></thead><tbody>{previewInv.items.map((item,i)=><tr key={i} style={{borderBottom:'1px solid #1c1c20'}}><td style={{padding:'10px 12px',fontSize:13}}>{item.desc}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>{item.qty}</td><td style={{padding:'10px 12px',fontSize:13,textAlign:'right'}}>${item.price.toFixed(2)}</td><td style={{padding:'10px 12px',fontSize:13,fontWeight:600,textAlign:'right'}}>${(item.qty*item.price).toFixed(2)}</td></tr>)}</tbody></table>
-              {(()=>{const sub=previewInv.items.reduce((s,i)=>s+i.qty*i.price,0);const tax=sub*TAX_RATE;return(<div style={{display:'flex',justifyContent:'flex-end'}}><div style={{width:200}}>{[['Subtotal',sub],['Tax (7%)',tax]].map(([label,val])=><div key={label} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',fontSize:13,color:'#b3b3bc',borderBottom:'1px solid #1c1c20'}}><span>{label}</span><span>${val.toFixed(2)}</span></div>)}<div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:16,fontWeight:700,color:'#f4f4f5'}}><span>Total</span><span>${(sub+tax).toFixed(2)}</span></div></div></div>);})()}
-              <div style={{marginTop:20,padding:14,background:'#141417',borderRadius:0,fontSize:13,color:'#b3b3bc',lineHeight:1.7}}><strong style={{color:'#f4f4f5'}}>Payment:</strong> Venmo · Zelle · Check · Bank Transfer<br/><strong style={{color:'#f4f4f5'}}>Questions?</strong> info@sascreenprinting.com · (973) 555-0100</div></div></div></div>
-      )}
     </div>
   );
 }

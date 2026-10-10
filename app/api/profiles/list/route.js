@@ -14,7 +14,7 @@ export async function GET() {
     if (!auth.isAdmin) return forbidden();
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, business_name, contact_name, email')
+      .select('id, business_name, contact_name, email, phone, created_at')
       .eq('is_admin', false)
       .order('business_name', { ascending: true });
 

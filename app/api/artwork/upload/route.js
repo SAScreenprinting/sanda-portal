@@ -34,17 +34,20 @@ export async function POST(request) {
 
   const { data: { publicUrl } } = supabase.storage.from('artwork').getPublicUrl(path);
 
-  const { error: dbErr } = await supabase.from('artwork').insert({
+  // `name` is required by the table. `status` and `order_id` come from supabase/go_live_fixes.sql; if that
+  // has not been run yet, save the file with the columns every database has so an upload never fails.
+  const base = {
     client_id: clientId,
-    order_id:  orderId,
-    file_name: file.name,
+    name:      file.name,
     file_url:  publicUrl,
     file_size: file.size,
     file_type: file.type,
-    status:    'pending',
     label:     label,
-  });
-
+  };
+  let { error: dbErr } = await supabase.from('artwork').insert({ ...base, order_id: orderId, status: 'pending' });
+  if (dbErr && /order_id|status/.test(dbErr.message || '')) {
+    ({ error: dbErr } = await supabase.from('artwork').insert(base));
+  }
   if (dbErr) return Response.json({ error: dbErr.message }, { status: 500 });
   return Response.json({ ok: true, url: publicUrl });
 }

@@ -13,14 +13,6 @@ const STATUS = {
   'Delivered':        { color: '#9ca3af', step: 6, live: false },
 };
 
-const LOYALTY_TIERS = [
-  { name: 'Bronze',   min: 0,  max: 4,  perks: ['Early access to new products'] },
-  { name: 'Silver',   min: 5,  max: 14, perks: ['5% reorder discount', 'Priority support'] },
-  { name: 'Gold',     min: 15, max: 29, perks: ['10% reorder discount', 'Free setup on reorders', 'Dedicated rep'] },
-  { name: 'Platinum', min: 30, max: Infinity, perks: ['15% discount on all orders', 'Free rush processing', 'White-glove service'] },
-];
-const tierFor = (n) => LOYALTY_TIERS.find((t) => n >= t.min && n <= t.max) || LOYALTY_TIERS[0];
-
 const ONBOARDING_STEPS = [
   { title: 'Welcome to your portal', sub: 'Everything you need to manage your S&A print orders in one place.', icon: 'dashboard', tip: null },
   { title: 'Track your orders', sub: 'Watch every order move from Art Approved to Production to Shipped in real time.', icon: 'orders', tip: 'Head to Orders to see your current status.' },
@@ -151,10 +143,11 @@ export default function DashboardPage() {
   const nextStep = () => (onboardingStep >= ONBOARDING_STEPS.length - 1 ? completeOnboarding() : setOnboardingStep((s) => s + 1));
 
   const firstName = profile?.contact_name?.split(' ')[0];
-  const total = loading ? 0 : stats.totalOrders;
-  const tier = tierFor(total);
-  const tierIdx = LOYALTY_TIERS.indexOf(tier);
-  const nextTier = LOYALTY_TIERS[tierIdx + 1];
+  // What the client should do next, built only from their real orders and invoices.
+  const nextSteps = [];
+  if (stats.pendingArt > 0) nextSteps.push({ title: `Upload artwork for ${stats.pendingArt} order${stats.pendingArt === 1 ? '' : 's'}`, sub: 'We cannot start printing until it is approved.', href: '/orders' });
+  if (stats.balanceDue > 0) nextSteps.push({ title: `Pay your open invoice, $${stats.balanceDue.toFixed(2)}`, sub: stats.balanceDueDate ? `Due ${stats.balanceDueDate}` : 'See Billing for payment options.', href: '/billing' });
+  if (stats.active > 0) nextSteps.push({ title: `${stats.active} order${stats.active === 1 ? ' is' : 's are'} in progress`, sub: 'Track every step in Orders.', href: '/orders' });
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const actions = [
@@ -217,24 +210,34 @@ export default function DashboardPage() {
         </div>
 
         <div className="sp-card sp-in" style={{ '--i': 6 }}>
-          <div className="sp-tier">
-            <div className="sp-label">Loyalty status</div>
-            <div className="sp-tier-name">{tier.name}</div>
-            <div className="sp-sub">{total} order{total !== 1 ? 's' : ''} total{nextTier ? `, ${nextTier.min - total} more to ${nextTier.name}` : ''}</div>
-            <div className="sp-tier-bar" aria-hidden="true">
-              {LOYALTY_TIERS.map((t, k) => <i key={t.name} className={k <= tierIdx ? 'on' : ''} style={{ '--k': k }} />)}
-            </div>
-            <div className="sp-tier-names">
-              {LOYALTY_TIERS.map((t, k) => <span key={t.name} className={k === tierIdx ? 'on' : ''}>{t.name}</span>)}
-            </div>
-            <div style={{ marginTop: 22 }}>
-              {tier.perks.map((p) => (
-                <div key={p} className="sp-perk">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" aria-hidden="true"><path d="M4 12l5 5 11-11" /></svg>
-                  {p}
-                </div>
-              ))}
-            </div>
+          <div className="sp-panel-head"><h2>What&apos;s next</h2></div>
+          <div className="sp-next">
+            {loading ? (
+              <div className="sp-empty">Loading…</div>
+            ) : nextSteps.length === 0 ? (
+              <div className="sp-empty">
+                <b>You are all caught up</b>
+                Nothing needs your attention right now.
+                <div><a href="/studio" className="sp-btn">Start a new design <Arrow /></a></div>
+              </div>
+            ) : (
+              nextSteps.map((n) => (
+                <a key={n.title} href={n.href} className="sp-next-row">
+                  <div>
+                    <div className="sp-next-title">{n.title}</div>
+                    <div className="sp-next-sub">{n.sub}</div>
+                  </div>
+                  <Arrow />
+                </a>
+              ))
+            )}
+            <a href="/messages" className="sp-next-row sp-next-quiet">
+              <div>
+                <div className="sp-next-title">Questions about an order?</div>
+                <div className="sp-next-sub">Message your S&amp;A account rep.</div>
+              </div>
+              <Arrow />
+            </a>
           </div>
         </div>
       </section>

@@ -84,7 +84,7 @@ export default function SettingsPage() {
               <div className="sp-field"><label>Business name</label><input value={form.business_name} onChange={(e) => setForm((f) => ({ ...f, business_name: e.target.value }))} placeholder="Your business" /></div>
               <div className="sp-field"><label>Contact name</label><input value={form.contact_name} onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))} placeholder="Your name" /></div>
             </div>
-            <div className="sp-field"><label>Phone</label><input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(201) 555-0182" /></div>
+            <div className="sp-field"><label>Phone</label><input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Phone number" /></div>
             {msg(profileMsg)}
             <button type="submit" disabled={profileSaving} className="sp-btn">{profileSaving ? 'Saving…' : 'Save profile'}</button>
           </div>

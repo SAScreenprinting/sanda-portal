@@ -9,6 +9,7 @@ import AdminClients from './sections/Clients';
 import AdminOrders from './sections/Orders';
 import AdminBilling from './sections/Billing';
 import AdminSettings from './sections/Settings';
+import NewDesign from './sections/NewDesign';
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'sanda2024admin';
 
@@ -449,7 +450,7 @@ export default function AdminPage() {
 
         {/* ARTWORK */}
         {section==='designs' && (
-          <div style={s.sec}><h1 style={s.h1}>Designs</h1><p style={{...s.sub,color:'#e4e4e7'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p><div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
+          <div style={s.sec}><h1 style={s.h1}>Designs</h1><p style={{...s.sub,color:'#e4e4e7'}}>Review what POD clients create in the Design Studio. Open a design to look at the artwork, then approve it or send it back with a reason.</p><NewDesign /><div style={{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}}>
               {['All','Submitted','Approved','In Setup','Live','Denied'].map(f=>(
                 <button key={f} onClick={()=>setDesignFilter(f)} style={{padding:'7px 14px',border:'1px solid '+(designFilter===f?'#ffc800':'#34343a'),background:designFilter===f?'#ffc800':'#121214',color:designFilter===f?'#fff':'#f4f4f5',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
                   {f}{f!=='All' ? ` (${designs.filter(d=>(d.product?.status||'Submitted')===f).length})` : ''}

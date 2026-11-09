@@ -29,15 +29,28 @@ export default function StudioPage() {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [forClient, setForClient] = useState(null); // admin only: the client this design is for
+  const [forClientName, setForClientName] = useState('');
   const mountRef = useRef(null);
   const tokenRef = useRef(null);
 
   useEffect(() => {
     // the product comes from the address bar, which only exists in the browser
+    const qs = new URLSearchParams(window.location.search);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProductId(new URLSearchParams(window.location.search).get('product'));
+    setProductId(qs.get('product'));
+    setForClient(qs.get('client'));
     setReady(true);
   }, []);
+
+  // Show who the design is for (only admins can read the client list; the server also checks admin before saving)
+  useEffect(() => {
+    if (!forClient) return;
+    fetch('/api/profiles/list', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      const c = d?.profiles?.find((p) => p.id === forClient);
+      setForClientName(c ? (c.business_name || c.contact_name || c.email) : '');
+    }).catch(() => {});
+  }, [forClient]);
 
   // Product picker
   useEffect(() => {
@@ -102,7 +115,7 @@ export default function StudioPage() {
         const res = await fetch('/api/designs/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...d, variantTitle: variant?.title && variant.title !== 'Default Title' ? variant.title : null }),
+          body: JSON.stringify({ ...d, forClientId: forClient || undefined, variantTitle: variant?.title && variant.title !== 'Default Title' ? variant.title : null }),
         });
         const out = await res.json();
         if (!res.ok) throw new Error(out.error || 'Could not save your design.');
@@ -115,7 +128,8 @@ export default function StudioPage() {
     }
     window.addEventListener('sa-designer-complete', onComplete);
     return () => window.removeEventListener('sa-designer-complete', onComplete);
-  }, [bootstrap]);
+  }, [bootstrap, forClient]);
+  const clientQs = forClient ? `client=${encodeURIComponent(forClient)}` : '';
 
   const categories = ['All', ...Array.from(new Set((products || []).map((p) => p.category).filter(Boolean)))];
   const shown = (products || []).filter((p) => category === 'All' || p.category === category);
@@ -123,10 +137,11 @@ export default function StudioPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d0d', color: '#eee', fontFamily: "var(--font-dm), 'DM Sans', system-ui, sans-serif" }}>
       <div style={{ height: 52, background: '#111', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: 14, padding: '0 16px', position: 'sticky', top: 0, zIndex: 50 }}>
-        <a href="/dashboard" style={{ color: '#aaa', textDecoration: 'none', fontSize: 13 }}>&larr; Dashboard</a>
+        <a href={forClient ? '/admin' : '/dashboard'} style={{ color: '#aaa', textDecoration: 'none', fontSize: 13 }}>&larr; {forClient ? 'Admin' : 'Dashboard'}</a>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: "var(--font-sora), sans-serif", letterSpacing: '-0.01em' }}>Design Studio</span>
         <div style={{ flex: 1 }} />
-        {productId && <a href="/studio" style={{ color: '#ffc800', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>Change product</a>}
+        {forClient && <span style={{ fontSize: 13, color: '#ffc800', fontWeight: 600 }}>Designing for {forClientName || 'a client'}</span>}
+        {productId && <a href={`/studio${clientQs ? '?' + clientQs : ''}`} style={{ color: '#ffc800', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>Change product</a>}
       </div>
 
       {error && <div style={{ margin: 20, padding: '12px 16px', background: '#3a1414', border: '1px solid #7a2a2a', borderRadius: 8, color: '#ffb4b4', fontSize: 14 }}>{error}</div>}
@@ -146,7 +161,7 @@ export default function StudioPage() {
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
             {shown.map((p) => (
-              <a key={p.id} href={`/studio?product=${encodeURIComponent(p.id)}`}
+              <a key={p.id} href={`/studio?product=${encodeURIComponent(p.id)}${clientQs ? '&' + clientQs : ''}`}
                 style={{ display: 'block', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 0, overflow: 'hidden', textDecoration: 'none', color: '#eee' }}>
                 <div style={{ aspectRatio: '1', background: '#fff', display: 'grid', placeItems: 'center' }}>
                   {p.image && <img src={p.image} alt="" loading="lazy" decoding="async" width="240" height="240" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
@@ -177,10 +192,16 @@ export default function StudioPage() {
               <>
                 <div style={{ fontSize: 34, marginBottom: 8 }}>✓</div>
                 <h2 style={{ margin: '0 0 8px', color: '#fff', fontSize: 20 }}>Design #{result.designNumber} saved</h2>
-                <p style={{ margin: '0 0 20px', color: '#aaa', fontSize: 14, lineHeight: 1.5 }}>Your design and print files are saved to your POD profile. S&A will set it up with your stores.</p>
+                <p style={{ margin: '0 0 20px', color: '#aaa', fontSize: 14, lineHeight: 1.5 }}>
+                  {result.forClient
+                    ? `Saved to ${result.forClient}'s account, approved${result.sku ? ` (SKU ${result.sku})` : ''}. They can publish it to their store from Designs.${result.emailed ? ' They were emailed.' : ' No email was sent.'}`
+                    : result.approved
+                      ? `Saved and approved${result.sku ? ` (SKU ${result.sku})` : ''}. You can publish it to your store from Designs.`
+                      : 'Your design and print files are saved to your POD profile. S&A will set it up with your stores.'}
+                </p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <a href={`/designs/${result.id}`} style={{ padding: '10px 18px', background: '#ffc800', color: '#000', textDecoration: 'none', fontWeight: 800, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>View design</a>
-                  <a href="/studio" style={{ padding: '10px 18px', background: '#2a2a2a', color: '#ddd', textDecoration: 'none', fontSize: 13 }}>Design another</a>
+                  <a href={result.forClient ? '/admin' : `/designs/${result.id}`} style={{ padding: '10px 18px', background: '#ffc800', color: '#000', textDecoration: 'none', fontWeight: 800, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' }}>{result.forClient ? 'Back to admin' : 'View design'}</a>
+                  <a href={`/studio${clientQs ? '?' + clientQs : ''}`} style={{ padding: '10px 18px', background: '#2a2a2a', color: '#ddd', textDecoration: 'none', fontSize: 13 }}>Design another</a>
                 </div>
               </>
             )}

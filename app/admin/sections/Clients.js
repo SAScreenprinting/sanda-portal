@@ -87,7 +87,7 @@ export default function Clients() {
                     <td className="ad-muted">{c.email}</td>
                     <td className="ad-muted">{c.phone || '—'}</td>
                     <td className="ad-muted">{fmtDate(c.created_at)}</td>
-                    <td className="ad-right"><button className="ad-btn ad-btn--sm" onClick={() => { setResetting(c); setNewPw(''); setMsg(null); }}>Reset password</button></td>
+                    <td className="ad-right"><a className="ad-btn ad-btn--sm" style={{ marginRight: 8, textDecoration: 'none' }} href={`/studio?client=${encodeURIComponent(c.id)}`}>Create design</a><button className="ad-btn ad-btn--sm" onClick={() => { setResetting(c); setNewPw(''); setMsg(null); }}>Reset password</button></td>
                   </tr>
                 ))}
               </tbody>

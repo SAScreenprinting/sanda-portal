@@ -89,6 +89,7 @@ export default function DesignTools({ design, onChanged }) {
   const [pick, setPick] = useState({});          // option index -> Set of chosen values
   const [extra2, setExtra2] = useState('2');
   const [extra3, setExtra3] = useState('3');
+  const [useMockups, setUseMockups] = useState(true); // build the design on each color of shirt
   useEffect(() => {
     if (!approved) return;
     fetch(`/api/designs/${design.id}/variants`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -102,6 +103,7 @@ export default function DesignTools({ design, onChanged }) {
   }, [approved, design.id]);
   const multi = !!vinfo;
   const sizeIdx = multi ? vinfo.optionNames.findIndex((n) => /size/i.test(n)) : -1;
+  const colorIdx = multi ? vinfo.optionNames.findIndex((n) => /colou?r/i.test(n)) : -1;
   const chosen = multi
     ? vinfo.variants.filter((v) => v.values.every((val, i) => pick[i]?.has(val))).map((v) => ({
         values: v.values,
@@ -109,6 +111,7 @@ export default function DesignTools({ design, onChanged }) {
       }))
     : [];
   const prices = chosen.map((c) => Number.parseFloat(c.price));
+  const chosenColors = colorIdx >= 0 ? [...new Set(chosen.map((c) => c.values[colorIdx]))] : [];
   const toggle = (i, val) => setPick((p) => { const s = new Set(p[i]); s.has(val) ? s.delete(val) : s.add(val); return { ...p, [i]: s }; });
   const setAll = (i, on) => setPick((p) => ({ ...p, [i]: new Set(on ? vinfo.options[i].values : []) }));
 
@@ -119,9 +122,9 @@ export default function DesignTools({ design, onChanged }) {
   useEffect(() => { setPubPrice(price); }, [price]);
   async function publish(e) {
     e.preventDefault(); setPubMsg(''); setPubBusy(true);
-    const res = await fetch(`/api/designs/${design.id}/publish`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectionId: connId, title, description: desc, price: pubPrice, draft, ...(multi ? { variants: chosen.map((c) => ({ values: c.values, price: c.price })) } : {}) }) });
+    const res = await fetch(`/api/designs/${design.id}/publish`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectionId: connId, title, description: desc, price: pubPrice, draft, ...(multi ? { variants: chosen.map((c) => ({ values: c.values, price: c.price })), mockups: useMockups } : {}) }) });
     const out = await res.json();
-    setPubMsg(res.ok ? `ok:Published${multi ? ` ${out.variantCount} variants` : ''}${draft ? ' as a draft' : ''}. ${out.adminUrl}` : `err:${out.error}`);
+    setPubMsg(res.ok ? `ok:Published${multi ? ` ${out.variantCount} variants` : ''}${out.mockupCount ? ` with ${out.mockupCount} color pictures` : ''}${draft ? ' as a draft' : ''}. ${out.adminUrl}${out.mockupNote ? `  (${out.mockupNote})` : ''}` : `err:${out.error}`);
     setPubBusy(false);
   }
 
@@ -248,6 +251,26 @@ export default function DesignTools({ design, onChanged }) {
                           <span style={{ color: 'var(--muted)' }}>Charge more for big sizes:</span>
                           <label>2XL +$ <input type="number" min="0" step="0.5" value={extra2} onChange={(e) => setExtra2(e.target.value)} style={{ width: 70 }} /></label>
                           <label>3XL and up +$ <input type="number" min="0" step="0.5" value={extra3} onChange={(e) => setExtra3(e.target.value)} style={{ width: 70 }} /></label>
+                        </div>
+                      )}
+                      {colorIdx >= 0 && (
+                        <div>
+                          <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13.5, color: '#e4e4e7', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={useMockups} onChange={(e) => setUseMockups(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#ffc800' }} />
+                            Show the design on each color. Shoppers see that color&apos;s shirt when they pick it.
+                          </label>
+                          {useMockups && chosenColors.length > 0 && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                              {chosenColors.slice(0, 8).map((c) => (
+                                <figure key={c} style={{ margin: 0, textAlign: 'center', width: 92 }}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={`/api/designs/${design.id}/mockup?color=${encodeURIComponent(c)}`} alt={c} loading="lazy" width="92" height="107" style={{ width: 92, height: 107, objectFit: 'contain', background: '#fff', borderRadius: 8 }} />
+                                  <figcaption style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{c}</figcaption>
+                                </figure>
+                              ))}
+                              {chosenColors.length > 8 && <div style={{ alignSelf: 'center', fontSize: 12, color: 'var(--muted)' }}>+{chosenColors.length - 8} more colors</div>}
+                            </div>
+                          )}
                         </div>
                       )}
                       <div style={{ fontSize: 13.5, color: chosen.length ? '#e4e4e7' : '#fca5a5' }}>

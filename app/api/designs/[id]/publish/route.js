@@ -1,15 +1,19 @@
 import { getAuth, unauthorized, serviceDb } from '@/lib/apiAuth';
 import { decryptToken } from '@/lib/tokenCrypto';
-import { publishProduct, publishProductVariants } from '@/lib/shopifyStore';
-import { fetchProductVariants, variantKey } from '@/lib/designVariants';
+import { publishProduct, publishProductVariants, stageImages } from '@/lib/shopifyStore';
+import { fetchProductVariants, variantKey, colorOptionIndex } from '@/lib/designVariants';
+import { buildColorMockups } from '@/lib/designMockups';
 import { buildVariantSkus } from '@/lib/designSku';
+
+// Building and uploading a mockup for every color can take a while
+export const maxDuration = 60;
 
 // Publish an approved design to one of the client's connected Shopify stores (saved as a draft unless they choose otherwise)
 export async function POST(request, { params }) {
   const auth = await getAuth();
   if (!auth.user) return unauthorized();
   const { id } = await params;
-  const { connectionId, title, description, price, draft, variants: chosen } = await request.json();
+  const { connectionId, title, description, price, draft, variants: chosen, mockups: wantMockups = true } = await request.json();
   const db = serviceDb();
   const { data: design } = await db.from('saved_designs').select('id, name, product, decorations').eq('id', id).eq('client_id', auth.user.id).maybeSingle();
   if (!design) return Response.json({ error: 'Design not found' }, { status: 404 });
@@ -35,15 +39,43 @@ export async function POST(request, { params }) {
     const number = design.product?.designNumber;
     if (!number) return Response.json({ error: 'This design has no number yet.' }, { status: 400 });
     const skus = buildVariantSkus(number, info.optionNames, chosen.map((c) => c.values));
+    const token = decryptToken(conn.token_encrypted);
+    const cleanTitle = String(title).trim();
+
+    // The design on a shirt in each chosen color, uploaded to the store, so the picture changes when a shopper picks a color.
+    let mediaFiles = null;
+    const fileByColor = {};
+    let mockupCount = 0;
+    let mockupNote = null;
+    const colorIdx = colorOptionIndex(info.optionNames);
+    if (wantMockups !== false && colorIdx >= 0) {
+      try {
+        const colors = [...new Set(chosen.map((c) => c.values[colorIdx]))];
+        const built = await buildColorMockups({ design, info, colors, userId: auth.user.id });
+        if (built) {
+          const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const staged = await stageImages(conn.store_domain, token, built.items.map((it) => ({ filename: `${slug(design.name)}-${slug(it.color)}-${slug(it.view)}.jpg`, buffer: it.buffer, mimeType: 'image/jpeg' })));
+          mediaFiles = built.items.map((it, i) => ({ source: staged[i], alt: `${cleanTitle} - ${it.color}${built.views.length > 1 ? ` (${it.view})` : ''}` }));
+          built.items.forEach((it, i) => { if (!fileByColor[it.color]) fileByColor[it.color] = mediaFiles[i]; });
+          mockupCount = mediaFiles.length;
+        } else mockupNote = 'This product has no shirt picture to build mockups from, so your design preview was used.';
+      } catch (e) {
+        mediaFiles = null;
+        mockupNote = 'The color pictures could not be built (' + (e.message || 'error') + '), so your design preview was used instead.';
+      }
+    }
     try {
       const images = Object.values(design.decorations?.previews || {});
-      const out = await publishProductVariants(conn.store_domain, decryptToken(conn.token_encrypted), {
-        title: String(title).trim(), description: String(description || '').trim(), draft: draft !== false, images,
+      const out = await publishProductVariants(conn.store_domain, token, {
+        title: cleanTitle, description: String(description || '').trim(), draft: draft !== false, images, mediaFiles,
         optionNames: info.optionNames,
-        variants: chosen.map((c, i) => ({ values: c.values, price: Number.parseFloat(c.price).toFixed(2), sku: skus[i] })),
+        variants: chosen.map((c, i) => ({
+          values: c.values, price: Number.parseFloat(c.price).toFixed(2), sku: skus[i],
+          ...(mediaFiles && fileByColor[c.values[colorIdx]] ? { fileSource: fileByColor[c.values[colorIdx]].source, fileAlt: fileByColor[c.values[colorIdx]].alt } : {}),
+        })),
       });
       await db.from('design_publications').insert({ design_id: id, connection_id: conn.id, external_id: out.id, external_url: out.adminUrl, price: Math.min(...chosen.map((c) => Number.parseFloat(c.price))) });
-      return Response.json({ ok: true, adminUrl: out.adminUrl, variantCount: chosen.length });
+      return Response.json({ ok: true, adminUrl: out.adminUrl, variantCount: chosen.length, mockupCount, mockupNote });
     } catch (e) {
       return Response.json({ error: e.message || 'Could not publish.' }, { status: 502 });
     }

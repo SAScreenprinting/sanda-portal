@@ -1,5 +1,6 @@
 import { isPortalKey } from '@/lib/podLink';
 import { serviceDb } from '@/lib/apiAuth';
+import { designNumberFromSku } from '@/lib/designSku';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +12,17 @@ export async function GET(request) {
   const clientId = url.searchParams.get('clientId');
   if (!sku || !clientId) return Response.json({ design: null });
   const { data } = await serviceDb().from('saved_designs').select('id, name, client_id, product, decorations').eq('client_id', clientId).limit(500);
-  const hit = (data || []).find((d) => String(d.product?.sku || '').toUpperCase() === sku);
+  // Exact SKU first (older single-variant designs), then any variant of the design: POD-<number>-<color>-<size> all share the number.
+  const designs = data || [];
+  const number = designNumberFromSku(sku);
+  const hit = designs.find((d) => String(d.product?.sku || '').toUpperCase() === sku)
+    || (number ? designs.find((d) => String(d.product?.designNumber || '') === number) : null);
   if (!hit) return Response.json({ design: null });
+  const exact = String(hit.product?.sku || '').toUpperCase() === sku;
   return Response.json({
     design: {
       id: hit.id, name: hit.name, clientId: hit.client_id, sku, productTitle: hit.product?.productTitle || null,
-      variantTitle: hit.product?.variantTitle || null, previews: hit.decorations?.previews || {}, printFiles: hit.decorations?.printFiles || [],
+      variantTitle: exact ? (hit.product?.variantTitle || null) : null, // another variant of the design: the order's own variant says which color/size previews: hit.decorations?.previews || {}, printFiles: hit.decorations?.printFiles || [],
     },
   });
 }

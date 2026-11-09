@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { sizeUpcharge } from '@/lib/designSku';
 
 // Looks at a print file in the browser: size in pixels, how much of it is printed, and how many distinct colors it has.
 async function inspectFile(url) {
@@ -82,6 +83,35 @@ export default function DesignTools({ design, onChanged }) {
   const [draft, setDraft] = useState(true);
   const [pubMsg, setPubMsg] = useState('');
   const [pubBusy, setPubBusy] = useState(false);
+
+  // Which colors / sizes to publish: one product with all of them, each with its own SKU
+  const [vinfo, setVinfo] = useState(null);      // null = loading, false = not available, else { optionNames, options, variants }
+  const [pick, setPick] = useState({});          // option index -> Set of chosen values
+  const [extra2, setExtra2] = useState('2');
+  const [extra3, setExtra3] = useState('3');
+  useEffect(() => {
+    if (!approved) return;
+    fetch(`/api/designs/${design.id}/variants`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d || !d.optionNames?.length || (d.optionNames.length === 1 && d.optionNames[0] === 'Title')) { setVinfo(false); return; }
+      const own = String(d.designVariant || '').split('/').map((x) => x.trim());
+      const init = {};
+      d.options.forEach((o, i) => { init[i] = new Set(/size/i.test(o.name) || !o.values.includes(own[i]) ? (/size/i.test(o.name) ? o.values : o.values.slice(0, 1)) : [own[i]]); });
+      setPick(init);
+      setVinfo(d);
+    }).catch(() => setVinfo(false));
+  }, [approved, design.id]);
+  const multi = !!vinfo;
+  const sizeIdx = multi ? vinfo.optionNames.findIndex((n) => /size/i.test(n)) : -1;
+  const chosen = multi
+    ? vinfo.variants.filter((v) => v.values.every((val, i) => pick[i]?.has(val))).map((v) => ({
+        values: v.values,
+        price: ((Number.parseFloat(pubPrice) || 0) + (sizeIdx >= 0 ? sizeUpcharge(v.values[sizeIdx], Number.parseFloat(extra2) || 0, Number.parseFloat(extra3) || 0) : 0)).toFixed(2),
+      }))
+    : [];
+  const prices = chosen.map((c) => Number.parseFloat(c.price));
+  const toggle = (i, val) => setPick((p) => { const s = new Set(p[i]); s.has(val) ? s.delete(val) : s.add(val); return { ...p, [i]: s }; });
+  const setAll = (i, on) => setPick((p) => ({ ...p, [i]: new Set(on ? vinfo.options[i].values : []) }));
+
   useEffect(() => {
     if (!approved) return;
     fetch('/api/stores', { cache: 'no-store' }).then((r) => r.json()).then((d) => { setStores(d.stores || []); setConnId(d.stores?.[0]?.id || ''); }).catch(() => setStores([]));
@@ -89,9 +119,9 @@ export default function DesignTools({ design, onChanged }) {
   useEffect(() => { setPubPrice(price); }, [price]);
   async function publish(e) {
     e.preventDefault(); setPubMsg(''); setPubBusy(true);
-    const res = await fetch(`/api/designs/${design.id}/publish`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectionId: connId, title, description: desc, price: pubPrice, draft }) });
+    const res = await fetch(`/api/designs/${design.id}/publish`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectionId: connId, title, description: desc, price: pubPrice, draft, ...(multi ? { variants: chosen.map((c) => ({ values: c.values, price: c.price })) } : {}) }) });
     const out = await res.json();
-    setPubMsg(res.ok ? `ok:Published${draft ? ' as a draft' : ''}. ${out.adminUrl}` : `err:${out.error}`);
+    setPubMsg(res.ok ? `ok:Published${multi ? ` ${out.variantCount} variants` : ''}${draft ? ' as a draft' : ''}. ${out.adminUrl}` : `err:${out.error}`);
     setPubBusy(false);
   }
 
@@ -193,11 +223,43 @@ export default function DesignTools({ design, onChanged }) {
                     <select className="sp-select" value={connId} onChange={(e) => setConnId(e.target.value)}>{stores.map((s) => <option key={s.id} value={s.id}>{s.store_domain}</option>)}</select></div>
                   <div className="sp-field"><label>Product title</label><input value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
                   <div className="sp-field"><label>Description</label><textarea rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Tell shoppers about this product" /></div>
-                  <div className="sp-field"><label>Price</label><input type="number" min="0" step="0.01" value={pubPrice} onChange={(e) => setPubPrice(e.target.value)} required /></div>
+                  <div className="sp-field"><label>{multi ? 'Price (smallest sizes)' : 'Price'}</label><input type="number" min="0" step="0.01" value={pubPrice} onChange={(e) => setPubPrice(e.target.value)} required /></div>
+                  {vinfo === null && <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 14 }}>Loading colors and sizes…</div>}
+                  {multi && (
+                    <div style={{ margin: '4px 0 16px', display: 'grid', gap: 14 }}>
+                      {vinfo.options.map((o, i) => (
+                        <div key={o.name}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
+                            <b style={{ fontSize: 13.5 }}>{o.name}</b>
+                            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{pick[i]?.size || 0} of {o.values.length}</span>
+                            <button type="button" className="sp-link" style={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 12 }} onClick={() => setAll(i, true)}>All</button>
+                            <button type="button" className="sp-link" style={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 12 }} onClick={() => setAll(i, false)}>None</button>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {o.values.map((val) => {
+                              const on = pick[i]?.has(val);
+                              return <button key={val} type="button" onClick={() => toggle(i, val)} style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid ' + (on ? '#ffc800' : '#34343a'), background: on ? '#ffc800' : 'transparent', color: on ? '#000' : '#e4e4e7', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>{val}</button>;
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      {sizeIdx >= 0 && (
+                        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', fontSize: 13 }}>
+                          <span style={{ color: 'var(--muted)' }}>Charge more for big sizes:</span>
+                          <label>2XL +$ <input type="number" min="0" step="0.5" value={extra2} onChange={(e) => setExtra2(e.target.value)} style={{ width: 70 }} /></label>
+                          <label>3XL and up +$ <input type="number" min="0" step="0.5" value={extra3} onChange={(e) => setExtra3(e.target.value)} style={{ width: 70 }} /></label>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 13.5, color: chosen.length ? '#e4e4e7' : '#fca5a5' }}>
+                        {chosen.length ? <><b>{chosen.length} variant{chosen.length === 1 ? '' : 's'}</b> will be created, from ${Math.min(...prices).toFixed(2)} to ${Math.max(...prices).toFixed(2)}. Each gets its own SKU that starts with POD-.</> : 'Choose at least one option.'}
+                        {chosen.length > 250 && <span style={{ color: '#fca5a5' }}> That is more than 250, so please choose fewer.</span>}
+                      </div>
+                    </div>
+                  )}
                   <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13.5, color: '#e4e4e7', margin: '0 0 16px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={draft} onChange={(e) => setDraft(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#ffc800' }} /> Save as a draft so I can review it in my store first
                   </label>
-                  <button className="sp-btn" type="submit" disabled={pubBusy}>{pubBusy ? 'Publishing…' : 'Publish'} <Arrow /></button>
+                  <button className="sp-btn" type="submit" disabled={pubBusy || vinfo === null || (multi && (chosen.length === 0 || chosen.length > 250))}>{pubBusy ? 'Publishing…' : 'Publish'} <Arrow /></button>
                 </form>
               )}
             {msg(pubMsg)}

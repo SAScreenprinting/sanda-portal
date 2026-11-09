@@ -31,13 +31,36 @@ export async function POST(request) {
     email_confirm: true,
   })
 
-  if (createError) return NextResponse.json({ error: createError.message }, { status: 400 })
+  const fields = { email, business_name, contact_name, phone, is_admin: false }
 
-  // Update the auto-created profile with their business info
-  await adminClient
+  if (createError) {
+    // A login can exist without a profile (an earlier attempt that did not finish). Repair that one instead of failing.
+    if (!/already|registered|exists/i.test(createError.message)) return NextResponse.json({ error: createError.message }, { status: 400 })
+    let existing = null
+    for (let page = 1; page <= 10 && !existing; page++) {
+      const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 200 })
+      if (error || !data?.users?.length) break
+      existing = data.users.find((u) => (u.email || '').toLowerCase() === String(email).toLowerCase()) || null
+      if (data.users.length < 200) break
+    }
+    if (!existing) return NextResponse.json({ error: createError.message }, { status: 400 })
+    const { data: hasProfile } = await adminClient.from('profiles').select('id').eq('id', existing.id).maybeSingle()
+    if (hasProfile) return NextResponse.json({ error: 'That email already has a client account.' }, { status: 400 })
+    const { error: fixError } = await adminClient.from('profiles').upsert({ id: existing.id, ...fields }, { onConflict: 'id' })
+    if (fixError) return NextResponse.json({ error: 'Could not finish the account: ' + fixError.message }, { status: 500 })
+    await adminClient.auth.admin.updateUserById(existing.id, { password, email_confirm: true })
+    return NextResponse.json({ success: true, userId: existing.id, repaired: true })
+  }
+
+  // Save their business info. Upsert so it works whether or not the database already made a blank profile for the new login.
+  const { error: profileError } = await adminClient
     .from('profiles')
-    .update({ business_name, contact_name, phone, is_admin: false })
-    .eq('id', newUser.user.id)
+    .upsert({ id: newUser.user.id, ...fields }, { onConflict: 'id' })
+  if (profileError) {
+    // Do not leave a login with no profile behind.
+    await adminClient.auth.admin.deleteUser(newUser.user.id)
+    return NextResponse.json({ error: 'Could not save the client profile: ' + profileError.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true, userId: newUser.user.id })
 }

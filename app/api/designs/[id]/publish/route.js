@@ -1,7 +1,8 @@
 import { getAuth, unauthorized, serviceDb } from '@/lib/apiAuth';
 import { decryptToken } from '@/lib/tokenCrypto';
 import { publishProduct, publishProductVariants, stageImages } from '@/lib/shopifyStore';
-import { fetchProductVariants, variantKey, colorOptionIndex } from '@/lib/designVariants';
+import { loadVariantInfo, variantKey, colorOptionIndex } from '@/lib/designVariants';
+import { isCustom } from '@/lib/customDesign';
 import { buildColorMockups } from '@/lib/designMockups';
 import { buildVariantSkus } from '@/lib/designSku';
 
@@ -26,7 +27,7 @@ export async function POST(request, { params }) {
   // Several colors/sizes at once: one product, every variant gets its own SKU from the design number.
   if (Array.isArray(chosen) && chosen.length > 0) {
     if (chosen.length > 250) return Response.json({ error: 'Choose 250 variants or fewer at a time.' }, { status: 400 });
-    const info = await fetchProductVariants(design.product?.productId, auth.user.id);
+    const info = await loadVariantInfo(design, auth.user.id);
     if (!info) return Response.json({ error: "Could not load this product's colors and sizes right now. Please try again." }, { status: 502 });
     const real = new Set(info.variants.map((v) => variantKey(v.values)));
     const seen = new Set();
@@ -48,7 +49,7 @@ export async function POST(request, { params }) {
     let mockupCount = 0;
     let mockupNote = null;
     const colorIdx = colorOptionIndex(info.optionNames);
-    if (wantMockups !== false && colorIdx >= 0) {
+    if (wantMockups !== false && colorIdx >= 0 && !isCustom(design)) {
       try {
         const colors = [...new Set(chosen.map((c) => c.values[colorIdx]))];
         const built = await buildColorMockups({ design, info, colors, userId: auth.user.id });

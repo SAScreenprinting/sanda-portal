@@ -1,6 +1,7 @@
 import { isPortalKey } from '@/lib/podLink';
 import { serviceDb } from '@/lib/apiAuth';
-import { fetchProductVariants, variantKey, colorOptionIndex } from '@/lib/designVariants';
+import { loadVariantInfo, variantKey, colorOptionIndex } from '@/lib/designVariants';
+import { isCustom, customColorPictures } from '@/lib/customDesign';
 import { buildVariantSkus } from '@/lib/designSku';
 import { colorHexes, mockupViews } from '@/lib/designMockups';
 import { mockupUrl } from '@/lib/podMockupUrl';
@@ -24,7 +25,7 @@ export async function POST(request) {
   const number = design.product?.designNumber;
   if (!number) return Response.json({ error: 'This design has no number yet.' }, { status: 400 });
 
-  const info = await fetchProductVariants(design.product?.productId, clientId);
+  const info = await loadVariantInfo(design, clientId);
   if (!info) return Response.json({ error: "Could not load this product's colors and sizes right now. Please try again." }, { status: 502 });
   const real = new Set(info.variants.map((v) => variantKey(v.values)));
   const seen = new Set();
@@ -41,7 +42,12 @@ export async function POST(request) {
   let media = [];
   let mockupNote = null;
   const colorIdx = colorOptionIndex(info.optionNames);
-  if (mockups !== false && colorIdx >= 0) {
+  if (mockups !== false && colorIdx >= 0 && isCustom(design)) {
+    // Hand-built product: use the picture uploaded for each chosen color (its link is already public)
+    const colors = [...new Set(selected.map((v) => v[colorIdx]))];
+    media = customColorPictures(design, colors).map((p) => ({ color: p.color, view: p.view, hex: '', url: p.url }));
+    if (media.length === 0) mockupNote = 'No color pictures were uploaded for this product, so the design picture was used.';
+  } else if (mockups !== false && colorIdx >= 0) {
     try {
       const views = await mockupViews(design, clientId);
       if (views.length === 0) mockupNote = 'This product has no shirt picture to build color pictures from.';

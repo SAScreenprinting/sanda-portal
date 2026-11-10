@@ -1,7 +1,8 @@
 import { isPortalKey } from '@/lib/podLink';
 import { serviceDb } from '@/lib/apiAuth';
-import { fetchProductVariants, colorOptionIndex } from '@/lib/designVariants';
+import { loadVariantInfo, colorOptionIndex } from '@/lib/designVariants';
 import { mockupViews } from '@/lib/designMockups';
+import { isCustom, customColorPictures } from '@/lib/customDesign';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -19,12 +20,27 @@ export async function GET(request) {
   const { data: design } = await db.from('saved_designs').select('id, name, product, decorations').eq('id', designId).eq('client_id', clientId).maybeSingle();
   if (!design || !READY.includes(design.product?.status)) return Response.json({ error: 'Design not found' }, { status: 404 });
 
-  const info = await fetchProductVariants(design.product?.productId, clientId);
+  const info = await loadVariantInfo(design, clientId);
   if (!info) return Response.json({ error: "Could not load this product's colors and sizes right now." }, { status: 502 });
   const hasColor = colorOptionIndex(info.optionNames) >= 0;
-  const views = hasColor ? await mockupViews(design, clientId) : [];
-  const { data: price } = await db.from('pod_pricing').select('base_cost, print_cost, shipping_cost, suggested_price').eq('shopify_product_id', String(design.product?.productId || '')).maybeSingle();
-  const cost = price ? Number(price.base_cost) + Number(price.print_cost) + Number(price.shipping_cost) : null;
+  const custom = isCustom(design);
+
+  // Color pictures: a custom product uses the photos that were uploaded for each color, a catalog product is built from its shirt picture.
+  let viewNames;
+  if (custom) viewNames = customColorPictures(design).length > 0 ? ['Front'] : [];
+  else viewNames = hasColor ? (await mockupViews(design, clientId)).map((v) => v.name) : [];
+
+  let pricing = null;
+  if (custom) {
+    const c = design.product.custom;
+    if (c.cost != null || c.suggested != null) pricing = { cost: c.cost ?? 0, suggested: c.suggested ?? null };
+  } else {
+    const { data: price } = await db.from('pod_pricing').select('base_cost, print_cost, shipping_cost, suggested_price').eq('shopify_product_id', String(design.product?.productId || '')).maybeSingle();
+    if (price) {
+      const cost = Number(price.base_cost) + Number(price.print_cost) + Number(price.shipping_cost);
+      pricing = { cost: +cost.toFixed(2), suggested: price.suggested_price != null ? Number(price.suggested_price) : null };
+    }
+  }
 
   return Response.json({
     design: {
@@ -34,8 +50,8 @@ export async function GET(request) {
     optionNames: info.optionNames,
     options: info.options,
     variants: info.variants.map((v) => v.values),
-    canMockup: views.length > 0,
-    mockupViews: views.map((v) => v.name),
-    pricing: price ? { cost: +cost.toFixed(2), suggested: price.suggested_price != null ? Number(price.suggested_price) : null } : null,
+    canMockup: viewNames.length > 0,
+    mockupViews: viewNames,
+    pricing,
   });
 }

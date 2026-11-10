@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getAuth } from '@/lib/apiAuth';
 import { makeSku } from '@/lib/designSku';
 import { sendDesignReviewEmail } from '@/lib/designEmail';
+import { newDesignNumber } from '@/lib/designNumber';
 
 // A client finished a design in the studio. It is saved to their POD profile as a Design
 // (not an order) so S&A can set it up with their profile and connected stores.
@@ -30,13 +31,7 @@ export async function POST(request) {
     owner = target;
   }
 
-  // Random 6-digit design number, re-rolled if it is already taken
-  let number = '';
-  for (let i = 0; i < 8; i++) {
-    const candidate = String(Math.floor(100000 + Math.random() * 900000));
-    const { data: clash } = await db.from('saved_designs').select('id').eq('name', `Design #${candidate}`).limit(1);
-    if (!clash || clash.length === 0) { number = candidate; break; }
-  }
+  const number = await newDesignNumber(db);
   if (!number) return Response.json({ error: 'Could not create a design number. Please try again.' }, { status: 500 });
 
   const product = {

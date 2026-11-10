@@ -1,5 +1,6 @@
 import { getAuth, unauthorized, serviceDb } from '@/lib/apiAuth';
-import { fetchProductVariants, colorOptionIndex } from '@/lib/designVariants';
+import { loadVariantInfo, colorOptionIndex } from '@/lib/designVariants';
+import { isCustom } from '@/lib/customDesign';
 import { buildColorMockups } from '@/lib/designMockups';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,8 @@ export async function GET(request, { params }) {
   const view = url.searchParams.get('view') || undefined;
   const { data: design } = await serviceDb().from('saved_designs').select('id, product, decorations').eq('id', id).eq('client_id', auth.user.id).maybeSingle();
   if (!design) return Response.json({ error: 'Design not found' }, { status: 404 });
-  const info = await fetchProductVariants(design.product?.productId, auth.user.id);
+  if (isCustom(design)) return Response.json({ error: 'This product uses the pictures S&A uploaded.' }, { status: 404 });
+  const info = await loadVariantInfo(design, auth.user.id);
   if (!info || colorOptionIndex(info.optionNames) < 0) return Response.json({ error: 'No colors for this product' }, { status: 404 });
   const idx = colorOptionIndex(info.optionNames);
   const colors = [...new Set(info.variants.map((v) => v.values[idx]))];

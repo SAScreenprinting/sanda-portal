@@ -22,7 +22,11 @@ export async function GET(request) {
   return Response.json({
     design: {
       id: hit.id, name: hit.name, clientId: hit.client_id, sku, productTitle: hit.product?.productTitle || null,
-      variantTitle: exact ? (hit.product?.variantTitle || null) : null, // another variant of the design: the order's own variant says which color/size previews: hit.decorations?.previews || {}, printFiles: hit.decorations?.printFiles || [],
+      // For another variant of the design the order's own variant says which color/size, so none is given here.
+      variantTitle: exact ? (hit.product?.variantTitle || null) : null,
+      blank: hit.product?.custom?.blank || null,
+      previews: hit.decorations?.previews || {},
+      printFiles: hit.decorations?.printFiles || [],
     },
   });
 }
